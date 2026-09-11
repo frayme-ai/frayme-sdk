@@ -23,15 +23,18 @@ jobs:
         run: npm i --no-save @json-render/core@latest @json-render/react@latest
 
       - run: npm ci
-      - run: npm run type-check
+      # Build before type-check: @frayme/runtime resolves @frayme/api through the
+      # workspace link, whose types live in packages/api/dist.
       - run: npm run build
+      - run: npm run type-check
       - run: npm run test
 
       - name: Package shape (publint + arethetypeswrong)
         run: |
           for p in catalog api runtime; do
             npx publint packages/$p
-            npx attw --pack packages/$p --profile esm-only
+            # ./styles.css is a stylesheet export, not a JS entrypoint — exclude it from resolution checks.
+            npx attw --pack packages/$p --profile esm-only --exclude-entrypoints ./styles.css
           done
 
       - name: Directive gate — "use client" present in client chunks, absent in server entries

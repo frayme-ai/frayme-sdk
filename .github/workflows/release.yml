@@ -1,0 +1,52 @@
+name: Release
+
+# Publishes @frayme/catalog, @frayme/api and @frayme/runtime to npm when a
+# version tag (v0.4.0, v1.2.3, …) is pushed. Uses npm Trusted Publishing:
+# the job authenticates with GitHub's OIDC token, so no npm token is stored,
+# and every published version carries a provenance attestation.
+#
+# Only versions that are not yet on the registry are published, so the job
+# is safe to re-run after a partial failure.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      # Trusted Publishing requires npm 11.5.1 or newer.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run build
+      - run: npm run type-check
+      - run: npm test
+      - name: Publish in dependency order
+        run: |
+          set -euo pipefail
+          for pkg in catalog api runtime; do
+            name="@frayme/$pkg"
+            version="$(node -p "require('./packages/$pkg/package.json').version")"
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "$name@$version is already on the registry — skipping"
+            else
+              npm publish -w "$name" --access public --provenance
+            fi
+          done
