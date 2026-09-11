@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly canary against @json-render latest (Mondays 07:00 UTC)
+    - cron: '0 7 * * 1'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Canary — bump json-render to latest (scheduled runs only)
+        if: github.event_name == 'schedule'
+        run: npm i --no-save @json-render/core@latest @json-render/react@latest
+
+      - run: npm ci
+      - run: npm run type-check
+      - run: npm run build
+      - run: npm run test
+
+      - name: Package shape (publint + arethetypeswrong)
+        run: |
+          for p in catalog api runtime; do
+            npx publint packages/$p
+            npx attw --pack packages/$p --profile esm-only
+          done
+
+      - name: Directive gate — "use client" present in client chunks, absent in server entries
+        run: |
+          set -e
+          for f in react/index ai-sdk/index ag-ui/index; do
+            head -c 300 "packages/runtime/dist/$f.js" | grep -q '"use client"' \
+              || { echo "FAIL: missing directive in $f"; exit 1; }
+          done
+          head -c 300 packages/runtime/dist/index.js | grep -q '"use client"' \
+            && { echo "FAIL: server entry has directive"; exit 1; } || true
+          head -c 300 packages/api/dist/index.js | grep -q '"use client"' \
+            && { echo "FAIL: api entry has directive"; exit 1; } || true
+          echo "directive gate OK"
+
+      - name: Clean-room tarball install
+        run: |
+          npm pack -w @frayme/catalog -w @frayme/api -w @frayme/runtime --pack-destination /tmp
+          mkdir /tmp/cleanroom && cd /tmp/cleanroom && npm init -y
+          npm i /tmp/frayme-catalog-*.tgz /tmp/frayme-api-*.tgz /tmp/frayme-runtime-*.tgz react react-dom
+          node --input-type=module -e "
+            import Frayme from '@frayme/api';
+            import { composeToolDefinition } from '@frayme/api/tools';
+            import { validateFraymeSpec } from '@frayme/runtime';
+            import { FraymeRenderer } from '@frayme/runtime/react';
+            import { FraymeMessageRenderer } from '@frayme/runtime/ai-sdk';
+            import { FraymeAgUiRenderer } from '@frayme/runtime/ag-ui';
+            console.log('clean-room imports OK');
+          "

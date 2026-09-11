@@ -1,0 +1,1628 @@
+/* Selective Tailwind v4 import — theme + utilities ONLY, NO preflight. This is a
+   LIBRARY stylesheet imported into consumer apps (and SSR'd into iframes), so it
+   must never clobber the host's base styles with a global reset. The CVA recipes
+   set every base style explicitly, so preflight isn't needed. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Tailwind v4 theme tokens. Defaults here let Tailwind GENERATE the utilities
+   (bg-primary, text-danger-foreground, …); `.frayme-root` below re-points each
+   token at the themeable `--frayme-*` var, so CVA/Tailwind components follow
+   per-workspace theming + dark mode for free. */
+@theme {
+  --color-primary: #2563eb;
+  --color-primary-foreground: #ffffff;
+  --color-background: transparent;
+  --color-foreground: #18181b;
+  --color-card: #ffffff;
+  --color-card-foreground: #18181b;
+  --color-border: #e4e4e7;
+  --color-muted: #f4f4f5;
+  /* Kept byte-identical to --frayme-muted-fg below (see the measurement there).
+     This is the value Tailwind bakes into the generated utilities for anything
+     rendered OUTSIDE .frayme-root, so letting the two drift would give a host
+     two different "muted" greys with two different contrast ratios. */
+  --color-muted-foreground: #52525b;
+  --color-danger: #dc2626;
+  --color-danger-foreground: #ffffff;
+  /* Same argument as --color-muted-foreground above, and these two were left
+     behind when it was made. #16a34a reads 3.30:1 and #d97706 3.19:1 on plain
+     white — the exact two values --frayme-success/--frayme-warning below were
+     moved OFF for failing the 4.5 floor (see the measurements there). Baked into
+     the generated utilities, they handed a host a green and an amber that fail
+     outside .frayme-root while the identically-named tokens pass inside it.
+     Every --color-* token that .frayme-root re-points is now pinned to its
+     --frayme-* value by test/theme-tokens.test.ts, so the two cannot fork again.
+     --color-background is deliberately NOT in that set: .frayme-root does not
+     re-point it, and its `transparent` is what the .fr-tabscroll fade depends on. */
+  --color-success: #15803d;
+  --color-success-foreground: #ffffff;
+  --color-warning: #b45309;
+  --color-warning-foreground: #ffffff;
+  --color-info: #2563eb;
+  --color-info-foreground: #ffffff;
+  --radius-frayme: 0.625rem;
+  /* Typeface menu — system-font stacks only (no @font-face; CSP font-src 'self').
+     sans/serif/mono are Tailwind built-ins; these add the `font-rounded`/`font-display`
+     utilities the closed `Font` enum maps to. */
+  --font-rounded: ui-rounded, 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', 'Quicksand', 'Comfortaa', system-ui, sans-serif;
+  --font-display: 'SF Pro Display', 'Segoe UI Variable Display', 'Helvetica Neue', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* @frayme/runtime tokens + the few legacy classes still emitted by the runtime
+   (Fallback, invalid-spec, Tooltip). All component styling is now CVA + Tailwind
+   recipes in the registry — the old per-component `.frayme-*` rules were stripped
+   once every component was cut over. */
+.frayme-root {
+  /* Re-point Tailwind's @theme tokens at the themeable --frayme-* vars (so CVA
+     components follow per-workspace theming + dark mode). */
+  --color-primary: var(--frayme-primary);
+  --color-primary-foreground: var(--frayme-primary-fg);
+  --color-foreground: var(--frayme-fg);
+  --color-card: var(--frayme-card);
+  --color-card-foreground: var(--frayme-card-fg);
+  --color-border: var(--frayme-border);
+  --color-muted: var(--frayme-muted);
+  --fr-chip-face: var(--frayme-chip-face);
+  --fr-chip-edge: var(--frayme-chip-edge);
+  --fr-dt-actions-shade: var(--frayme-dt-shade);
+  --fr-dt-actions-amt: var(--frayme-dt-shade-amt);
+  --color-muted-foreground: var(--frayme-muted-fg);
+  --color-danger: var(--frayme-danger);
+  --color-danger-foreground: var(--frayme-danger-fg);
+  --color-success: var(--frayme-success);
+  --color-warning: var(--frayme-warning);
+  --color-info: var(--frayme-info);
+  --radius-frayme: var(--frayme-radius);
+
+  /* The interactive-UI accent — toggle ON, row/field selection, focus ring,
+     checked, active. Neutral (foreground) by default; an app sets --fr-accent
+     (e.g. to var(--color-primary)) to colour all interactive UI at once.
+     Because its value is --color-foreground (which itself flips light↔dark via
+     --frayme-fg), --fr-accent tracks the theme automatically — no per-mode
+     redeclaration needed in the dark blocks below. */
+  --fr-accent: var(--color-foreground);
+
+  --frayme-primary: #2563eb;
+  --frayme-primary-fg: #ffffff;
+  /* The render surface PAINTS. `transparent` was legible only because whatever
+     hosted it happened to paint something suitable behind: on a light surface a
+     dark-theme render came out white on white, and the whole embed story is
+     "unknown host". It also made contrast unmeasurable — an automated check
+     walking for the effective background finds nothing and has to guess, so a
+     dark-mode audit compared light text against an assumed white and failed
+     everything. A surface you cannot measure is a surface you cannot promise.
+     A host that genuinely wants transparency sets --frayme-bg itself. */
+  --frayme-bg: #ffffff;
+  --frayme-fg: #18181b;
+  --frayme-card: #ffffff;
+  --frayme-card-fg: #18181b;
+  --frayme-border: #e4e4e7;
+  --frayme-muted: #f4f4f5;
+  /* DataTable actions column: a RECESSED band, always one step DARKER than
+     --frayme-card, in BOTH themes. It cannot be --frayme-muted, because muted sits
+     BELOW card in light (#f4f4f5 < #ffffff) and ABOVE it in dark (#26262b >
+     #1c1c20). Pinned to muted, the column inverted between themes — the card-toned
+     row chip read as RAISED in light and as a sunken well in dark. A control should
+     not change its elevation when the lights go out. */
+  /* The actions column is a SHADE OVER THE REAL SURFACE, not a fixed colour.
+     A DataTable has no bg of its own — an authored background comes from the Card
+     around it, which re-points --fr-card-bg. A flat token ignored that entirely: a
+     yellow table kept a grey actions column. Shading the surface follows whatever
+     is actually behind it, and keeps the column one step DARKER in both themes
+     (which is why this is a shade rather than a token — muted sits below card in
+     light and above it in dark, so a token inverted between them). */
+  --frayme-dt-shade: #000000;
+  --frayme-dt-shade-amt: 4%;
+  --frayme-chip-face: #ffffff;
+  --frayme-chip-edge: #000000;
+  /* The row-action chip is EMBOSSED from whatever surface it stands on. Two mixing
+     agents, because light and dark need OPPOSITE edges: a raised face lifts toward
+     white in both themes, but its hairline must be DARKER than the surface on a
+     light ground and LIGHTER on a dark one. Literals live here, in the token block,
+     never in a paint declaration — a painted colour has to be able to follow the
+     theme, and these are the values it follows. */
+  --frayme-chip-face: #ffffff;
+  --frayme-chip-edge: #000000;
+  /* #71717a (zinc-500) reads 4.83:1 on white but 4.40:1 on `--frayme-muted`
+     (#f4f4f5) — the second-lightest surface this same file declares — so muted
+     body text failed the 4.5 floor everywhere it sat on the muted band. This is
+     not one bad component: the worst real surface read 3.44:1. Solve back from
+     that 3.44 and the offending surface has
+     luminance ≈0.70 (a tinted chip, a striped row) — lighter-contrast than
+     anything a card/muted pairing can produce, so the token is failing well
+     outside the two surfaces named here. zinc-600 reads 7.73 on white, 7.03 on
+     muted, 5.52 on that ≈0.70 surface.
+     Rejected — the minimal step #6b6b74: it clears this file's own surfaces
+     (5.28 / 4.80) but still reads 3.77 on the measured worst case, i.e. the same
+     argument would have to be had again at every tinted surface a spec paints.
+     Rejected — leaving the token and deepening it per component: data-table.tsx
+     (ColumnHeader) and data-display.tsx (imagePlaceholder) each already ship a
+     local color-mix toward foreground for exactly this pairing. Two components
+     needing the identical local patch in one sweep is the signature of a token
+     set too light, not of two bad components. Those local mixes stay correct
+     after this change — they mix TOWARD foreground, so a darker token only
+     deepens them. */
+  --frayme-muted-fg: #52525b;
+  --frayme-danger: #dc2626;
+  --frayme-danger-fg: #ffffff;
+  /* #16a34a read 3.30:1 on plain white — below the 4.5:1 floor before any tinted
+     surface is involved, so a green ✓ used as a cell's entire payload was
+     unreadable in LIGHT mode while its red counterpart failed in dark. #15803d
+     clears white at 5.02:1 and its own tints at 4.57-4.79. */
+  --frayme-success: #15803d;
+  --frayme-success-fg: #ffffff;
+  /* #d97706 read 3.19:1 on white — amber is the hardest hue to keep readable at
+     full saturation, and it failed the plain-white case before any tint. #b45309
+     clears white at 5.02:1 and its own amber tint at 4.51:1. */
+  --frayme-warning: #b45309;
+  --frayme-warning-fg: #ffffff;
+  --frayme-info: #2563eb;
+  --frayme-info-fg: #ffffff;
+  --frayme-radius: 0.625rem;
+  --frayme-font: ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  font-family: var(--frayme-font);
+  color: var(--frayme-fg);
+  background: var(--frayme-bg);
+  line-height: 1.5;
+  font-size: 0.9375rem;
+  box-sizing: border-box;
+}
+.frayme-root *,
+.frayme-root *::before,
+.frayme-root *::after {
+  box-sizing: inherit;
+}
+
+/* Scoped border-color default. The Tailwind import above deliberately SKIPS
+   preflight, and Tailwind v4 makes the bare `border` width default its colour to
+   `currentColor` — so any component using `border` without an explicit colour would
+   paint a TEXT-coloured border (looks broken). This restores the design-token border
+   the way preflight would, but SCOPED to `.frayme-root` (never clobbers the host) and
+   in `@layer base` so every explicit `border-*` / arbitrary border-colour utility
+   still overrides it. Follows --frayme-border, so it flips with dark mode. */
+@layer base {
+  .frayme-root,
+  .frayme-root *,
+  .frayme-root *::before,
+  .frayme-root *::after {
+    border-color: var(--color-border);
+  }
+
+  /* Focus fallback. 43 of 56 registry files paint their own focus ring, which
+     left the other 13 with NOTHING: a keyboard user tabbing through them cannot
+     see where they are.
+
+     This is a floor, not an override, and the cascade does the arbitration for
+     us. It sits in `base`, so ANY component's `focus-visible:ring-2` utility
+     (layer `utilities`, declared last) wins over it; and components that paint
+     their own ring almost always combine it with `focus-visible:outline-none`,
+     which suppresses this outline rather than doubling up on it. So the ring
+     appears exactly where nothing else claims the job.
+
+     `:where()` keeps specificity at 0 so even an equal-layer rule beats it. The
+     unlayered text-input rule below still wins for fields, which paint their own
+     border+ring and must not gain a second outline. */
+  .frayme-root
+    :where(
+      a[href],
+      button,
+      summary,
+      [role='button'],
+      [role='tab'],
+      [role='link'],
+      [role='menuitem'],
+      [role='menuitemcheckbox'],
+      [role='menuitemradio'],
+      [role='option'],
+      [role='switch'],
+      [role='checkbox'],
+      [role='radio'],
+      [role='slider'],
+      [role='treeitem'],
+      [role='gridcell'],
+      [tabindex]:not([tabindex='-1'])
+    ):focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--fr-accent) 65%, transparent);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .frayme-root {
+    --frayme-bg: #131316;
+    --frayme-fg: #fafafa;
+    --frayme-card: #1c1c20;
+    --frayme-card-fg: #fafafa;
+    --frayme-border: #3f3f46;
+    --frayme-muted: #26262b;
+  /* 6 steps below --frayme-card (#1c1c20), so the card-toned chip still rises. */
+  --frayme-dt-shade: #000000;
+  /* Deeper on a dark ground: 4% of black on #1c1c20 is invisible. */
+  --frayme-dt-shade-amt: 22%;
+  --frayme-chip-face: #ffffff;
+  /* Inverted on a dark ground: a black hairline vanishes, a light one reads. */
+  --frayme-chip-edge: #ffffff;
+    --frayme-muted-fg: #a1a1aa;
+    /* Same re-derivation as the explicit dark block above — a viewer on the
+       default "system" setting stamps no attribute, so this is the ONLY block
+       that reaches them. Leaving it behind was how the two paths would drift. */
+    --frayme-primary: #60a5fa;
+    --frayme-primary-fg: #0b1220;
+    --frayme-danger: #f87171;
+    --frayme-danger-fg: #0b1220;
+    --frayme-success: #22c55e;
+    --frayme-success-fg: #0b1220;
+    --frayme-warning: #f59e0b;
+    --frayme-warning-fg: #0b1220;
+    /* #3b82f6 read 4.09:1 on the muted surface — the token gate caught this one,
+       nobody had checked. #60a5fa clears every dark surface at 5.92-8.26. */
+    --frayme-info: #60a5fa;
+    --frayme-info-fg: #0b1220;
+  }
+}
+
+/* Tooltip keeps a tiny CSS rule — Tailwind can't express `content: attr()`. The
+   Tooltip renderer sets `class="frayme-tooltip"` + `data-content`. */
+.frayme-tooltip {
+  position: relative;
+  text-decoration: underline dotted;
+  cursor: help;
+}
+.frayme-tooltip:hover::after,
+.frayme-tooltip:focus-visible::after {
+  content: attr(data-content);
+  position: absolute;
+  bottom: calc(100% + 0.375rem);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: var(--frayme-fg);
+  color: var(--frayme-card);
+  padding: 0.25rem 0.625rem;
+  border-radius: calc(var(--frayme-radius) / 2);
+  font-size: 0.75rem;
+  z-index: 40;
+}
+
+/* Slider `trackColor` — GATED on the `.fr-slider-custom` marker class (the Slider
+   renderer adds it only when `trackColor` is set). A native range ignores
+   ::-webkit-slider-runnable-track backgrounds unless `appearance:none`, but
+   `appearance:none` also disables the native `accent-color` fill + thumb — so when
+   the author asks for a track colour we switch to a fully custom appearance and
+   redraw BOTH: the track is a hard-stop gradient (accent up to the value %, then
+   `trackColor`), and the thumb is drawn explicitly in `accent`. Sliders WITHOUT a
+   trackColor never get this class, so they keep the clean native accent-color
+   default (zero regression). `--fr-slider-pct` is the live fill %, `--fr-slider-accent`
+   the brand colour, both set inline by the renderer; `--fr-slider-track` is the
+   value-channel colour. */
+.frayme-root input[type='range'].fr-slider-custom {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 1rem;
+  background: transparent;
+  cursor: pointer;
+}
+.frayme-root input[type='range'].fr-slider-custom::-webkit-slider-runnable-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--fr-slider-accent, var(--fr-accent)) var(--fr-slider-pct, 0%),
+    var(--fr-slider-track, var(--color-border)) var(--fr-slider-pct, 0%)
+  );
+}
+.frayme-root input[type='range'].fr-slider-custom::-moz-range-track {
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    var(--fr-slider-accent, var(--fr-accent)) var(--fr-slider-pct, 0%),
+    var(--fr-slider-track, var(--color-border)) var(--fr-slider-pct, 0%)
+  );
+}
+.frayme-root input[type='range'].fr-slider-custom::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1rem;
+  height: 1rem;
+  margin-top: -0.25rem;
+  border-radius: 9999px;
+  background: var(--fr-slider-accent, var(--fr-accent));
+  border: 2px solid var(--frayme-card, #fff);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+}
+.frayme-root input[type='range'].fr-slider-custom::-moz-range-thumb {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--frayme-card, #fff);
+  border-radius: 9999px;
+  background: var(--fr-slider-accent, var(--fr-accent));
+}
+/* appearance:none drops the native focus ring — restore a visible one (WCAG 2.4.7). */
+.frayme-root input[type='range'].fr-slider-custom:focus-visible {
+  outline: 2px solid var(--fr-slider-accent, var(--fr-accent));
+  outline-offset: 2px;
+}
+
+/* RangeSlider — TWO native range inputs are overlaid full-width over the track to
+   provide the draggable min/max thumbs, while the visible fill + handles are drawn
+   by the renderer (decorative spans). For both thumbs to stay independently
+   grabbable in the overlap, the input TRACK must pass pointer events through
+   (`pointer-events:none`) and ONLY the thumb area captures them (`pointer-events:auto`).
+   The native thumb itself is made transparent (the decorative handle shows instead).
+   Mirrors the `.fr-slider-custom` precedent; gated on the `.fr-range-thumb` marker
+   so nothing else is affected. `--fr-range-accent` is the value-channel accent. */
+.frayme-root input[type='range'].fr-range-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  pointer-events: none;
+}
+.frayme-root input[type='range'].fr-range-thumb::-webkit-slider-runnable-track {
+  background: transparent;
+  height: 100%;
+}
+.frayme-root input[type='range'].fr-range-thumb::-moz-range-track {
+  background: transparent;
+  height: 100%;
+}
+.frayme-root input[type='range'].fr-range-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.frayme-root input[type='range'].fr-range-thumb::-moz-range-thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+/* appearance:none drops the native focus ring — draw one on the decorative thumb. */
+.frayme-root input[type='range'].fr-range-thumb:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--fr-range-accent, var(--fr-accent));
+  outline-offset: 2px;
+  border-radius: 9999px;
+}
+.frayme-root input[type='range'].fr-range-thumb:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--fr-range-accent, var(--fr-accent));
+  outline-offset: 2px;
+  border-radius: 9999px;
+}
+
+/* Focus-outline self-defense (UNLAYERED, so it beats a host app's global
+   `:focus-visible { outline }` — which is itself unlayered and would otherwise win
+   over the runtime's LAYERED `outline-none` utility and bleed the host's accent
+   colour onto every rendered field). Our field recipes already paint a neutral
+   ring + border on focus, so this only removes the competing native/host outline.
+   Scoped to text-ish native controls inside `.frayme-root`; range/checkbox/radio
+   are excluded so their own focus indicator (and the slider's `:focus-visible`
+   outline at higher specificity) is untouched. */
+.frayme-root
+  :is(input:not([type='range']):not([type='checkbox']):not([type='radio']), select, textarea):is(:focus, :focus-visible) {
+  outline: none;
+}
+
+/* ── Responsive keystone ──────────────────────────────────────────────────────
+   The runtime renders into HOST PANELS of unknown width (MCP sidebars, web
+   embeds, phones). Media queries read the VIEWPORT and are therefore the wrong
+   tool here — container queries against the render root are the contract.
+   `.frayme-root` is the container: a block-level div whose width comes from its
+   host, so inline-size containment is safe (its own height stays content-driven).
+
+   Markers (set by the components, UNLAYERED rules here so they beat the layered
+   flex-row / grid-template utilities — same precedence trick as the focus reset):
+   - fr-hcols      Stack classified as a COLUMN LAYOUT (≥2 block-container
+                   children via ElementTypesContext). Narrow → stack children
+                   full-width instead of wrapping them at intrinsic width (the
+                   "orphan side-card" defect).
+   - fr-grid-fixed Grid's fixed-column branch (authored `columns`); the auto-fit
+                   branch already collapses naturally.
+   - fr-sg-fixed   StatGroup's fixed-column branch: 2-up below 480, 1-up below 340. */
+.frayme-root {
+  container-type: inline-size;
+}
+
+/* Page padding floor — stamped by FraymeRenderer ONLY when the spec's root
+   element sets no padding of its own; without it such a root renders with the
+   headline flush at 0px against the host edge.
+   1.25rem matches the `padding:"lg"` specs commonly choose.
+
+   Deliberately NOT wrapped in a narrow-width container query: `.frayme-root` is
+   itself the container (container-type above), and a container query can only
+   style a container's DESCENDANTS, never the container itself. A tightening rule
+   here would be dead CSS that looks like it works — the same trap the chart-axis
+   thinning hit, which is why that one puts container-type on the axis row and
+   styles the labels inside it. 20px on a 272px surface is 15% of the width,
+   which is acceptable without the extra machinery. */
+.frayme-root.fr-page-pad {
+  padding: 1.25rem;
+}
+/* Long unbreakable tokens (identifiers, hashes, URLs, order refs) must break
+   rather than run past their box — a spec cannot know which of its strings has
+   no break opportunity. `break-word`, never `anywhere`: `anywhere` participates
+   in min-content sizing, so every flex/grid item can be squeezed below its
+   longest word and a token like "£86k" shatters into a vertical stack of
+   characters at any container width. */
+.frayme-root :where(p, li, dd, dt, td, th, figcaption, blockquote, code, pre, span, div) {
+  overflow-wrap: break-word;
+}
+
+/* A flex item's min-width is `auto`, i.e. its min-content — so a nested stack
+   refuses to shrink and pushes its content out of the frame. The renderer sets
+   min-width:0 at the root and nested stacks were left out. */
+.frayme-root .fr-stack > * {
+  min-width: 0;
+}
+
+/* …and a text leaf never exceeds its container. This is the OTHER half of the
+   same problem and isolated component tests are what pinned it: an unbreakable token
+   ("Betriebskostenabrechnung_2026_Q3_final") has a min-content of the whole word,
+   `overflow-wrap: break-word` does NOT reduce min-content, and a flex item's
+   automatic minimum IS its min-content — so the label sat 284px wide inside a
+   232px parent and left the surface. Input, Textarea, Select, Radio and Slider
+   all escaped by exactly 32px, which is what a single shared cause looks like.
+
+   `max-width: 100%` resolves it, and resolves it in the direction that keeps
+   BOTH invariants: per CSS Flexbox 4.5 the automatic minimum is clamped by
+   max-width, so the box can never exceed its parent, while its min-content floor
+   still stops it collapsing to a one-character column. The word breaks only when
+   the word alone genuinely does not fit — which is the case overflow-wrap exists
+   for. Measured: 284px to 232px, wraps to two lines, nothing escaping.
+
+   Leaves only (:not(:has(*))), so a container's own sizing is untouched. */
+/* REVERTED after measuring: capping every text leaf at 100% fixed escapes in
+   isolated component tests (hostile input) and made REAL SCREENS worse, because a
+   leaf that used to overflow now gets constrained and shatters instead. The
+   isolated tests and the real screens disagreed, and real screens are what ship.
+   The control and wrapper caps below survive; they are targeted and did not
+   carry that cost. */
+
+/* The same cap for CONTENT-SIZED CONTROLS. A Button is `inline-flex` with no
+   max-width, so it grows to fit its label and takes the label's escape with it —
+   capping the label at 100% only caps it at 100% OF THE BUTTON. Button, Link,
+   Toggle, Suggestion and Spinner all escaped by 60-72px for this one reason.
+
+   Excluded: anything inside a scrolling rail, whose items are SUPPOSED to exceed
+   their container — that is what the rail scrolls. */
+.frayme-root
+  :where(button, a[href], summary, select, input, textarea, [role='button'], [role='tab'], [role='switch']):not(
+    .fr-tabscroll *
+  ):not(.fr-tabscroll-card *) {
+  max-width: 100%;
+}
+
+/* And the content-sized WRAPPERS that carry those controls: a fieldset, an
+   inline-flex chrome span. They have no max-width of their own, so a capped
+   child still leaves a wrapper free to grow past the surface — Radio's fieldset
+   sat at 284px, Spinner's span at 314px. Scroll rails excluded for the same
+   reason as above. */
+.frayme-root :where(fieldset, legend):not(.fr-tabscroll *):not(.fr-tabscroll-card *) {
+  max-width: 100%;
+}
+
+/* A text leaf CAN still collapse to a one-character column here (measured after
+   the registry-wide wrap audit: one such box came out 0px wide and 4,345px
+   tall). Two blanket floors were tried and both were worse, so neither is in:
+
+   - `min(100%, min-content)` — invalid. CSS min() takes only <length-percentage>,
+     so the declaration is dropped and the computed value silently stays `auto`.
+   - `min(100%, 12ch)` — valid, and it made things WORSE: a floor on every leaf
+     means three siblings in a row demand 36ch between them, and page overflow
+     rose sharply.
+
+   The collapse is not a property of text in general; it is specific rows whose
+   text column has no flex-basis to defend it. It belongs fixed per component
+   (give the column `flex-1`), not globally. Left measured and untouched. */
+/* WIDE: column children FLEX to share the row (2:1 main:aside — source order
+   puts content first, summary second) instead of sitting at intrinsic width and
+   overflow-wrapping the aside below at partial width (the reported
+   defect happened at ~1100px, not just narrow). flex-basis 0 means they can
+   never overflow → the historical wrap:true never triggers for column layouts. */
+.frayme-root .fr-hcols > * {
+  flex: 1 1 0%;
+  min-width: 0;
+}
+.frayme-root .fr-hcols > :first-child {
+  flex-grow: 2;
+}
+@container (max-width: 42.667em) {
+  .frayme-root .fr-hcols {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  /* Reset the row-flex: in column direction a 0% basis would collapse the
+     children's heights (container height is auto). */
+  .frayme-root .fr-hcols > * {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+}
+/* ── Equal-frame law ──────────────────────────────────────────────────────────
+   Side-by-side Grid cells present EQUAL FRAMES however the card is nested.
+   Grid's items-stretch already equalizes DIRECT children (Card/Callout roots
+   are auto-height, so they stretch to the row track). An interposed Stack
+   wrapper used to defeat it: the WRAPPER stretched while the frame inside kept
+   content height — a short card beside a tall one with dead space below.
+   This rule passes the fill through: inside a stretched grid cell's vertical
+   Stack, the LAST frame child (fr-frame = Card/Callout) grows to absorb the
+   slack. Later non-frame siblings (captions, footnotes) may follow — they end
+   up pinned under the grown frame, which is the wanted reading.
+   Scope guards:
+   - fr-grid is stamped only when the Grid's align RESOLVES to stretch, so an
+     authored align:start/center/end keeps its meaning.
+   - .flex-col only: in a horizontal Stack, flex-grow would distribute WIDTH.
+   - Stacked (1-column) layouts are unaffected — each row track is its own
+     content height, so there is no slack to absorb. */
+.frayme-root .fr-grid > .fr-stack.flex-col > .fr-frame:not(:has(~ .fr-frame)) {
+  flex: 1 1 auto;
+}
+
+/* A pricing tier needs more room than a generic grid cell: three tiers at 360px
+   wraps every feature line to one character. 42.667em == 640px at the root's
+   0.9375rem, and being in em it also fires under text-only zoom. */
+@container (max-width: 42.667em) {
+  .frayme-root .fr-pricing-fixed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* A row Stack that the spec asked NOT to wrap still must not burst the page:
+     below this width the row becomes a wrapping row. */
+  .frayme-root .fr-stack.flex-row {
+    flex-wrap: wrap;
+  }
+  /* A direction flip keyed to the VIEWPORT is keyed to the wrong axis (RSP-1),
+     and three registry rows are: `heroInner` is `flex-col items-center
+     md:flex-row`, `ctaLayout` split is `flex-col md:flex-row md:items-center
+     md:justify-between`, and the footer row is `flex flex-col justify-between
+     gap-8 md:flex-row`. In a 1400px window all three stay ROWS however narrow
+     the host panel is — which is exactly an MCP sidebar, and exactly what a
+     narrow-root test reproduces (320px render root, 1400px viewport). Measured in a
+     248px panel: the hero's two columns came out 104px each with its <h1>
+     rendering 264px tall inside a 104px box; in a 190px panel the footer's brand
+     block was squeezed to 53px and its link columns escaped by 207px.
+
+     This restores each component's OWN mobile-first base — every one of them is
+     `flex-col` before its breakpoint — so no new design is invented here, only
+     the axis corrected. Keyed on the min-width variant prefix rather than a
+     marker class: the `:` IS the structural signal that the direction is
+     CONDITIONAL, and a plain `flex-row` (Stack's own row, `.fr-stack.flex-row`
+     above) therefore never matches. A marker would have to be remembered by each
+     new component, which is how these three were missed in the first place.
+
+     `align-items: stretch` is load-bearing and was measured into place. Flipping
+     direction alone leaves the authored `items-center` sizing each pane to
+     fit-content on the NEW cross axis: the copy pane took its <h1>'s min-content
+     (315px) and escaped its 248px parent by 34px, and a media pane with no
+     intrinsic width collapsed to 0px. Stretch pins both to 248px. `.fr-hcols`
+     resolves the identical transformation the identical way one block up.
+     Rejected — adding `flex-wrap: wrap` too (to rescue the footer's inner
+     `md:flex` column strip): a multi-line flex container sizes items to the
+     LINE, not to the container, so stretch stopped stretching and the hero's
+     panes went straight back to 315px, 67px over. Measured, then dropped. */
+  .frayme-root
+    :is([class*='sm:flex-row'], [class*='md:flex-row'], [class*='lg:flex-row'], [class*='xl:flex-row']) {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@container (max-width: 32em) {
+  /* An authored `wrap:false` row gives its children nowhere to go on a narrow
+     container: `min-width:0` (above) lets every stack child shrink past its own
+     content, so the row stays on one line and the text ellipsises instead. That
+     is where truncation comes from: at 320px a truncated element sits inside a
+     nowrap flex row, never inside a grid, which already collapses here.
+
+     Below 32em the row gets its wrapping back. Rigid alignment is a comfort-width
+     luxury; it is not worth deleting the words. Rows that genuinely must stay on
+     one line and scroll are separate components (fr-tabscroll and the attached
+     strips) with their own overflow container, so they are untouched. */
+  .frayme-root .fr-row-rigid {
+    flex-wrap: wrap;
+  }
+  /* minmax(0,1fr), never a bare 1fr: `1fr` means minmax(AUTO,1fr) and the
+     automatic minimum is the item's min-content — which, for any item holding a
+     nowrap/truncate descendant, is the full untruncated string. The track then
+     grows past the container and the content escapes the render surface. */
+  .frayme-root .fr-grid-fixed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* Same reasoning for a pricing grid, which has its own fixed column count. */
+  .frayme-root .fr-pricing-fixed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* A split needs room to BE a split. Measured at 320px: a 208px SplitPane gave
+     one pane 58px, and every label inside it collapsed to a one-character
+     column. Below 32em it stacks, and the
+     panes give up their authored percentages (which are inline, hence the
+     !important) along with the fixed height that only makes sense side by side. */
+  .frayme-root .fr-splitpane {
+    flex-direction: column;
+    height: auto !important;
+  }
+  .frayme-root .fr-splitpane > * {
+    flex: 1 1 auto !important;
+    min-height: 0;
+  }
+
+  /* A term/value row stacks rather than starving the value: the term's 7rem
+     floor plus the 1.5rem gap claims 8.5rem before the value gets anything, and
+     inside a padded card at phone width what is left is not enough for a word. */
+  .frayme-root .fr-dl-inline {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 0.125rem;
+  }
+  /* An authored column COUNT is a target, not a lock — same rule as fr-grid-fixed
+     and fr-sg-fixed. A 3-up description grid gives each entry ~85px at 272px, and
+     the text stacks itself one character at a time instead.
+
+     !important is load-bearing here and nowhere else in this file: DescriptionList
+     sets its template through an inline `style` (the count is a number, not an
+     enum, so it cannot be a class), and an inline declaration beats any
+     stylesheet rule without it. */
+  .frayme-root .fr-dl-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  .frayme-root .fr-dl-inline > dd {
+    text-align: left;
+  }
+  /* An authored track list ("13rem 4.5rem 6rem …") is ABSOLUTE: CSS lays those
+     tracks out at their stated widths whatever the container is, so a matrix
+     that reads perfectly at desk width would run straight off a phone. Collapse
+     it the same way as every other fixed template — one column, shrinkable. A
+     matrix stacks into a list on narrow; that is the width rule
+     ("stack vertical when size is narrow"), applied consistently. */
+  .frayme-root .fr-grid-tracks {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .frayme-root .fr-sg-fixed {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  /* …and the same collapse for a fixed template carrying NO marker. Both measured
+     grid findings are FeatureGrid, whose template is
+     `repeat(var(--fr-fgrid-cols,3),minmax(0,1fr))`: in a 142px column it resolved
+     to 39.3px tracks and rendered a description 39.3px wide by 180px tall, and in
+     a 232px column it resolved to 61.3px and gave its <h3> 61.3px. Both DO carry
+     a collapse — `max-[640px]:!grid-cols-1` — but that is a viewport media query,
+     so it never fires in a narrow panel inside a wide window. Re-keyed here, the
+     two columns become 142px and 232px and the shattered leaves drop to one and
+     two lines.
+
+     Keyed on the DECLARATION (`[class*='grid-template-columns:repeat(']`), which
+     is the one thing every arbitrary-template grid has in common, plus the
+     variant form for a static `grid-cols-N` bumped at a breakpoint. Same reason
+     as the flex rule above: markers get forgotten, an authored property does not.
+
+     Two exclusions, both structural rather than a name list:
+     - `auto-fit` templates are EXCLUDED because they already collapse against
+       their own box (Grid's auto-fit branch, StatGroup, Sources). Re-keying them
+       to the render root would be a regression, not a fix — a nested 142px grid
+       inside a 1100px root would stop collapsing.
+     - `:has(:is(h1..h6, p))` — flowing text is what shatters. ColorPicker's 6-up
+       swatch grid and LogoCloud's 5-up row hold buttons and images, which shrink
+       cleanly; forcing them to one column would turn a swatch palette into a
+       vertical strip. Both were carried through the tests as controls and came
+       out byte-identical, as did the 7-up calendar grid and StatGroup's auto-fit
+       branch. */
+  .frayme-root
+    :is(
+      [class*='grid-template-columns:repeat(']:not([class*='auto-fit']),
+      [class*='sm:grid-cols-'],
+      [class*='md:grid-cols-'],
+      [class*='lg:grid-cols-'],
+      [class*='xl:grid-cols-']
+    ):has(:is(h1, h2, h3, h4, h5, h6, p)) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container (max-width: 22.667em) {
+  .frayme-root .fr-sg-fixed {
+    grid-template-columns: 1fr;
+  }
+}
+/* ── Width law (replaces the fr-measure page clamp) ──────────────────────────
+   PAGE WIDTH IS CONSTANT: every spec renders at full host width. The old
+   computeMeasureMode heuristic capped "form/reading" screens at 780px based on
+   which component types happened to be present — so two specs' widths diverged
+   on an enum (WIDE_DATA_TYPES). Killed. Width restraint now lives one level
+   DOWN, in the things that are actually width-sensitive:
+   - flowing copy self-caps at a reading measure (fr-text-measure, below);
+   - date panels/pickers already self-cap (max-w-sm);
+   - lone form controls get column/card management at the spec level (at
+     authoring time), stacking on narrow via fr-grid-fixed/fr-hcols. */
+
+/* ── Chart axis labels thin instead of shattering ────────────────────────────
+   An axis label must stay over the column it names, so it cannot wrap onto its
+   own line or reorder. But its slot is 1/N of the row, and at 320px a measured
+   bar chart gave a 114px row holding SEVEN labels — 16px each, which rendered
+   "September" one letter per line.
+
+   Thinning is what a real chart does: show fewer labels, keep every visible one
+   readable, keep alignment exact. `visibility: hidden` (not `display: none`)
+   because the slot must still hold its share of the row or the survivors drift
+   off their columns.
+
+   The row is its OWN container: a chart sitting in a narrow column of a wide
+   screen has exactly this problem, and a page-level query would miss it. */
+.frayme-root .fr-xaxis {
+  container-type: inline-size;
+}
+@container (max-width: 24rem) {
+  .frayme-root .fr-xaxis-label:nth-child(even) {
+    visibility: hidden;
+  }
+}
+@container (max-width: 12rem) {
+  /* Half was not enough at 114px: keep only the ends, which are the two a reader
+     actually uses to place the range. */
+  .frayme-root .fr-xaxis-label:not(:first-child):not(:last-child) {
+    visibility: hidden;
+  }
+}
+
+/* Tab rail scroll affordance: non-fitted tabs keep their
+   natural width and the rail scrolls instead of hard-cutting labels. A thin
+   scrollbar plus a right-edge fade signals there is more to reach; the fade
+   is a scroll-attached background so it disappears at the end of the scroll,
+   and it only paints when the rail actually overflows.
+
+   SIZED 1rem @ 14%, not 2.5rem @ 22%. At 40px wide and 22% it stopped reading as
+   an edge hint and became a grey BAND washing over the last column of a table —
+   the affordance obscuring the data it points at. The pinned-column seam does the
+   same job in 6px (shadow-[-6px_0_8px_-8px_…]); this is the same restraint. */
+.frayme-root .fr-tabscroll {
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+}
+.frayme-root .fr-tabscroll::-webkit-scrollbar {
+  height: 4px;
+}
+.frayme-root .fr-tabscroll::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-muted-foreground) 35%, transparent);
+}
+/* Card-surface variant: --color-background is `transparent` by default, so the
+   page-tinted fade above is invisible on a card (and paints the wrong colour on
+   a host that sets a real page background). Rails that sit on a card fade to
+   the CARD token instead. */
+.frayme-root .fr-tabscroll-card {
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
+  /* TWO layers, and both are needed. A `local` gradient is positioned against
+     the CONTENT, so on its own it paints at the content's right end — visible
+     only once you have already scrolled there, and painted even when nothing
+     overflows. The shadow (attachment: scroll, pinned to the viewport edge) is
+     what actually signals "more this way"; the local cover sits on top of it and
+     slides in to hide it exactly when the end is reached.
+     ORDER IS LOAD-BEARING: the FIRST background layer paints on TOP, so the cover
+     must be listed FIRST. It was listed second, which put the shadow above it —
+     the fade then painted permanently, on rails that do not overflow at all. */
+}
+.frayme-root .fr-tabscroll-card::-webkit-scrollbar {
+  height: 4px;
+}
+/* THUMB STYLING IS SHARED WITH .fr-scrollfade-y — see the combined rule below.
+   These were two identical declarations at equal specificity, and DataTable puts
+   BOTH classes on one element (data-table.tsx:1403), so source order decided which
+   painted. Harmless while the values matched; a silent trip-wire the moment either
+   changed. Found by test/css-specificity.test.ts on its first run. */
+
+/* Vertical counterpart for capped scroll regions. `local` attaches the gradient
+   to the scrolled content, so it is absent when the content does not overflow
+   and slides away as the reader reaches the bottom — an always-on overlay
+   signals "more below" when there is nothing below. */
+.frayme-root .fr-scrollfade-y {
+  scrollbar-width: thin;
+  overscroll-behavior-y: contain;
+}
+.frayme-root .fr-scrollfade-y::-webkit-scrollbar {
+  width: 4px;
+}
+/* ONE rule for both scroll regions: identical by intent, so declared once. A
+   selector list cannot collide with itself, which is what removes the trap rather
+   than merely out-ranking it. */
+.frayme-root .fr-tabscroll-card::-webkit-scrollbar-thumb,
+.frayme-root .fr-scrollfade-y::-webkit-scrollbar-thumb {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-muted-foreground) 35%, transparent);
+}
+
+/* Reading measure for flowing copy: Text variants body/lead/muted stamp
+   fr-text-measure. max-width only bites on genuinely long single-column
+   paragraphs (short UI copy is untouched); alignment-aware margins keep
+   centered/right text visually centered/right when the cap engages. :where()
+   keeps specificity at the class level so authored width utilities still win. */
+.frayme-root :where(.fr-text-measure) {
+  max-width: 70ch;
+}
+.frayme-root :where(.fr-text-measure.text-center) {
+  margin-inline: auto;
+}
+.frayme-root :where(.fr-text-measure.text-right) {
+  margin-left: auto;
+}
+
+/* RichComposer WYSIWYG surface (.fr-rte) — restore formatted-content styling for
+   the execCommand output (lists/quote/code/links). Tailwind's selective import
+   ships no preflight, and contentEditable output needs explicit list markers etc. */
+.frayme-root .fr-rte ul {
+  list-style: disc;
+  padding-left: 1.5rem;
+  margin: 0.25rem 0;
+}
+.frayme-root .fr-rte ol {
+  list-style: decimal;
+  padding-left: 1.5rem;
+  margin: 0.25rem 0;
+}
+.frayme-root .fr-rte li {
+  margin: 0.125rem 0;
+}
+.frayme-root .fr-rte a {
+  color: var(--color-primary);
+  text-decoration: underline;
+}
+.frayme-root .fr-rte blockquote {
+  border-left: 3px solid var(--color-border);
+  padding-left: 0.75rem;
+  margin: 0.25rem 0;
+  color: var(--color-muted-foreground);
+}
+.frayme-root .fr-rte pre {
+  background: var(--color-muted);
+  border-radius: var(--frayme-radius);
+  padding: 0.5rem 0.75rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  overflow-x: auto;
+  margin: 0.25rem 0;
+}
+.frayme-root .fr-rte code {
+  background: var(--color-muted);
+  border-radius: 0.25rem;
+  padding: 0.1rem 0.3rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+}
+.frayme-root .fr-rte p {
+  margin: 0.25rem 0;
+}
+.frayme-root .fr-rte h1 {
+  font-size: 1.5em;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0.4rem 0 0.25rem;
+}
+.frayme-root .fr-rte h2 {
+  font-size: 1.25em;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0.4rem 0 0.25rem;
+}
+.frayme-root .fr-rte h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  line-height: 1.35;
+  margin: 0.35rem 0 0.2rem;
+}
+.frayme-root .fr-rte img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--frayme-radius);
+  margin: 0.35rem 0;
+}
+.frayme-root .fr-rte hr {
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  margin: 0.6rem 0;
+}
+
+/* Marquee — an auto-scrolling strip. The renderer marks the viewport
+   `.fr-marquee` (with `data-fr-marquee-dir` ∈ left|right|up|down + an inline
+   `--fr-marquee-duration` from a FIXED speed map) and the moving row
+   `.fr-marquee-track` (two duplicated lanes → translate −50% loops seamlessly).
+   Keyframes/timing live HERE (never an author-supplied value); the spec only
+   picks the bounded `direction`/`speed`/`pauseOnHover` enums. */
+.frayme-root .fr-marquee-track {
+  animation-duration: var(--fr-marquee-duration, 18s);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+.frayme-root .fr-marquee[data-fr-marquee-dir='left'] .fr-marquee-track {
+  animation-name: fr-marquee-x;
+}
+.frayme-root .fr-marquee[data-fr-marquee-dir='right'] .fr-marquee-track {
+  animation-name: fr-marquee-x;
+  animation-direction: reverse;
+}
+.frayme-root .fr-marquee[data-fr-marquee-dir='up'] .fr-marquee-track {
+  animation-name: fr-marquee-y;
+}
+.frayme-root .fr-marquee[data-fr-marquee-dir='down'] .fr-marquee-track {
+  animation-name: fr-marquee-y;
+  animation-direction: reverse;
+}
+/* Pause on hover, on keyboard focus anywhere inside, and whenever the marquee's
+   own control has stopped it. Hover alone leaves a keyboard user with no way to
+   stop an infinite loop. */
+.frayme-root .fr-marquee:hover .fr-marquee-pause,
+.frayme-root .fr-marquee:focus-within .fr-marquee-pause,
+.frayme-root .fr-marquee[data-fr-marquee-paused='true'] .fr-marquee-pause {
+  animation-play-state: paused;
+}
+@keyframes fr-marquee-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes fr-marquee-y {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Killing the animation parks a track wider than its viewport, so part of the
+     content becomes permanently unreachable — it has to be scrollable instead. */
+  .frayme-root .fr-marquee-track { animation: none; }
+  .frayme-root .fr-marquee[data-fr-marquee-dir='left'],
+  .frayme-root .fr-marquee[data-fr-marquee-dir='right'] { overflow-x: auto; scrollbar-width: thin; }
+  /* A vertical marquee's parked track overflows the height cap instead. */
+  .frayme-root .fr-marquee[data-fr-marquee-dir='up'],
+  .frayme-root .fr-marquee[data-fr-marquee-dir='down'] { overflow-y: auto; scrollbar-width: thin; }
+}
+
+/* Inert Fallback (unknown component) + invalid-spec error box. */
+.frayme-fallback {
+  border: 1px dashed var(--frayme-border);
+  border-radius: var(--frayme-radius);
+  padding: 0.75rem;
+  color: var(--frayme-muted-fg);
+  font-size: 0.8125rem;
+}
+.frayme-fallback-label {
+  display: inline-block;
+  font-family: ui-monospace, monospace;
+  /* Surface-relative: this is a DEBUG chip for an unresolved component, and it was
+     painting the light muted token onto whatever page it landed on. */
+  background: color-mix(in srgb, var(--fr-dt-actions-shade, #000000) calc(var(--fr-dt-actions-amt, 4%) * 2), var(--fr-surface, var(--color-card)));
+  color: inherit;
+  border-radius: calc(var(--frayme-radius) / 2);
+  padding: 0.125rem 0.5rem;
+  margin-bottom: 0.25rem;
+}
+.frayme-invalid {
+  border: 1px solid var(--frayme-danger);
+  border-radius: var(--frayme-radius);
+  padding: 1rem;
+  color: var(--frayme-danger);
+  font-size: 0.875rem;
+}
+.frayme-invalid ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+/* ── Action receipt (react/action-receipt.tsx) ───────────────────────────────
+   The card a host shows in the chat thread when a control fires a declared
+   action: title, description, a params table.
+   TOKENS ONLY — every colour below is a --frayme-* var that both dark blocks
+   re-derive, so the card follows the theme with no rule of its own (the
+   dark-inversion gate in test/theme-tokens.test.ts holds it to that).
+
+   It is its own `.frayme-root` (so the token block, the dark remaps and the
+   presets reach it exactly as they reach a rendered spec beside it), and that
+   root rule PAINTS the page ground. A card in a thread must not carry a page
+   behind it, so this rule — (0,2,0) over the root's (0,1,0) — re-paints the
+   CARD surface instead and drops the root's page font-size for the card's. */
+.frayme-root.frayme-receipt {
+  display: block;
+  max-width: 100%;
+  background: var(--frayme-card);
+  color: var(--frayme-card-fg);
+  border: 1px solid var(--frayme-border);
+  border-radius: var(--frayme-radius);
+  padding: 0.75rem 1rem;
+  font-family: var(--frayme-font);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+.frayme-receipt__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  /* A label is the caller's string verbatim (core/thread-text.ts) — it may be
+     one unbreakable token, and it must wrap rather than widen the card. */
+  overflow-wrap: anywhere;
+}
+.frayme-receipt__description {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--frayme-muted-fg);
+  overflow-wrap: anywhere;
+}
+.frayme-receipt__params {
+  width: 100%;
+  margin: 0.625rem 0 0;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+/* A hairline BETWEEN rows, none above the first or below the last. */
+.frayme-receipt__params tr + tr > th,
+.frayme-receipt__params tr + tr > td {
+  border-top: 1px solid var(--frayme-border);
+}
+.frayme-receipt__params th {
+  /* The key column shrinks to its longest key (`width: 1%` + nowrap is the
+     standard fit-to-content cell); keys are humanized identifiers, so short. */
+  width: 1%;
+  white-space: nowrap;
+  text-align: left;
+  font-weight: 500;
+  color: var(--frayme-muted-fg);
+  padding: 0.3125rem 0.75rem 0.3125rem 0;
+  vertical-align: top;
+}
+.frayme-receipt__params td {
+  padding: 0.3125rem 0;
+  vertical-align: top;
+  /* `anywhere`, not `break-word`: a value can be a bare id / URL / hash with no
+     break opportunity, and inside a table cell there is no flex min-content
+     trap for `anywhere` to fall into (the root's `break-word` rule says why it
+     avoids `anywhere` elsewhere). */
+  overflow-wrap: anywhere;
+}
+.frayme-receipt__state {
+  margin: 0.625rem 0 0;
+  font-size: 0.75rem;
+}
+.frayme-receipt__state > summary {
+  cursor: pointer;
+  color: var(--frayme-muted-fg);
+}
+/* Long state scrolls INSIDE the card; the card never widens for it. */
+.frayme-receipt__state > pre {
+  margin: 0.375rem 0 0;
+  max-width: 100%;
+  max-height: 20rem;
+  overflow: auto;
+  padding: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  border: 1px solid var(--frayme-border);
+  border-radius: calc(var(--frayme-radius) / 2);
+  background: var(--frayme-muted);
+  color: var(--frayme-fg);
+}
+
+/* ── Theme presets ───────────────────────────────────────────────────────────
+   Opt in via <div class="frayme-root" data-theme="slate">.
+
+   A preset is a COMPLETE LIGHT PALETTE, not a patch on one. It has to be,
+   because of where the cascade lands it: a preset selector is (0,2,0) and the
+   prefers-color-scheme block is (0,1,0), so on a dark-OS machine the preset's
+   LIGHT surfaces won while every token it did not name kept its DARK value.
+   Measured on what shipped: --frayme-fg stayed #fafafa over slate's #f8fafc
+   page (1.00:1) and its #ffffff card (1.04:1) — white text on a white surface,
+   which is not low contrast but invisible text; warm's card read 1.03:1. The
+   state colours leaked the same way (#f87171 2.77:1, #22c55e 2.28:1, #f59e0b
+   2.15:1 on white). Same shape as the --frayme-primary/--frayme-danger omission
+   documented below, one selector further out.
+
+   So every token the dark blocks flip is pinned here, once, for both presets;
+   each preset then overrides only what makes it that preset (surfaces, primary,
+   muted-fg, radius, font). Source order is load-bearing — this block first, the
+   preset blocks after, identical specificity.
+
+   Rejected: giving the presets dark variants instead (a "slate dark", a "warm
+   dark"). Every value in both presets is a light value and there is no measured
+   dark slate to derive one from — that is two new palettes invented without
+   numbers. A preset whose every colour says light means light, and says so to
+   the native controls too via color-scheme. */
+.frayme-root[data-theme='slate'],
+.frayme-root[data-theme='warm'] {
+  color-scheme: light;
+  --frayme-fg: #18181b;
+  --frayme-card-fg: #18181b;
+  --frayme-primary-fg: #ffffff;
+  --frayme-danger: #dc2626;
+  --frayme-danger-fg: #ffffff;
+  --frayme-success: #15803d;
+  --frayme-success-fg: #ffffff;
+  --frayme-warning: #b45309;
+  --frayme-warning-fg: #ffffff;
+  --frayme-info: #2563eb;
+  --frayme-info-fg: #ffffff;
+}
+.frayme-root[data-theme='slate'] {
+  --frayme-primary: #4f46e5;
+  --frayme-bg: #f8fafc;
+  --frayme-card: #ffffff;
+  --frayme-border: #e2e8f0;
+  --frayme-muted: #f1f5f9;
+  /* One step below this preset's #ffffff card, in the preset's own hue. Every
+     palette must restate this: the media-query dark block would otherwise win on
+     a dark-OS machine and paint the DARK actions band under slate's light
+     surfaces. */
+  --frayme-dt-shade: #000000;
+  --frayme-dt-shade-amt: 4%;
+  --frayme-chip-face: #ffffff;
+  --frayme-chip-edge: #000000;
+  /* The row-action chip is EMBOSSED from whatever surface it stands on. Two mixing
+     agents, because light and dark need OPPOSITE edges: a raised face lifts toward
+     white in both themes, but its hairline must be DARKER than the surface on a
+     light ground and LIGHTER on a dark one. Literals live here, in the token block,
+     never in a paint declaration — a painted colour has to be able to follow the
+     theme, and these are the values it follows. */
+  --frayme-chip-face: #ffffff;
+  --frayme-chip-edge: #000000;
+  /* #64748b read 4.34:1 on slate's own #f1f5f9 muted band (4.55 page, 4.76
+     card) — the same near-miss the default muted grey had, and it needs the
+     same one-step answer. slate-600 reads 6.92-7.58 across all three. */
+  --frayme-muted-fg: #475569;
+  --frayme-radius: 0.75rem;
+}
+.frayme-root[data-theme='warm'] {
+  /* #ea580c cannot carry its own --frayme-primary-fg: white on it is 3.56:1,
+     and as text it read 3.17-3.53 on warm's own surfaces. Full-saturation
+     orange is the trap the warning token already hit (#d97706, 3.19:1) and it
+     takes the same ramp step — orange-700 carries white at 5.18:1 and reads
+     4.62-5.13 as text. */
+  --frayme-primary: #c2410c;
+  --frayme-bg: #fffbf7;
+  --frayme-card: #fffefb;
+  --frayme-border: #f0e6da;
+  /* #f7f1ea was the DARKEST muted band in the file — luminance 0.8863 against
+     0.9053 for the default #f4f4f5 and 0.9085 for slate's #f1f5f9 — and that 2%
+     is the whole defect: the identical state tokens read 4.56/4.57 on the
+     default band and 4.58/4.58 on slate's, but 4.47 (--frayme-success) and 4.48
+     (--frayme-warning) here. One surface out of line, not three tokens: nothing
+     about warm asks its muted band to be deeper than its siblings'. Fixed on the
+     SURFACE rather than by moving the green/amber ramp another step, which would
+     have darkened them in all six palettes to answer one.
+     #f9f4ee is the same tint one step lighter (the r>g>b spacing is carried
+     through, 249/244/238 for 247/241/234), luminance 0.9101 — now in line with
+     the other two bands — and it lifts success to 4.59 and warning to 4.59.
+     --frayme-muted-fg #6b5b49 only improves (dark ink, lighter ground). The band
+     still reads as a band: 0.0805 below warm's #fffefb card, against 0.0947 and
+     0.0915 for the default and slate presets.
+     NOT fixed by this, and deliberately: --frayme-danger #dc2626 goes 4.31→4.41
+     and still misses. That one is not a surface outlier — it misses on ALL THREE
+     bands (4.39 default, 4.41 slate) because red-600 is the one state colour
+     this file left at 600 while success and warning were moved to 700. Closing
+     it means red-700 #b91c1c, which reads 6.47 on white against its siblings'
+     5.02 — a visible brand shift, and light mode is not what this pass measured.
+     Carried as a named floor in test/theme-tokens.test.ts instead, so it can
+     only improve. */
+  --frayme-muted: #f9f4ee;
+  /* One step below this preset's #fffefb card, in warm's own hue. */
+  --frayme-dt-shade: #000000;
+  --frayme-dt-shade-amt: 4%;
+  --frayme-chip-face: #ffffff;
+  --frayme-chip-edge: #000000;
+  /* The row-action chip is EMBOSSED from whatever surface it stands on. Two mixing
+     agents, because light and dark need OPPOSITE edges: a raised face lifts toward
+     white in both themes, but its hairline must be DARKER than the surface on a
+     light ground and LIGHTER on a dark one. Literals live here, in the token block,
+     never in a paint declaration — a painted colour has to be able to follow the
+     theme, and these are the values it follows. */
+  --frayme-chip-face: #ffffff;
+  --frayme-chip-edge: #000000;
+  /* #8a7a68 was the worst muted grey in the file: 3.70:1 on warm's own muted
+     tint and never clearing 4.5 on ANY of its surfaces (4.03 page, 4.11 card).
+     This one is 5.82-6.47 and keeps the warm hue rather than going neutral. */
+  --frayme-muted-fg: #6b5b49;
+  --frayme-radius: 0.875rem;
+  --frayme-font: ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+}
+
+/* Forced dark / forced light — the same values the prefers-color-scheme block
+   flips, but host-controlled. Three ways in:
+     <FraymeRenderer className="frayme-dark"/>   (className lands ON .frayme-root)
+     <div class="frayme-dark"><FraymeRenderer/></div>   (any ancestor wrapper)
+     <div class="frayme-root" data-theme="dark">        (hand-authored root)
+   All three selector forms are (0,2,0), so they beat both the light defaults and
+   the media-query dark block (each (0,1,0)) regardless of source order — which is
+   also what makes forced LIGHT on a dark-OS machine possible. `radius` and `font`
+   stay mode-invariant.
+
+   `primary` and `danger` USED to stay mode-invariant too. That was wrong and the
+   numbers say so: measured on the dark surfaces this file itself defines,
+   #2563eb reads 3.29:1 on card, 2.91:1 on muted, 4.06:1 on black, and #dc2626
+   reads 3.52 / 3.12 / 4.35 — every one below the 4.5:1 floor. Success was
+   re-derived for dark and passes at 6.61-9.22, which is what made the omission
+   look deliberate rather than unfinished. On the permission matrices the failing
+   glyph IS the payload: a red ✕ at 3.2:1 is the difference between access
+   granted and denied. The lighter two clear every dark surface (5.44-8.26),
+   and their foregrounds flip to near-black because white on #f87171 is 2.77:1. */
+.frayme-root[data-theme='dark'],
+.frayme-root.frayme-dark,
+.frayme-dark .frayme-root {
+  color-scheme: dark;
+  --frayme-bg: #131316;
+  --frayme-fg: #fafafa;
+  --frayme-card: #1c1c20;
+  --frayme-card-fg: #fafafa;
+  --frayme-border: #3f3f46;
+  --frayme-muted: #26262b;
+  /* 6 steps below --frayme-card (#1c1c20), so the card-toned chip still rises. */
+  --frayme-dt-shade: #000000;
+  /* Deeper on a dark ground: 4% of black on #1c1c20 is invisible. */
+  --frayme-dt-shade-amt: 22%;
+  --frayme-chip-face: #ffffff;
+  /* Inverted on a dark ground: a black hairline vanishes, a light one reads. */
+  --frayme-chip-edge: #ffffff;
+  --frayme-muted-fg: #a1a1aa;
+  --frayme-primary: #60a5fa;
+  --frayme-primary-fg: #0b1220;
+  --frayme-danger: #f87171;
+  --frayme-danger-fg: #0b1220;
+  --frayme-success: #22c55e;
+  --frayme-success-fg: #0b1220;
+  --frayme-warning: #f59e0b;
+  --frayme-warning-fg: #0b1220;
+  /* #3b82f6 read 4.09:1 on the muted surface — the token gate caught this one,
+     nobody had checked. #60a5fa clears every dark surface at 5.92-8.26. */
+  --frayme-info: #60a5fa;
+  --frayme-info-fg: #0b1220;
+}
+/* Forced light — the light root restated IN FULL, and it has to be the full
+   palette for the same cascade reason the presets do: this block is (0,2,0) and
+   the prefers-color-scheme block is (0,1,0), so on a dark-OS machine every token
+   it fails to name keeps its DARK value.
+
+   What shipped named nine of the seventeen colour tokens, and the eight it left
+   out are exactly the failure the comment above says this selector exists to
+   prevent:
+   - `--frayme-bg` was absent, so forced light on a dark-OS machine painted
+     #18181b text on the dark block's #131316 page: 1.05:1. The one mode "what
+     makes forced LIGHT on a dark-OS machine possible" did not survive.
+   - `--frayme-primary`, `--frayme-danger` and four *-fg tokens were absent, so a
+     forced-light render kept dark's #60a5fa (2.54:1 on white), #f87171 (2.77:1)
+     and the #0b1220 foregrounds sitting on light fills.
+   - `--frayme-success` and `--frayme-warning` were STALE: #16a34a and #d97706,
+     the exact two values the light root replaced for reading 3.30:1 and 3.19:1
+     on plain white (see the measurements there). Forcing light re-introduced a
+     failure this file had already found and fixed.
+   test/theme-tokens.test.ts now pins this block as a byte-for-byte restatement
+   of the light root, so the two cannot silently fork again. */
+.frayme-root[data-theme='light'],
+.frayme-root.frayme-light,
+.frayme-light .frayme-root {
+  color-scheme: light;
+  --frayme-primary: #2563eb;
+  --frayme-primary-fg: #ffffff;
+  --frayme-bg: #ffffff;
+  --frayme-fg: #18181b;
+  --frayme-card: #ffffff;
+  --frayme-card-fg: #18181b;
+  --frayme-border: #e4e4e7;
+  --frayme-muted: #f4f4f5;
+  /* DataTable actions column: a RECESSED band, always one step DARKER than
+     --frayme-card, in BOTH themes. It cannot be --frayme-muted, because muted sits
+     BELOW card in light (#f4f4f5 < #ffffff) and ABOVE it in dark (#26262b >
+     #1c1c20). Pinned to muted, the column inverted between themes — the card-toned
+     row chip read as RAISED in light and as a sunken well in dark. A control should
+     not change its elevation when the lights go out. */
+  /* The actions column is a SHADE OVER THE REAL SURFACE, not a fixed colour.
+     A DataTable has no bg of its own — an authored background comes from the Card
+     around it, which re-points --fr-card-bg. A flat token ignored that entirely: a
+     yellow table kept a grey actions column. Shading the surface follows whatever
+     is actually behind it, and keeps the column one step DARKER in both themes
+     (which is why this is a shade rather than a token — muted sits below card in
+     light and above it in dark, so a token inverted between them). */
+  --frayme-dt-shade: #000000;
+  --frayme-dt-shade-amt: 4%;
+  --frayme-chip-face: #ffffff;
+  --frayme-chip-edge: #000000;
+  /* The row-action chip is EMBOSSED from whatever surface it stands on. Two mixing
+     agents, because light and dark need OPPOSITE edges: a raised face lifts toward
+     white in both themes, but its hairline must be DARKER than the surface on a
+     light ground and LIGHTER on a dark one. Literals live here, in the token block,
+     never in a paint declaration — a painted colour has to be able to follow the
+     theme, and these are the values it follows. */
+  --frayme-chip-face: #ffffff;
+  --frayme-chip-edge: #000000;
+  --frayme-muted-fg: #52525b;
+  --frayme-danger: #dc2626;
+  --frayme-danger-fg: #ffffff;
+  --frayme-success: #15803d;
+  --frayme-success-fg: #ffffff;
+  --frayme-warning: #b45309;
+  --frayme-warning-fg: #ffffff;
+  --frayme-info: #2563eb;
+  --frayme-info-fg: #ffffff;
+}
+
+/* Bounded animations used by the data-display recipes (Progress
+   indeterminate, Skeleton shimmer, Spinner dots/bars). The `animation`/`speed`
+   ENUMS reference these by name via static arbitrary utilities — never an
+   author-supplied timing/keyframe value (see dynamic-component plan §7). */
+@keyframes fr-indet {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(350%); }
+}
+@keyframes fr-shimmer {
+  100% { transform: translateX(100%); }
+}
+@keyframes fr-bounce {
+  0%, 80%, 100% { transform: scale(0.5); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}
+/* Overlay enter transition. OPT-IN via the closed `motion` enum
+   (motionClass → motion-safe:animate-[fr-overlay-in_<dur>_ease-out]); default
+   (unset/none) = no animation (instant, byte-identical). `motion-safe` means
+   prefers-reduced-motion users never see it. A subtle fade + scale, universal for
+   dialogs/popovers/menus/toasts. Fixed keyframes (no author-supplied timing). */
+@keyframes fr-overlay-in {
+  from { opacity: 0; transform: scale(0.98); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ── Scoped printing ─────────────────────────────────────────────────────────
+   `printFraymeRoot` (registry/_print.ts) prints ONLY a [data-fr-print-root]
+   element: it walks the root → <body> and stamps every off-path SIBLING with
+   `data-fr-print-hidden` (removed from layout, so no blank pages) and each
+   ancestor with `data-fr-print-ancestor` (its own height/padding neutralised, so
+   an app-shell min-height leaves no residual page). The document stays in normal
+   flow, so a genuinely long document still paginates. The attributes are stamped
+   only for the duration of window.print() and removed afterward, so screen
+   rendering is never affected. */
+@media print {
+  [data-fr-print-hidden] {
+    display: none !important;
+  }
+  [data-fr-print-ancestor] {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  @page {
+    margin: 14mm;
+  }
+}
+
+/* ── Scroll-edge affordance ────────────────────────────────────────────────────
+   ONE layer, gated on a MEASUREMENT (react/use-scroll-edges.ts toggles
+   data-fr-more-x / data-fr-more-y). The old two-layer local/scroll trick needed a
+   "cover" gradient painted in the parent background colour to hide the shadow when
+   nothing overflowed — and CSS cannot know that colour. Hardcoded to --color-card,
+   it painted a visible band on page surfaces, muted sections, and inside any Card
+   with an authored bg (which re-points --fr-card-bg, not --color-card). That band
+   was the grey blob washing over real data. No cover, no wrong colour, and the
+   shadow cannot appear on content that does not scroll. */
+/* TWO FADES, ONE ELEMENT — layered, not competing.
+   These were two `background` SHORTHAND declarations at equal specificity. DataTable
+   puts .fr-tabscroll-card and .fr-scrollfade-y on the same node
+   (data-table.tsx:1403), so a table that scrolls BOTH ways sets both attributes and
+   the shorthand overwrote — source order handed the win to -y, and the "more columns
+   to the right" hint vanished on exactly the wide tables that need it.
+   Split into background-image/position/size/repeat/attachment so each axis
+   contributes its own layer, and the both-axes case declares both. Longhand also
+   means a future third fade adds a layer instead of silently replacing one.
+   Found by test/css-specificity.test.ts. */
+.frayme-root .fr-tabscroll[data-fr-more-x],
+.frayme-root .fr-tabscroll-card[data-fr-more-x] {
+  background-image: linear-gradient(to left, color-mix(in srgb, var(--color-muted-foreground) 14%, transparent), transparent 1rem);
+  background-position: right center;
+  background-size: 1rem 100%;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+}
+.frayme-root .fr-scrollfade-y[data-fr-more-y] {
+  background-image: linear-gradient(to top, color-mix(in srgb, var(--color-muted-foreground) 14%, transparent), transparent 1rem);
+  background-position: bottom center;
+  background-size: 100% 1rem;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+}
+/* BOTH axes scrolling: declare the two layers together, right-edge first. Without
+   this the longhands still overwrite each other one property at a time. */
+.frayme-root .fr-tabscroll-card[data-fr-more-x][data-fr-more-y],
+.frayme-root .fr-scrollfade-y[data-fr-more-x][data-fr-more-y] {
+  background-image:
+    linear-gradient(to left, color-mix(in srgb, var(--color-muted-foreground) 14%, transparent), transparent 1rem),
+    linear-gradient(to top, color-mix(in srgb, var(--color-muted-foreground) 14%, transparent), transparent 1rem);
+  background-position: right center, bottom center;
+  background-size: 1rem 100%, 100% 1rem;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: scroll, scroll;
+}
+/* The pinned actions column seam. Same rule: a shadow that says "columns run under
+   this one" is a LIE when nothing scrolls, so it paints only while something does.
+   The hairline border stays unconditional — a column separator is always honest. */
+.frayme-root [data-fr-more-x] .fr-pinseam {
+  /* Hairline AND shadow, together and only while something scrolls under the column.
+     Separately they contradict each other: a permanent line delineates a region
+     whose fill deliberately follows the rows. */
+  border-left: 1px solid var(--fr-dt-border, var(--color-border));
+  box-shadow: -6px 0 8px -8px color-mix(in srgb, var(--color-foreground) 25%, transparent);
+}
+
+/* ── Actions column tint ───────────────────────────────────────────────────────
+   The trailing actions column is CHROME, not data — it holds controls and never a
+   value — so it carries one shade more than the row band beneath it. Composited to
+   a single opaque colour, never a translucent overlay: this column is sticky and
+   has to cover horizontally-scrolled cells, which would otherwise show through.
+   The row band is mixed INTO each variant rather than layered over, so zebra and
+   selection still read inside the column instead of being flattened away.
+   Real classes, not Tailwind arbitrary values — the variant is chosen at runtime,
+   so the full class string never appears in source for the scanner to extract. */
+/* ── Actions column + row chips ────────────────────────────────────────────────
+   THE COLUMN BLENDS; THE BUTTON IS EMBOSSED.
+
+   Earlier revisions tried to make the column itself read as chrome by tinting it a
+   shade off the table. That fought the controls sitting on it — 92% of row actions
+   paint no fill, so their whole legibility is a hairline against the row — and it
+   was wrong the moment the table carried an authored colour: a yellow table kept a
+   grey column, a navy one a white column.
+
+   So the column paints the SURFACE ITSELF and disappears into the table, and the
+   emboss moves onto the buttons, which is where "this is an action" actually
+   belongs. Everything below is expressed RELATIVE to --fr-surface, published by
+   whichever Card/Stack/Grid last painted a background, so it holds on white,
+   on dark, and on any authored colour without a single per-theme value.
+
+   It still has to be OPAQUE: the column is sticky and covers horizontally scrolled
+   cells. Blending means painting the same colour, not painting nothing. */
+.frayme-root .fr-dt-actions {
+  background: var(--fr-surface, var(--color-card));
+  /* Ink INHERITS. The surface already carries its ink down the tree — that is why
+     the table body reads correctly on a dark page — so naming a token here would
+     re-pin it to the light default and put #18181b text on a #0a1120 column. */
+  color: inherit;
+}
+/* The row bands have to keep reading THROUGH the column, or the blend turns the
+   actions cell into a stripe of its own. Same mixes the rows use, over the same
+   surface. */
+.frayme-root .fr-dt-actions--zebra {
+  background: color-mix(in srgb, var(--color-muted) 30%, var(--fr-surface, var(--color-card)));
+}
+.frayme-root .fr-dt-actions--selected {
+  background: color-mix(in srgb, var(--fr-dt-accent, var(--fr-accent)) 12%, var(--fr-surface, var(--color-card)));
+}
+/* THE PINNED ACTIONS HEADER MATCHES THE CARD, NOT THE BAND.
+   `th.` earns one point of specificity (0,2,1) over `.fr-band` (0,2,0). Without it
+   this rule loses on SOURCE ORDER alone — .fr-band is declared later in this file —
+   and the Actions header painted .fr-band's color-mix while every other header stayed
+   transparent and its OWN body cells stayed card-coloured. Measured on a
+   sales-pipeline table: Account th rgba(0,0,0,0), Actions th ≈#e3e0d9, body
+   cells #f7f4ec. A grey block at the top of a rail that is card-coloured below.
+   Same specificity trap as .fr-band vs .fr-raised.
+   It must stay OPAQUE — the rail is `sticky right-0`, so columns scroll underneath it
+   and a transparent header would show them through. Opaque, but the card's own colour,
+   so the rail reads as part of the table rather than a stray band. An authored
+   headerColor still wins through --fr-dt-header. */
+.frayme-root th.fr-dt-actions--head {
+  background: var(--fr-dt-header, var(--fr-surface, var(--color-card)));
+}
+
+/* THE CHIP. A hairline and a whisper of lift — nothing more.
+   The first version was a full emboss: a lifted face, a hairline, an inset
+   highlight along the top edge and a drop shadow beneath. Four cues at once, which
+   is how a physical key is drawn — and repeated once per row it read as a strip of
+   plastic buttons rather than a quiet list of actions. The affordance was never in
+   doubt; the volume was.
+   So: the hairline stays, because that is what specs already rely on
+   to say "control". The lift drops to 4% so the chip separates from the column
+   without becoming an object. The inset highlight and the drop shadow go entirely —
+   they were the loud half, and they are what made a table of six rows look like a
+   keyboard.
+   Depth moves to HOVER and PRESS, where it belongs: at rest the row is quiet, and
+   the chip only becomes a raised thing under the pointer. */
+.frayme-root .fr-dt-chip {
+  background: color-mix(in srgb, var(--fr-chip-face, #ffffff) 4%, var(--fr-surface, var(--color-card)));
+  border-color: color-mix(in srgb, var(--fr-chip-edge, #000000) 16%, var(--fr-surface, var(--color-card)));
+  color: inherit;
+}
+.frayme-root .fr-dt-chip:hover {
+  background: color-mix(in srgb, var(--fr-chip-face, #ffffff) 12%, var(--fr-surface, var(--color-card)));
+  border-color: color-mix(in srgb, var(--fr-chip-edge, #000000) 26%, var(--fr-surface, var(--color-card)));
+}
+/* Pressed reads as pushed IN — the one place a shadow earns its keep. */
+.frayme-root .fr-dt-chip:active {
+  box-shadow: inset 0 1px 2px color-mix(in srgb, #000000 14%, transparent);
+}
+
+/* ── A MUTED BAND, RELATIVE TO ITS SURFACE ─────────────────────────────────────
+   Table headers, and anything else that wants to sit a step off the surface it is
+   on. The chain it replaces was `var(--fr-x-header, var(--color-muted))`: an
+   authored header colour if given, otherwise the GLOBAL muted token — which is
+   #f4f4f5, a light-theme value, painted regardless of what is underneath. On a
+   navy page that is a white band across the table, which is what it was.
+   Same recipe as the actions column: shade --fr-surface, published by whichever
+   Card/Stack/Grid/Dialog last painted a background. An authored header colour still
+   wins; this only replaces the FALLBACK. Ink inherits, because the surface already
+   carries its own down the tree. */
+.frayme-root .fr-band {
+  /* THE AUTHORED COLOUR FLOWS THROUGH, it is not painted over.
+     This selector is (0,2,0); the utility carrying the author's value —
+     [background:var(--fr-dt-header,transparent)] — is (0,1,0), so the class won and
+     `headerColor` became INERT on DataTable and ColumnHeader. Measured: the var was
+     correctly set to #1d4ed8 and the header still rendered #ebebeb, on every spec
+     that set it.
+     Reading --fr-band-authored FIRST puts the author ahead of the band while keeping
+     one implementation and one specificity. Each consumer points that alias at its own
+     value; unset, the chain falls through to the band exactly as before. */
+  background: var(--fr-band-authored,
+    color-mix(in srgb,
+      var(--fr-dt-actions-shade, #000000) calc(var(--fr-dt-actions-amt, 4%) * 2),
+      var(--fr-surface, var(--color-card))));
+  /* Ink: same trap as the background above, and the audit flagged it on .fr-raised —
+     `color: inherit` here is (0,2,0) and silently kills any co-located text utility,
+     so a header that names its own ink was overruled and inherited the table's.
+     Measured 2.64:1 (#18181b on an authored #1d4ed8) even after the fill was fixed.
+     --fr-band-ink lets the element's own pairing win; unset, inherit stands. */
+  color: var(--fr-band-ink, inherit);
+}
+
+/* A RAISED SURFACE — a selected pill, a chip, anything that should read as sitting
+   ON the surface rather than in it. Lifts --fr-surface toward the theme's light and
+   inherits its ink, so it is white-on-white in light, a lifted navy on a navy page,
+   and a lifted brand colour on a branded one. `bg-card text-foreground` was the
+   version this replaces: correct on the default surface, a WHITE PILL with dark ink
+   on an authored dark page. */
+.frayme-root .fr-raised {
+  /* SAME TRAP AS .fr-band, and the audit named THIS class first. The selector is
+     (0,2,0); an authored value rides a Tailwind utility at (0,1,0), so the class wins
+     and the author's colour is computed and then painted over. On .fr-band that made
+     `headerColor` INERT on every spec that set it, and its `color: inherit` silently
+     killed the header's own ink chain — measured 2.64:1. .fr-band was fixed and its
+     sibling left untouched, which is the whole reason this comment exists.
+     --fr-raised-authored / --fr-raised-ink let the element's own values win while
+     keeping one implementation and one specificity. Unset, both chains fall through to
+     exactly what they were. */
+  /* 16% via --fr-surface-raised, NOT a local 8% mix. A raised element usually sits on
+     a SUNKEN track, and sunken is itself 8% — so an 8% lift measured #252931 on a
+     #252831 track, one unit apart, and the selected Tabs pill simply disappeared on a
+     dark card. This is the same collision that produced surfaceRaised(16%) for
+     SegmentedControl; reading that var keeps one definition of "lifted" instead of two
+     that drift. Falls back to the old local mix when nothing is published, so an
+     unstyled page is unchanged. */
+  background: var(--fr-raised-authored,
+    var(--fr-surface-raised,
+      color-mix(in srgb, var(--fr-chip-face, #ffffff) 8%, var(--fr-surface, var(--color-card)))));
+  color: var(--fr-raised-ink, inherit);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SUPPRESS json-render's OWN ConfirmDialog when ours is mounted.
+
+   json-render renders its own confirm for `pendingConfirmation` — an inline-styled
+   fixed div at z-index 50 with backgroundColor "rgba(0, 0, 0, 0.5)" — and Frayme's
+   ConfirmHost renders FraymeConfirmModal for the SAME pending state at z-60. Both
+   mount. Every binding confirm has therefore been painting TWO stacked modals since
+   the confirm gate shipped; nobody saw it because they say the same thing and ours
+   covers most of theirs. It only became visible when our own scrim went transparent.
+
+   Ours is the one to keep: themeable (--fr-confirm-*), danger variant, confirmIcon,
+   and `data-fr-confirm` which Dialog/Drawer read to defer their Escape handling.
+
+   WHY :has() AND NOT A FLAT RULE. If ours ever fails to mount, a flat rule would hide
+   the ONLY confirm on screen while json-render's gate still waits for an answer — the
+   user would be stuck with an invisible question and no way to reply. Scoping to
+   `:has([data-fr-confirm])` means theirs is hidden only while ours is actually there.
+
+   FRAGILE BY CONSTRUCTION: it matches a literal in json-render's dist. One space
+   changes and this silently stops working — hence test/confirm-single-modal.test.tsx,
+   which fails the suite the moment two scrims are mounted at once. The real fix is a
+   `confirmComponent` prop upstream; this holds until then.
+   ───────────────────────────────────────────────────────────────────────────── */
+body:has([data-fr-confirm]) > div [style*="rgba(0, 0, 0, 0.5)"][style*="z-index: 50"],
+body:has([data-fr-confirm]) [style*="rgba(0, 0, 0, 0.5)"][style*="z-index: 50"] {
+  display: none !important;
+}

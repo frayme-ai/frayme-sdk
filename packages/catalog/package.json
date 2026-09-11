@@ -1,0 +1,56 @@
+{
+  "name": "@frayme/catalog",
+  "version": "0.4.0",
+  "description": "Frayme component catalog — Zod schemas + descriptions for the Frayme component vocabulary. Zero React deps. Single source of truth for validation, runtime, and framework adapters.",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frayme-ai/frayme-sdk.git",
+    "directory": "packages/catalog"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./validate": {
+      "types": "./dist/validate/index.d.ts",
+      "default": "./dist/validate/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@json-render/core": "^0.19.0",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@json-render/core": "^0.19.0",
+    "zod": "^4.0.0",
+    "tsdown": "^0.22.2",
+    "typescript": "^5.3.0",
+    "vitest": "^3.2.6"
+  }
+}

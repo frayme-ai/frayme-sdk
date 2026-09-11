@@ -1,0 +1,14 @@
+# GitBook Site Git Sync — site structure for docs.frayme.ai.
+# One space at the root of the site. Its content directory is the repository
+# root, so the existing .gitbook.yaml (root: ./docs) keeps applying unchanged.
+$schema: https://api.gitbook.com/gitbook-docs.yaml
+site:
+  title: Frayme
+  structure:
+    - type: space
+      key: docs
+      title: Frayme
+      path: docs
+      default: true
+      content:
+        directory: ./

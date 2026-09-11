@@ -1,0 +1,1178 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Frayme API",
+    "version": "1.0.0",
+    "summary": "UI for Agents — give your AI a real interface.",
+    "description": "Your agent calls one API; Frayme streams back live, interactive UI — validated before it renders, built on open standards (json-render, AG-UI, MCP).\n\nFrayme runs its own model, purpose-built for composing interfaces. Every spec is validated before it renders, and weak generations are automatically retried on a stronger model. The `model` field in responses is an opaque identifier — treat it as a string and do not branch on its value.\n\n**Base URL:** `https://api.frayme.ai` · **Auth:** `Authorization: Bearer fr_live_…`.\n\n**Billing:** you are billed only for validated successes. Failed generations, in-band `error` events, and idempotent replays are never billed.\n\n**SDK:** `npm i @frayme/api @frayme/runtime` — `@frayme/api` 0.3.2 wraps this exact contract with typed errors, streaming helpers, and automatic idempotency keys on retries.",
+    "contact": {
+      "name": "Frayme",
+      "url": "https://frayme.ai"
+    }
+  },
+  "externalDocs": {
+    "description": "Frayme SDK on GitHub",
+    "url": "https://github.com/frayme-ai/frayme-sdk"
+  },
+  "servers": [
+    {
+      "url": "https://api.frayme.ai",
+      "description": "Production"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "compose",
+      "description": "Generate validated, interactive UI specs from natural language."
+    },
+    {
+      "name": "account",
+      "description": "Key and workspace introspection."
+    },
+    {
+      "name": "status",
+      "description": "Service liveness."
+    }
+  ],
+  "paths": {
+    "/v1/health": {
+      "get": {
+        "tags": [
+          "status"
+        ],
+        "operationId": "getHealth",
+        "summary": "Liveness probe",
+        "description": "Unauthenticated liveness probe for the Frayme API. Returns the service name and the active catalog version. Static by design — it does not exercise the model path.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthEnvelope"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "status": "ok",
+                    "service": "frayme-inference-api",
+                    "catalog_version": "frayme-0.18.0"
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/me": {
+      "get": {
+        "tags": [
+          "account"
+        ],
+        "operationId": "getMe",
+        "summary": "Verify an API key",
+        "description": "The \"whoami\" endpoint: verifies the presented API key and echoes its workspace and plan snapshot.\n\n{% hint style=\"info\" %}\nUnlike `/v1/compose` (snake_case), this endpoint speaks **camelCase** on the wire — `tierKey`, `generationsRemaining`, and so on.\n{% endhint %}\n\nThe endpoint is burst-limited per key at your plan's requests-per-minute rate, like compose.",
+        "responses": {
+          "200": {
+            "description": "The key is valid.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MeEnvelope"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "workspace": {
+                      "id": "0b1c9a4e-6d2f-4a8b-9c3d-5e6f7a8b9c0d",
+                      "name": "Acme Inc",
+                      "slug": "acme-inc"
+                    },
+                    "plan": {
+                      "tierKey": "free",
+                      "monthlyGenerations": 500,
+                      "rateLimitPerMin": 30,
+                      "generationsRemaining": 496,
+                      "inlineComponentsLimit": 0
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/v1/compose": {
+      "post": {
+        "tags": [
+          "compose"
+        ],
+        "operationId": "compose",
+        "summary": "Compose a UI from a prompt",
+        "description": "Turns a natural-language prompt into a validated [json-render](https://json-render.dev) UI spec. This is the product's core endpoint. Requires an API key with the `compose` scope (the default scope on new keys).\n\nBy default (`stream: true`) the response is a Server-Sent Events stream (`text/event-stream`) that forwards spec operations live as they are generated. Set `stream: false` for a buffered JSON envelope carrying the fully compiled spec.\n\n### SSE event sequence\n\nOpenAPI cannot model individual SSE frames, so the stream contract is stated here. Every frame is `event: <name>` + `data: <json>`, and the JSON always repeats the event name in a `type` field. A comment keepalive `: ping` is written every 15 seconds (SSE clients ignore comment lines).\n\n1. `compose.started` — first frame. Data: `{type, generation_id, model}`. `model` is an opaque identifier.\n2. `op` × N — one frame per json-render operation: `{type: \"op\", op, path, value?, from?}`. Ops are **provisional**: they pass incremental checks as they stream, but only `compose.completed` finalizes them.\n3. `compose.restarted` × 0–2 — the attempt failed validation and the generation is retried on a stronger model. Data: `{type, generation_id, model, reason: {code}}` where `model` is the identifier the next attempt uses. On this event the client **MUST discard all previously received ops and any rendered state** and rebuild from the following `op` frames.\n4. Exactly one terminal frame:\n   - `compose.completed` — the **only** success finalizer. Data: `{type, generation_id, model, operation_count, usage: {input_tokens, output_tokens}, validated: true, interactions, components_used}`. Idempotent replays instead carry `replayed: true` and omit `interactions` / `components_used`.\n   - `error` — in-band terminal error: `{type: \"error\", error: {code, message}}` (the HTTP status is already 200 by then). Never billed.\n\n### Modes\n\n- `create` (default) — build a fresh UI from the prompt.\n- `edit` — pair with `prior_spec`; the server streams a minimal patch that morphs the prior spec in place.\n- `continue_journey` — pair with `action_context`; the next step of a flow, composed in context of what the user just did.\n\n### Billing\n\nExactly one generation is deducted per validated success, committed **before** `compose.completed` is emitted — a `compose.completed` frame is never a lie. Failures (any `error` frame or non-2xx response) and idempotent replays are free.\n\n### Idempotency\n\nSend an `Idempotency-Key` header (≤ 255 chars) to make retries safe. The key binds to the SHA-256 of the exact raw request body. A replay of a completed request is **free** and returns the original `generation_id` with `replayed: true` (as an instant burst-stream when `stream: true`, or the buffered envelope when `stream: false`). Reusing a key while the original request is still in flight returns `409 IDEMPOTENCY_KEY_IN_USE`; reusing it with a different body returns `422 VALIDATION_ERROR`. Keys are retained for 24 hours. The `@frayme/api` SDK generates idempotency keys for its automatic retries, so retried requests can never double-bill.\n\n### Timeouts\n\nGenerations typically complete in seconds, but allow a client-side timeout of up to 300 seconds — the server's own ceiling for a single compose.\n\nUnknown request fields are rejected with `400 BAD_REQUEST` (the schema is strict).",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ComposeRequest"
+              },
+              "examples": {
+                "streaming": {
+                  "summary": "Default streaming compose",
+                  "value": {
+                    "prompt": "Compare our three plans; mark Pro as recommended; a Choose button on each.",
+                    "signals": {
+                      "data_shape": [
+                        "plans",
+                        "cards"
+                      ],
+                      "density": "standard",
+                      "tone": "branded"
+                    },
+                    "data": {
+                      "plans": [
+                        {
+                          "name": "Free",
+                          "price": "$0/mo"
+                        },
+                        {
+                          "name": "Pro",
+                          "price": "$99/mo",
+                          "recommended": true
+                        },
+                        {
+                          "name": "Scale",
+                          "price": "$299/mo"
+                        }
+                      ]
+                    },
+                    "actions": [
+                      {
+                        "name": "choosePlan",
+                        "role": "Choose",
+                        "required": true,
+                        "params": {
+                          "type": "object",
+                          "properties": {
+                            "plan": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "plan"
+                          ]
+                        },
+                        "description": "User chose a plan; `plan` is the chosen plan name."
+                      }
+                    ]
+                  }
+                },
+                "buffered_with_actions": {
+                  "summary": "Non-streaming compose with data and a declared action",
+                  "value": {
+                    "prompt": "Refund approval card for the order below — approving is final, so ask before it fires.",
+                    "stream": false,
+                    "signals": {
+                      "data_shape": [
+                        "cards"
+                      ],
+                      "density": "compact",
+                      "patterns": [
+                        "confirm-dialog"
+                      ],
+                      "tone": "neutral"
+                    },
+                    "data": {
+                      "order_id": "#4821",
+                      "amount": "$120.00"
+                    },
+                    "actions": [
+                      {
+                        "name": "approveRefund",
+                        "role": "Approve refund",
+                        "required": true,
+                        "confirm": true,
+                        "params": {
+                          "type": "object",
+                          "properties": {
+                            "order_id": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "order_id"
+                          ]
+                        },
+                        "description": "User approved the refund"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success. The content type depends on `stream`: `text/event-stream` when `stream` is `true` (the default), `application/json` when `stream` is `false`. See the operation description for the exact SSE event sequence — streamed errors after the 200 arrive as an in-band `error` event.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComposeSuccessEnvelope"
+                },
+                "example": {
+                  "success": true,
+                  "data": {
+                    "generation_id": "gen_2c9a66e1-5dd8-4e0b-9c3d-1a2b3c4d5e6f",
+                    "spec": {
+                      "state": {},
+                      "root": "card",
+                      "elements": {
+                        "card": {
+                          "type": "Card",
+                          "children": [
+                            "btn"
+                          ]
+                        },
+                        "btn": {
+                          "type": "Button",
+                          "props": {
+                            "label": "Click"
+                          }
+                        }
+                      }
+                    },
+                    "model": "frayme-compose",
+                    "operation_count": 4,
+                    "validated": true,
+                    "usage": {
+                      "input_tokens": 812,
+                      "output_tokens": 236
+                    },
+                    "interactions": [],
+                    "components_used": [
+                      "Button",
+                      "Card"
+                    ]
+                  }
+                }
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "SSE stream. Frames: compose.started → op ×N → (compose.restarted ×0–2, each requiring the client to discard rendered state) → compose.completed | error. Keepalive comment `: ping` every 15 s. See the operation description for each frame's data shape."
+                },
+                "example": "event: compose.started\ndata: {\"type\":\"compose.started\",\"generation_id\":\"gen_2c9a66e1-5dd8-4e0b-9c3d-1a2b3c4d5e6f\",\"model\":\"frayme-compose\"}\n\nevent: op\ndata: {\"type\":\"op\",\"op\":\"add\",\"path\":\"/state\",\"value\":{}}\n\nevent: op\ndata: {\"type\":\"op\",\"op\":\"add\",\"path\":\"/root\",\"value\":\"card\"}\n\nevent: op\ndata: {\"type\":\"op\",\"op\":\"add\",\"path\":\"/elements/card\",\"value\":{\"type\":\"Card\",\"children\":[\"btn\"]}}\n\nevent: op\ndata: {\"type\":\"op\",\"op\":\"add\",\"path\":\"/elements/btn\",\"value\":{\"type\":\"Button\",\"props\":{\"label\":\"Click\"}}}\n\n: ping\n\nevent: compose.completed\ndata: {\"type\":\"compose.completed\",\"generation_id\":\"gen_2c9a66e1-5dd8-4e0b-9c3d-1a2b3c4d5e6f\",\"model\":\"frayme-compose\",\"operation_count\":4,\"usage\":{\"input_tokens\":812,\"output_tokens\":236},\"validated\":true,\"interactions\":[],\"components_used\":[\"Button\",\"Card\"]}\n\n"
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "402": {
+            "$ref": "#/components/responses/PaymentRequired"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/IdempotencyKeyInUse"
+          },
+          "422": {
+            "$ref": "#/components/responses/IdempotencyBodyMismatch"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "502": {
+            "$ref": "#/components/responses/CompositionFailed"
+          },
+          "503": {
+            "$ref": "#/components/responses/ServiceUnavailable"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "API key in the Authorization header: `Authorization: Bearer fr_live_…`. Keys are scoped; `/v1/compose` requires the `compose` scope, which new keys carry by default."
+      }
+    },
+    "parameters": {
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "description": "Optional idempotency key (≤ 255 characters) that makes retries safe. Binds to the SHA-256 of the exact raw request body. Completed requests replay free with the original `generation_id` and `replayed: true`; in-flight reuse returns 409; reuse with a different body returns 422. Retained for 24 hours.",
+        "schema": {
+          "type": "string",
+          "maxLength": 255
+        }
+      }
+    },
+    "schemas": {
+      "ErrorCode": {
+        "type": "string",
+        "description": "Machine-readable error code. **Branch on `error.code`, not on the HTTP status** — several statuses carry more than one code.",
+        "enum": [
+          "BAD_REQUEST",
+          "INVALID_MANIFEST",
+          "CUSTOM_SLICE_TOO_LARGE",
+          "AUTHENTICATION_REQUIRED",
+          "PAYMENT_REQUIRED",
+          "FORBIDDEN",
+          "FEATURE_LIMIT",
+          "NOT_FOUND",
+          "IDEMPOTENCY_KEY_IN_USE",
+          "VALIDATION_ERROR",
+          "RATE_LIMITED",
+          "QUOTA_EXCEEDED",
+          "INTERNAL_SERVER_ERROR",
+          "COMPOSITION_FAILED",
+          "MODEL_UNAVAILABLE",
+          "SERVICE_UNAVAILABLE"
+        ]
+      },
+      "ErrorEnvelope": {
+        "type": "object",
+        "description": "Every non-2xx response uses this envelope. During an SSE stream, errors after the 200 arrive as an in-band `error` event carrying the same `{code, message}` pair.\n\nFull error taxonomy:\n\n| Status | `error.code` | Meaning |\n|---|---|---|\n| 400 | `BAD_REQUEST` | Malformed JSON, schema violation, unknown field, a size cap exceeded, or an invalid `prior_spec` |\n| 400 | `INVALID_MANIFEST` | A `custom_components` manifest failed validation, or two manifests share a name |\n| 400 | `CUSTOM_SLICE_TOO_LARGE` | `custom_components` exceed the 12,000-character combined per-request budget |\n| 401 | `AUTHENTICATION_REQUIRED` | Missing, malformed, or revoked API key |\n| 402 | `PAYMENT_REQUIRED` | Subscription payment past due — update the payment method to resume |\n| 403 | `FORBIDDEN` | The key lacks the required scope |\n| 403 | `FEATURE_LIMIT` | A plan limit was hit (e.g. inline custom components per request) |\n| 404 | `NOT_FOUND` | Unknown route or resource |\n| 409 | `IDEMPOTENCY_KEY_IN_USE` | Same `Idempotency-Key`, original request still in flight |\n| 422 | `VALIDATION_ERROR` | Same `Idempotency-Key` with a different request body |\n| 429 | `RATE_LIMITED` | Per-key burst limit exceeded — honor the `Retry-After` header |\n| 429 | `QUOTA_EXCEEDED` | Monthly generation quota exhausted (no `Retry-After`) — upgrade or wait for the next cycle |\n| 500 | `INTERNAL_SERVER_ERROR` | Unexpected server error |\n| 502 | `COMPOSITION_FAILED` | Output failed validation after automatic retries — never billed |\n| 503 | `MODEL_UNAVAILABLE` | Model backend temporarily unavailable |\n| 503 | `SERVICE_UNAVAILABLE` | Temporary service outage |",
+        "required": [
+          "success",
+          "error"
+        ],
+        "properties": {
+          "success": {
+            "const": false
+          },
+          "error": {
+            "type": "object",
+            "required": [
+              "message",
+              "code"
+            ],
+            "properties": {
+              "message": {
+                "type": "string",
+                "description": "Human-readable description of what went wrong."
+              },
+              "code": {
+                "$ref": "#/components/schemas/ErrorCode"
+              }
+            }
+          }
+        }
+      },
+      "Spec": {
+        "type": "object",
+        "description": "A json-render UI spec: `root`, `elements` (each `{type, props?, children?, on?}`), `state`, and optional `actions`. Uses standard json-render keys — see https://json-render.dev. Rendered with `FraymeRenderer` from `@frayme/runtime/react`.",
+        "additionalProperties": true
+      },
+      "ComposeContext": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Optional generation hints.",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "THE theme dial — `light` or `dark` (≤ 40 characters). Omit to let the host decide. There is deliberately no `signals.theme`."
+          },
+          "framework_hint": {
+            "type": "string",
+            "maxLength": 60,
+            "description": "Layout hint for the generator, e.g. `card-heavy` or `dashboard` (≤ 60 characters)."
+          }
+        }
+      },
+      "ComposeSignals": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "The primary steering dial — the vocabulary the model reads directly, so these values genuinely move the output. Send only the ones you are confident about; a partial object (or none at all) is a first-class call, and a wrong signal steers worse than a missing one. Most valuable where the prompt alone is ambiguous: \"a table of orders\" describes both a compact scanning grid and a rich card list, and `density` is what separates them. Theme is not a signal — use `context.theme`.",
+        "properties": {
+          "data_shape": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "description": "What the content IS, one or more of: avatar, board, bracket, calendar, cards, chart, citations, code, diff, document, feed, filters, form, image, link-preview, list, map, plans, reasoning, table, thread, timeline, tree, video."
+          },
+          "density": {
+            "type": "string",
+            "enum": [
+              "compact",
+              "standard",
+              "rich"
+            ],
+            "description": "How much per screen. `compact` — terse scanning · `standard` · `rich` — generous detail and supporting copy."
+          },
+          "patterns": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "type": "string",
+              "maxLength": 40
+            },
+            "description": "Interaction furniture you want available: accordion, bulk-actions, collapsible, confirm-dialog, dialog, drawer, dropdown-menu, hover-card, multi-step, popover, row-actions, segmented-control, tabs, tooltip."
+          },
+          "tone": {
+            "type": "string",
+            "enum": [
+              "neutral",
+              "branded"
+            ],
+            "description": "`neutral` — product-default styling · `branded` — lean into the colour and voice the prompt describes."
+          }
+        }
+      },
+      "ComposeAction": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name"
+        ],
+        "description": "A declared action — Frayme guarantees the wiring: param keys bind to live UI state, and the host receives the resolved values when the action fires.",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "description": "Bound action name, e.g. `approveRefund`."
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "The action's params — a JSON Schema object (`{\"type\":\"object\",\"properties\":{…},\"required\":[…]}`) or a flat `{ paramName: { description, enum? } }` map. Keys bind to live UI state and come back resolved when the action fires. List the mandatory keys in `required` (or `requiredItems`): they are marked on the form and genuinely block the submit until filled."
+          },
+          "role": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "Short human label for the control that fires this action, e.g. `approve` or `Save board`. Frayme uses it wherever it places or injects the control, including the carrier button injected when the action is wired only to a non-press component. Without it an injected carrier reads \"Done\" (or a name-derived label when the host is itself a press, or when two carriers on one screen would both read \"Done\")."
+          },
+          "live": {
+            "type": "boolean",
+            "default": false,
+            "description": "Default false: only a press fires the action (the carrier rule — a Button, a Confirmation verdict, a Form submit, a DataTable, or a row/bulk action on a table or board; any other gesture stays local under `state._ui.<elementId>.<verb>` and rides in the next press's `state`). true = ambient wiring — the action fires on every move/change with no button press (drags, sliders, board moves)."
+          },
+          "confirm": {
+            "description": "Gate the control behind a confirmation dialog. `true` for a plain confirm; an object (≤ 800 characters serialized) for detail — `{\"tone\":\"danger\",\"body\":\"This cannot be undone.\",\"confirmLabel\":\"Delete\",\"denyLabel\":\"Keep\"}`. Unknown keys are ignored, not rejected.",
+            "oneOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "object",
+                "additionalProperties": true
+              }
+            ]
+          },
+          "requiredItems": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "string",
+              "maxLength": 60
+            },
+            "description": "The params that are mandatory, lifted to action level — the same claim as `params.required` for hosts sending the flat param map."
+          },
+          "required": {
+            "type": "boolean",
+            "description": "If true, a control bound to this action is guaranteed present — injected if the generation omitted it."
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 160,
+            "description": "What this action means / what the user did — for your own handling."
+          },
+          "kind": {
+            "description": "How the server closes this action into `spec.actions`: `recompose` re-generates with the fixed `prompt`; `agent` (default) routes the event back to the host agent; `host` posts a message on `channel`; `false` denies the action (inert).",
+            "oneOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "recompose",
+                  "agent",
+                  "host"
+                ]
+              },
+              {
+                "type": "boolean",
+                "const": false
+              }
+            ]
+          },
+          "prompt": {
+            "type": "string",
+            "maxLength": 4000,
+            "description": "`recompose` only — the fixed prompt the server recomposes with when the action fires."
+          },
+          "channel": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "`host` only — the postMessage channel name."
+          }
+        }
+      },
+      "ComposeActionContext": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "action"
+        ],
+        "description": "What the user just did on a Frayme-rendered UI — pair with `mode: \"continue_journey\"` so the next compose responds in context. Serialized size ≤ 16,000 characters. Hosts on `@frayme/api/tools` never build this by hand: `frayme_action` takes the runtime's event (see `FraymeActionInput`) and the SDK maps it here.",
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "description": "The bound action name the user fired."
+          },
+          "event": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "The canonical event verb that fired (`commit`, `select`, `change`, …)."
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Resolved param values (the live UI-state values) at fire time."
+          },
+          "state": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Full live-state snapshot — what the user entered; preserved across the recompose."
+          },
+          "element_id": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The spec id of the control that fired — the button, or the table/board whose row/bulk action was pressed (absent only for programmatic dispatches)."
+          },
+          "generation_id": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The `generation_id` of the UI the user acted on (correlation)."
+          }
+        }
+      },
+      "FraymeActionInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "action"
+        ],
+        "description": "Input of the `frayme_action` tool (`@frayme/api/tools`): the `DynamicActionEvent` your host receives from `@frayme/runtime` when the user presses a control bound to a declared action, forwarded verbatim, plus an optional steering `prompt`. This is not a request body — the SDK maps it onto `ComposeRequest`: `prompt` becomes the top-level `prompt` (defaulting to a continue-the-journey instruction), `mode` is set to `continue_journey`, and `action`, `event`, `params`, `state`, `element_id` and `generation_id` become `action_context`. `label` and `description` are accepted for the host's own use (heading a thread card) and are not sent to the server.",
+        "properties": {
+          "action": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60,
+            "description": "The bound action name the user fired (from a prior `frayme_compose` actions contract)."
+          },
+          "event": {
+            "type": "string",
+            "maxLength": 40,
+            "description": "The canonical event verb that fired: `commit`, `select`, `change`, `dismiss`, `search`, `sort`, `page` or `move`."
+          },
+          "params": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Resolved params — the live UI-state values at fire time."
+          },
+          "state": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Full live state snapshot — what the user entered; preserved across the recompose. `state._ui.<elementId>.<verb>` holds the latest gesture per verb, never cleared by a press."
+          },
+          "element_id": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The spec id of the control that fired — the button, or the table/board whose row/bulk action was pressed (absent only for programmatic dispatches)."
+          },
+          "label": {
+            "type": "string",
+            "description": "The label of the control the user pressed, verbatim (absent for a Form submit, whose `element_id` is the Form) — for your own thread card; not sent to the server."
+          },
+          "description": {
+            "type": "string",
+            "description": "What the action does, in your own words (from your declared action) — for your own thread card; not sent to the server."
+          },
+          "generation_id": {
+            "type": "string",
+            "maxLength": 120,
+            "description": "The `generation_id` of the UI the user acted on (correlation)."
+          },
+          "prompt": {
+            "type": "string",
+            "maxLength": 4000,
+            "description": "What to do next; default: continue the journey for this action."
+          }
+        }
+      },
+      "CustomComponentManifest": {
+        "type": "object",
+        "additionalProperties": true,
+        "description": "A BYOC custom-component manifest — the same object you author for `defineFraymeComponent` from `@frayme/catalog` (name, props, events, description). Validated server-side with the identical deep lint the client runs; duplicate names are rejected (`400 INVALID_MANIFEST`). Render the matching React components in your app via `createCustomComponents` from `@frayme/runtime`."
+      },
+      "ComposeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "prompt"
+        ],
+        "description": "Request body for `POST /v1/compose`. Field names are snake_case on the wire. The schema is strict — unknown fields are rejected with `400 BAD_REQUEST`.",
+        "properties": {
+          "prompt": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000,
+            "description": "What to build, in natural language. 1–4000 characters."
+          },
+          "stream": {
+            "type": "boolean",
+            "default": true,
+            "description": "`true` (default) — respond as a live Server-Sent Events stream. `false` — respond with a buffered JSON envelope."
+          },
+          "context": {
+            "$ref": "#/components/schemas/ComposeContext"
+          },
+          "max_operations": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200,
+            "description": "Cap on generated operations (1–200)."
+          },
+          "signals": {
+            "$ref": "#/components/schemas/ComposeSignals"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "create",
+              "edit",
+              "continue_journey"
+            ],
+            "default": "create",
+            "description": "`create` (default) — fresh UI. `edit` — modify `prior_spec` in place (the server streams a minimal patch). `continue_journey` — next step of a flow (pair with `action_context`)."
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Factual content AND exact copy the UI must show verbatim — names, prices, items, counts, headings, disclaimers, button labels. These values render as written and are never invented or altered; anything not in `prompt` or `data` is the model's own invention, so pass `{}` for a UI with no fixed content. Display facts only — no synthetic ids or control flags. Serialized size ≤ 48,000 characters."
+          },
+          "actions": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/ComposeAction"
+            },
+            "description": "Declared action contract (≤ 20 entries) — Frayme guarantees each `required` action is wired to a control."
+          },
+          "action_policy": {
+            "type": "string",
+            "enum": [
+              "open",
+              "declared_only"
+            ],
+            "default": "open",
+            "description": "How model-authored actions beyond the declared contract are handled. `open` (default) — they stay live; the runtime forwards unmapped actions to the host agent. `declared_only` — the server strips every non-builtin action the contract didn't declare (bindings, `spec.actions` entries, and controls whose only job was a stripped action), so the UI can never grow controls the host didn't ask for."
+          },
+          "prior_spec": {
+            "$ref": "#/components/schemas/Spec",
+            "description": "The client's current spec, for `edit` / `continue_journey`. Validated server-side before use. Serialized size ≤ 48,000 characters."
+          },
+          "action_context": {
+            "$ref": "#/components/schemas/ComposeActionContext"
+          },
+          "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Free-form metadata recorded with the generation's usage log. Serialized size ≤ 24,000 characters."
+          },
+          "custom_components": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/CustomComponentManifest"
+            },
+            "description": "BYOC — inline custom-component manifests for this request. Absolute cap 20 per request; your plan's inline component limit (`GET /v1/me` → `plan.inlineComponentsLimit`) may be lower (`403 FEATURE_LIMIT`). The combined compiled size is budgeted at 12,000 characters per request (`400 CUSTOM_SLICE_TOO_LARGE`)."
+          }
+        }
+      },
+      "Usage": {
+        "type": "object",
+        "required": [
+          "input_tokens",
+          "output_tokens"
+        ],
+        "properties": {
+          "input_tokens": {
+            "type": "integer",
+            "description": "Tokens consumed by the request."
+          },
+          "output_tokens": {
+            "type": "integer",
+            "description": "Tokens produced by the generation."
+          }
+        }
+      },
+      "ComposeInteraction": {
+        "type": "object",
+        "description": "One wired interaction in the returned UI — the \"what can this UI do\" summary a host agent reads to know which actions it will receive.",
+        "required": [
+          "element",
+          "event",
+          "action",
+          "kind",
+          "params"
+        ],
+        "properties": {
+          "element": {
+            "type": "string",
+            "description": "The element id carrying the binding."
+          },
+          "event": {
+            "type": "string",
+            "description": "Canonical verb for the binding (`commit`, `select`, `change`, …)."
+          },
+          "action": {
+            "type": "string",
+            "description": "The bound action name."
+          },
+          "kind": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The `spec.actions` handler kind, or null when unmapped or denied."
+          },
+          "params": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": true,
+            "description": "The binding's params, or null when absent."
+          }
+        }
+      },
+      "ComposeResult": {
+        "type": "object",
+        "required": [
+          "generation_id",
+          "spec",
+          "model",
+          "operation_count",
+          "validated",
+          "usage"
+        ],
+        "properties": {
+          "generation_id": {
+            "type": "string",
+            "description": "Unique id for this generation (`gen_` prefix). On an idempotent replay this is the ORIGINAL generation's id."
+          },
+          "spec": {
+            "$ref": "#/components/schemas/Spec"
+          },
+          "model": {
+            "type": "string",
+            "description": "Opaque identifier of the model build that produced this generation. Values are not stable across releases — do not branch on them."
+          },
+          "operation_count": {
+            "type": "integer",
+            "description": "Number of json-render operations that built the spec."
+          },
+          "validated": {
+            "const": true,
+            "description": "Always true on success — every returned spec passed full validation before delivery."
+          },
+          "usage": {
+            "$ref": "#/components/schemas/Usage"
+          },
+          "replayed": {
+            "type": "boolean",
+            "description": "Present and true only when this response is an idempotent replay of a previously completed request (never billed)."
+          },
+          "interactions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComposeInteraction"
+            },
+            "description": "The wired interactions of the returned UI. Absent on replay."
+          },
+          "components_used": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Sorted unique component types used in the spec. Absent on replay."
+          }
+        }
+      },
+      "ComposeSuccessEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/ComposeResult"
+          }
+        }
+      },
+      "Health": {
+        "type": "object",
+        "required": [
+          "status",
+          "service",
+          "catalog_version"
+        ],
+        "properties": {
+          "status": {
+            "const": "ok"
+          },
+          "service": {
+            "type": "string",
+            "description": "Service identifier."
+          },
+          "catalog_version": {
+            "type": "string",
+            "description": "Version of the active component catalog, e.g. `frayme-0.18.0`."
+          }
+        }
+      },
+      "HealthEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/Health"
+          }
+        }
+      },
+      "Me": {
+        "type": "object",
+        "description": "Key introspection payload. Note the camelCase field names — this endpoint differs from compose's snake_case.",
+        "required": [
+          "workspace",
+          "plan"
+        ],
+        "properties": {
+          "workspace": {
+            "type": "object",
+            "required": [
+              "id",
+              "name",
+              "slug"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              }
+            }
+          },
+          "plan": {
+            "type": "object",
+            "required": [
+              "tierKey",
+              "monthlyGenerations",
+              "rateLimitPerMin",
+              "generationsRemaining",
+              "inlineComponentsLimit"
+            ],
+            "properties": {
+              "tierKey": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Plan tier key, or null when no tier is configured."
+              },
+              "monthlyGenerations": {
+                "type": "integer",
+                "description": "Generations included per month on this plan."
+              },
+              "rateLimitPerMin": {
+                "type": "integer",
+                "description": "Per-key burst limit in requests per minute."
+              },
+              "generationsRemaining": {
+                "type": "integer",
+                "description": "Generations left in the current cycle."
+              },
+              "inlineComponentsLimit": {
+                "type": "integer",
+                "description": "Maximum inline custom components (BYOC) allowed per compose request on this plan. 0 means BYOC is not available on the plan."
+              }
+            }
+          }
+        }
+      },
+      "MeEnvelope": {
+        "type": "object",
+        "required": [
+          "success",
+          "data"
+        ],
+        "properties": {
+          "success": {
+            "const": true
+          },
+          "data": {
+            "$ref": "#/components/schemas/Me"
+          }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Invalid request. `error.code` is `BAD_REQUEST` (malformed JSON, schema violation, unknown field, size cap, or invalid `prior_spec`), `INVALID_MANIFEST` (a custom-component manifest failed validation or duplicates a name), or `CUSTOM_SLICE_TOO_LARGE` (custom components exceed the 12,000-character per-request budget).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "Invalid request: prompt — prompt is required",
+                "code": "BAD_REQUEST"
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid API key (`AUTHENTICATION_REQUIRED`).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "Authentication required",
+                "code": "AUTHENTICATION_REQUIRED"
+              }
+            }
+          }
+        }
+      },
+      "PaymentRequired": {
+        "description": "Subscription payment is past due (`PAYMENT_REQUIRED`). Update the payment method to resume generations.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "Subscription payment is past due — update your payment method to resume generations",
+                "code": "PAYMENT_REQUIRED"
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "`FORBIDDEN` — the key lacks the required scope — or `FEATURE_LIMIT` — a plan limit was hit (e.g. more inline custom components than the plan allows per request).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "API key missing required scope: compose",
+                "code": "FORBIDDEN"
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Unknown route or resource (`NOT_FOUND`).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "Resource not found",
+                "code": "NOT_FOUND"
+              }
+            }
+          }
+        }
+      },
+      "IdempotencyKeyInUse": {
+        "description": "This `Idempotency-Key` belongs to a request that is still in flight (`IDEMPOTENCY_KEY_IN_USE`). Wait for the original to finish, then retry.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "This Idempotency-Key belongs to a request that is still in flight",
+                "code": "IDEMPOTENCY_KEY_IN_USE"
+              }
+            }
+          }
+        }
+      },
+      "IdempotencyBodyMismatch": {
+        "description": "The `Idempotency-Key` was already used with a different request body (`VALIDATION_ERROR`). Use a fresh key for a different request.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "Validation failed",
+                "code": "VALIDATION_ERROR"
+              }
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Two distinct 429s — branch on `error.code`. `RATE_LIMITED`: the per-key burst limit (your plan's requests-per-minute) was exceeded; honor the `Retry-After` header and back off exponentially. `QUOTA_EXCEEDED`: the monthly generation quota is exhausted (no `Retry-After`); upgrade the plan or wait for the next cycle.",
+        "headers": {
+          "Retry-After": {
+            "description": "Seconds to wait before retrying. Present only for `RATE_LIMITED`.",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        },
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "Rate limit exceeded — slow down and retry with exponential backoff",
+                "code": "RATE_LIMITED"
+              }
+            }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Unexpected server error (`INTERNAL_SERVER_ERROR`). Never billed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "An unexpected error occurred",
+                "code": "INTERNAL_SERVER_ERROR"
+              }
+            }
+          }
+        }
+      },
+      "CompositionFailed": {
+        "description": "The output failed validation even after automatic retries on a stronger model (`COMPOSITION_FAILED`). Never billed — retry, ideally with a clearer prompt.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "Output failed schema validation after fallback",
+                "code": "COMPOSITION_FAILED"
+              }
+            }
+          }
+        }
+      },
+      "ServiceUnavailable": {
+        "description": "`MODEL_UNAVAILABLE` — the model backend is temporarily unavailable — or `SERVICE_UNAVAILABLE` — a temporary service outage. Retry with backoff. Never billed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorEnvelope"
+            },
+            "example": {
+              "success": false,
+              "error": {
+                "message": "Model backend unavailable",
+                "code": "MODEL_UNAVAILABLE"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

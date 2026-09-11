@@ -1,0 +1,109 @@
+{
+  "name": "@frayme/runtime",
+  "version": "0.4.0",
+  "description": "Frayme runtime — render validated generative-UI specs in React, with Vercel AI SDK and AG-UI transport adapters. The last mile between an agent and live, interactive UI.",
+  "license": "MIT",
+  "homepage": "https://frayme.ai",
+  "keywords": [
+    "generative-ui",
+    "react",
+    "ai-agents",
+    "json-render",
+    "renderer",
+    "ag-ui",
+    "ai-sdk"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frayme-ai/frayme-sdk.git",
+    "directory": "packages/runtime"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "default": "./dist/react/index.js"
+    },
+    "./ai-sdk": {
+      "types": "./dist/ai-sdk/index.d.ts",
+      "default": "./dist/ai-sdk/index.js"
+    },
+    "./ag-ui": {
+      "types": "./dist/ag-ui/index.d.ts",
+      "default": "./dist/ag-ui/index.js"
+    },
+    "./styles.css": "./dist/frayme.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "!dist/**/*.map",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "build": "tsdown && npm run build:css",
+    "build:css": "tailwindcss -i src/styles/frayme.css -o dist/frayme.css --minify",
+    "dev": "tsdown --watch",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@ag-ui/core": "0.0.x",
+    "@frayme/api": "^0.4.0"
+  },
+  "peerDependencies": {
+    "@ai-sdk/react": "^3.0.0",
+    "@frayme/catalog": ">=0.4.0 <0.5.0",
+    "@json-render/core": "^0.19.0",
+    "@json-render/react": "^0.19.0",
+    "ai": "^6.0.0",
+    "react": "^19.0.0",
+    "zod": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ai": {
+      "optional": true
+    },
+    "@ai-sdk/react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@ai-sdk/react": "^3.0.0",
+    "@frayme/catalog": ">=0.4.0 <0.5.0",
+    "@json-render/core": "^0.19.0",
+    "@json-render/react": "^0.19.0",
+    "@tailwindcss/cli": "^4.3.1",
+    "@testing-library/react": "^16.0.0",
+    "@types/react": "^19.0.0",
+    "ai": "^6.0.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "jsdom": "^25.0.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.1",
+    "tsdown": "^0.22.2",
+    "typescript": "^5.3.0",
+    "vitest": "^3.2.6",
+    "zod": "^4.0.0"
+  }
+}
