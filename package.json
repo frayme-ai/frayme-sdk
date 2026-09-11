@@ -8,12 +8,12 @@
     "packages/*"
   ],
   "scripts": {
-    "build": "npm -ws --if-present run build",
-    "type-check": "npm -ws --if-present run type-check",
-    "clean": "npm -ws --if-present run clean",
-    "postinstall": "npm -w @frayme/catalog --if-present run build && npm -w @frayme/api --if-present run build",
+    "build": "npm --workspaces --if-present run build",
+    "type-check": "npm --workspaces --if-present run type-check",
+    "clean": "npm --workspaces --if-present run clean",
+    "postinstall": "npm --workspace @frayme/catalog --if-present run build && npm --workspace @frayme/api --if-present run build",
     "docs:components": "node tools/render-docs.mjs",
-    "test": "npm -ws --if-present run test"
+    "test": "npm --workspaces --if-present run test"
   },
   "devDependencies": {
     "@arethetypeswrong/cli": "^0.18.3",
