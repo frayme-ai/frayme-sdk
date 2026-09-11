@@ -1,12 +1,16 @@
 name: Release
 
-# Publishes @frayme/catalog, @frayme/api and @frayme/runtime to npm when a
-# version tag (v0.4.0, v1.2.3, …) is pushed. Uses npm Trusted Publishing:
-# the job authenticates with GitHub's OIDC token, so no npm token is stored,
-# and every published version carries a provenance attestation.
+# STAGES @frayme/catalog, @frayme/api and @frayme/runtime on npm when a
+# version tag (v0.4.0, v1.2.3, …) is pushed. Nothing goes live from here:
+# a maintainer promotes each staged version with `npm stage approve`, which
+# prompts for 2FA — see RELEASING.md. The job authenticates with GitHub's
+# OIDC token (npm Trusted Publishing), so no npm token is stored, and every
+# staged version carries a provenance attestation.
 #
-# Only versions that are not yet on the registry are published, so the job
-# is safe to re-run after a partial failure.
+# Re-runs are safe: a version that is already published is skipped, and a
+# version that is already staged is reported and skipped (the trust token can
+# stage but cannot list staged versions, so the conflict is detected on the
+# publish attempt itself).
 
 on:
   push:
@@ -32,22 +36,36 @@ jobs:
           node-version: 22
           registry-url: https://registry.npmjs.org
           cache: npm
-      # Trusted Publishing requires npm 11.5.1 or newer; pin the major so a new
-      # npm release cannot change CLI behaviour under us.
-      - run: npm install -g npm@11
+      # `npm stage` shipped in npm 12; pin the major so a new npm release
+      # cannot change CLI behaviour under us.
+      - run: npm install -g npm@12
       - run: npm ci
       - run: npm run build
       - run: npm run type-check
       - run: npm test
-      - name: Publish in dependency order
+      - name: Stage in dependency order
         run: |
           set -euo pipefail
           for pkg in catalog api runtime; do
             name="@frayme/$pkg"
             version="$(node -p "require('./packages/$pkg/package.json').version")"
             if npm view "$name@$version" version >/dev/null 2>&1; then
-              echo "$name@$version is already on the registry — skipping"
-            else
-              npm publish -w "$name" --access public --provenance
+              echo "$name@$version is already published — skipping"
+              continue
             fi
+            # `npm stage` is unaware of workspaces: run it from the package directory.
+            if out="$(cd "packages/$pkg" && npm stage publish --access public --provenance 2>&1)"; then
+              echo "$out" | tail -n 3
+            elif echo "$out" | grep -qiE "already (exists|staged)|previously (published|staged)|EPUBLISHCONFLICT|E403"; then
+              echo "$name@$version is already staged — skipping"
+            else
+              echo "$out"
+              exit 1
+            fi
+          done
+      - name: What happens next
+        run: |
+          echo "Staged versions are not live. A maintainer promotes them, in this order, from a logged-in terminal:"
+          for pkg in catalog api runtime; do
+            echo "  npm stage list @frayme/$pkg   # then: npm stage approve <stage-id>  (2FA prompt)"
           done
