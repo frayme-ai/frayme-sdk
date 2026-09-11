@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
   schedule:
     # Weekly canary against @json-render latest (Mondays 07:00 UTC)
     - cron: '0 7 * * 1'
