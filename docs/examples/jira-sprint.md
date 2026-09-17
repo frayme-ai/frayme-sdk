@@ -6,7 +6,7 @@ A working kanban board whose card moves sync back to the agent, with burndown an
 
 > Show me the current sprint board.
 
-The agent reads the sprint — 34 of 55 points done, 3 days left, two blockers gating 10 points — and composes a board you can actually work.
+The agent reads the sprint (34 of 55 points done, 3 days left, two blockers gating 10 points) and composes a board you can actually work.
 
 ## What comes back
 
@@ -19,7 +19,7 @@ The agent reads the sprint — 34 of 55 points done, 3 days left, two blockers g
 
 ## The interesting mechanic: `move` is a canonical event
 
-The board binds its column state and wires the `move` verb — one of the catalog's eight canonical event verbs (`commit`, `select`, `change`, `dismiss`, `search`, `sort`, `page`, `move`) — to a declared action:
+`move` is one of the catalog's eight canonical event verbs (`commit`, `select`, `change`, `dismiss`, `search`, `sort`, `page`, `move`). The board binds its column state and wires it to a declared action:
 
 ```json
 {"op":"add","path":"/elements/board","value":{"type":"KanbanBoard","props":{
@@ -35,13 +35,13 @@ The board binds its column state and wires the `move` verb — one of the catalo
   "on":{"move":{"action":"moveIssue"}}}}
 ```
 
-*(excerpt — cards trimmed)*
+*(excerpt: cards trimmed)*
 
 ```json
 {"op":"add","path":"/actions","value":{"summarizeStandup":{"kind":"agent"},"moveIssue":{"kind":"agent"}}}
 ```
 
-Drag PLAT-482 from *In progress* to *In review* and two things happen: the renderer updates the bound board state locally, and the `moveIssue` action fires back to the agent so the tracker stays in sync. The Burndown/Activity toggle, by contrast, is purely local — no round-trip.
+Drag PLAT-482 from *In progress* to *In review* and two things happen: the renderer updates the bound board state locally, and the `moveIssue` action fires back to the agent so the tracker stays in sync. The Burndown/Activity toggle, by contrast, is purely local, with no round-trip.
 
 ## The follow-up: a whole second screen
 
@@ -57,7 +57,7 @@ const frayme = new Frayme({ apiKey: process.env.FRAYME_API_KEY });
 const stream = frayme.compose.stream({
   prompt: 'Show me the current sprint board.',
   signals: { data_shape: ['board', 'chart'], density: 'compact' },
-  data: { sprint: {/* issues, points, blockers — rendered verbatim */} },
+  data: { sprint: {/* issues, points, blockers, rendered verbatim */} },
   actions: [
     { name: 'moveIssue', description: 'User moved a card between columns', kind: 'agent' },
     { name: 'summarizeStandup', description: 'Summarize activity since the last standup', kind: 'agent', required: true },
@@ -67,4 +67,4 @@ const stream = frayme.compose.stream({
 
 ## Try it
 
-Open [frayme.ai/examples](https://frayme.ai/examples) and select **Sprint 24 — board**. Drag a card, flip the analytics toggle, then press *Summarize standup*.
+Open [frayme.ai/examples](https://frayme.ai/examples) and select **Sprint 24 board**. Drag a card, flip the analytics toggle, then press *Summarize standup*.

@@ -18,12 +18,15 @@
 
 ## Guides
 
+* [Chatless screens](guides/chatless-screens.md)
 * [Custom components](guides/custom-components.md)
 * [Data binding](guides/data-binding.md)
 * [Edits and journeys](guides/edits-and-journeys.md)
 * [Error handling](guides/error-handling.md)
 * [Idempotency and retries](guides/idempotency-and-retries.md)
+* [Intents and sources](guides/intents-and-sources.md)
 * [Rendering](guides/rendering.md)
+* [Server handler](guides/server-handler.md)
 * [State and actions](guides/state-and-actions.md)
 * [Theming](guides/theming.md)
 
@@ -256,6 +259,9 @@
 ## SDK reference
 
 * [@frayme/api](sdk/api.md)
+* [@frayme/api/agent](sdk/api-agent.md)
+* [@frayme/api/ai-sdk](sdk/api-ai-sdk.md)
+* [@frayme/api/server](sdk/api-server.md)
 * [@frayme/catalog](sdk/catalog.md)
 * [@frayme/runtime](sdk/runtime.md)
 

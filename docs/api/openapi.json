@@ -4,7 +4,7 @@
     "title": "Frayme API",
     "version": "1.0.0",
     "summary": "UI for Agents — give your AI a real interface.",
-    "description": "Your agent calls one API; Frayme streams back live, interactive UI — validated before it renders, built on open standards (json-render, AG-UI, MCP).\n\nFrayme runs its own model, purpose-built for composing interfaces. Every spec is validated before it renders, and weak generations are automatically retried on a stronger model. The `model` field in responses is an opaque identifier — treat it as a string and do not branch on its value.\n\n**Base URL:** `https://api.frayme.ai` · **Auth:** `Authorization: Bearer fr_live_…`.\n\n**Billing:** you are billed only for validated successes. Failed generations, in-band `error` events, and idempotent replays are never billed.\n\n**SDK:** `npm i @frayme/api @frayme/runtime` — `@frayme/api` 0.3.2 wraps this exact contract with typed errors, streaming helpers, and automatic idempotency keys on retries.",
+    "description": "Your agent calls one API; Frayme streams back live, interactive UI — validated before it renders, built on open standards (json-render, AG-UI, MCP).\n\nFrayme runs its own model, purpose-built for composing interfaces. Every spec is validated before it renders, and weak generations are automatically retried on a stronger model. The `model` field in responses is an opaque identifier — treat it as a string and do not branch on its value.\n\n**Base URL:** `https://api.frayme.ai` · **Auth:** `Authorization: Bearer fr_live_…`.\n\n**Billing:** you are billed only for validated successes. Failed generations, in-band `error` events, and idempotent replays are never billed.\n\n**SDK:** `npm i @frayme/api @frayme/runtime` — `@frayme/api` 0.5.0 wraps this exact contract with typed errors, streaming helpers, and automatic idempotency keys on retries.",
     "contact": {
       "name": "Frayme",
       "url": "https://frayme.ai"
@@ -597,7 +597,7 @@
         "required": [
           "action"
         ],
-        "description": "Input of the `frayme_action` tool (`@frayme/api/tools`): the `DynamicActionEvent` your host receives from `@frayme/runtime` when the user presses a control bound to a declared action, forwarded verbatim, plus an optional steering `prompt`. This is not a request body — the SDK maps it onto `ComposeRequest`: `prompt` becomes the top-level `prompt` (defaulting to a continue-the-journey instruction), `mode` is set to `continue_journey`, and `action`, `event`, `params`, `state`, `element_id` and `generation_id` become `action_context`. `label` and `description` are accepted for the host's own use (heading a thread card) and are not sent to the server.",
+        "description": "Input of the `frayme_action` tool (`@frayme/api/tools`): the `DynamicActionEvent` your host receives from `@frayme/runtime` when the user presses a control bound to a declared action, forwarded verbatim, plus an optional steering `prompt` and the next screen's `data`, `actions` and `signals`. This is not a request body. The SDK maps it onto `ComposeRequest`: `prompt` becomes the top-level `prompt` (defaulting to a continue-the-journey instruction), `mode` is set to `continue_journey`, `action`, `event`, `params`, `state`, `element_id` and `generation_id` become `action_context`, and `data`, `actions` and `signals` become the top-level fields of the same name. `label` and `description` are accepted for the host's own use (heading a thread card) and are not sent to the server.",
         "properties": {
           "action": {
             "type": "string",
@@ -642,6 +642,23 @@
             "type": "string",
             "maxLength": 4000,
             "description": "What to do next; default: continue the journey for this action."
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Facts the next screen must show verbatim, exactly as `data` on `frayme_compose`: the result of what the user just did (the saved record, the new total, the confirmation number) plus anything else the next screen displays. Sent as the top-level `data` of the request, never inside `action_context`."
+          },
+          "actions": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "$ref": "#/components/schemas/ComposeAction"
+            },
+            "description": "Controls the next screen needs, exactly as `actions` on `frayme_compose`. Re-declare every action the next screen needs, including ones declared on the screen the user just used: an action left out comes back unwired. Sent as the top-level `actions` of the request."
+          },
+          "signals": {
+            "$ref": "#/components/schemas/ComposeSignals",
+            "description": "Steering for the next screen, exactly as `signals` on `frayme_compose`. Sent as the top-level `signals` of the request."
           }
         }
       },

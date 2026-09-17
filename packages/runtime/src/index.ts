@@ -25,7 +25,15 @@ export type {
   SpecActionMap,
   SpecActionSpec,
 } from './core/handlers.js';
-export { themeToStyle, type ThemeTokens } from './core/theme.js';
+export {
+  themeToStyle,
+  isThemePair,
+  resolveTheme,
+  type ThemeInput,
+  type ThemePair,
+  type ThemeScheme,
+  type ThemeTokens,
+} from './core/theme.js';
 export {
   threadText,
   humanizeName,
@@ -39,6 +47,15 @@ export {
 // in `state._ui` and the bound values, appended under `threadText` by the AI
 // SDK forwarder's default `sendMessage` text. The card still hides state.
 export { threadState, type ThreadStateOptions } from './core/thread-state.js';
+// A press as the user's next chat message (the text an agent reads, plus the
+// full event as metadata). Pure, so a server can write it; the ai-sdk subpath
+// re-exports `pressMessage`.
+export {
+  pressLine,
+  pressMessage,
+  pressThreadText,
+  type PressMessageOptions,
+} from './core/press-message.js';
 // The thread card's pure model: title = the control's
 // label verbatim else the humanized action name, the host's description or none,
 // a key/value table of the params. react/action-receipt.tsx is the DOM.
@@ -49,7 +66,10 @@ export {
   type ReceiptModelOptions,
   type ReceiptRow,
 } from './core/receipt.js';
-export { composeStreamToDataParts } from './core/ai-bridge.js';
+// `SPEC_DATA_PART_TYPE` is the same `'data-spec'` the ai-sdk subpath exports,
+// available here so a route handler can name the part type it writes without
+// importing a client module.
+export { composeStreamToDataParts, SPEC_DATA_PART_TYPE } from './core/ai-bridge.js';
 export {
   cutChildCycles,
   cutChildCyclesWithReport,

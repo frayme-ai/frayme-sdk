@@ -201,6 +201,35 @@ describe('FraymeRenderer — interactive prop (B1)', () => {
     expect(onDynamicAction).not.toHaveBeenCalled();
   });
 
+  it('an inert click records nothing, so the control still fires once the renderer turns interactive', () => {
+    const onDynamicAction = vi.fn();
+    const spec = {
+      root: 'b',
+      elements: {
+        b: {
+          type: 'Button',
+          props: { label: 'Go' },
+          on: { commit: { action: 'submit_form', params: { id: '7' }, confirm: false } },
+        },
+      },
+      state: {},
+      actions: { submit_form: { kind: 'agent' } },
+    } as never;
+    const { container, rerender } = render(
+      <FraymeRenderer spec={spec} onDynamicAction={onDynamicAction} interactive={false} />,
+    );
+    const button = () => screen.getByText('Go').closest('button') as HTMLButtonElement;
+    fireEvent.click(button());
+    expect(onDynamicAction).not.toHaveBeenCalled();
+    expect(button().disabled).toBe(false);
+    rerender(<FraymeRenderer spec={spec} onDynamicAction={onDynamicAction} interactive />);
+    expect(container.querySelector('.frayme-root')?.getAttribute('data-interactive')).toBe('true');
+    fireEvent.click(button());
+    expect(onDynamicAction).toHaveBeenCalledTimes(1);
+    // A live press still latches, as before.
+    expect(button().disabled).toBe(true);
+  });
+
   it('default (handler present) forwards the click', () => {
     const onDynamicAction = vi.fn();
     render(

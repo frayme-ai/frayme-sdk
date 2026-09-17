@@ -153,6 +153,13 @@ export interface IntrinsicSlots {
   /** Called by the handlers Proxy as its FIRST statement. Pop-on-consume. */
   take(action: string): IntrinsicEntry | undefined;
   /**
+   * Pop an entry WITHOUT writing the state mirror, for a renderer that is not
+   * interactive. A display-only screen records nothing: a mirror written there
+   * would read as "fired" to the commit latch, and the control would stay
+   * disabled once the screen becomes interactive, though nothing was sent.
+   */
+  drop(action: string): void;
+  /**
    * Drop every entry still pending for THIS element's fire (matched on fid +
    * event + row). Called by `emitWith` once json-render's emit promise settles —
    * see the module header ("NO STALE ENTRIES"). No fid → nothing to match → no-op.
@@ -226,6 +233,9 @@ export function createIntrinsicSlots(
       for (const [action, entry] of slots) {
         if (entry.fid === fid && entry.event === event && (entry.row ?? null) === (row ?? null)) slots.delete(action);
       }
+    },
+    drop(action) {
+      slots.delete(action);
     },
     take(action) {
       const entry = slots.get(action);

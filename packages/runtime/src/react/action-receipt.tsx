@@ -44,9 +44,9 @@ import type { CSSProperties, ReactNode } from 'react';
 import { useId, useMemo } from 'react';
 import type { DynamicActionEvent } from '../core/events.js';
 import { receiptModel, type ReceiptEvent } from '../core/receipt.js';
-import { themeToStyle, type ThemeTokens } from '../core/theme.js';
+import type { ThemeInput, ThemeScheme } from '../core/theme.js';
 import { formatValue } from '../core/thread-text.js';
-import { useFrayme } from './FraymeProvider.js';
+import { useThemeStyle } from './color-scheme.js';
 
 export interface FraymeActionReceiptProps {
   /** The dispatched event (`onDynamicAction`'s argument) — or just its receipt slice. */
@@ -57,7 +57,9 @@ export interface FraymeActionReceiptProps {
    */
   showState?: boolean;
   /** Per-instance theme tokens — same contract as `<FraymeRenderer theme>`; falls back to the provider's. */
-  theme?: ThemeTokens;
+  theme?: ThemeInput;
+  /** Same contract as `<FraymeRenderer scheme>`: a resolved mode adds `frayme-light` / `frayme-dark`. */
+  scheme?: ThemeScheme;
   /** Lands as `data-theme` on the root (`'dark'` / `'light'` / a preset name) — the stylesheet's forced-mode hook. */
   dataTheme?: string;
   /** Extra class on the root (e.g. `frayme-dark`, which the stylesheet also honours). */
@@ -95,20 +97,23 @@ export function FraymeActionReceipt({
   event,
   showState = false,
   theme,
+  scheme,
   dataTheme,
   className,
   omitKeys,
   as = 'section',
   headingLevel = 3,
 }: FraymeActionReceiptProps): ReactNode {
-  const ctx = useFrayme();
   const titleId = useId();
   const model = useMemo(
     () => receiptModel(event, { omitKeys, includeState: showState }),
     [event, omitKeys, showState],
   );
-  // Same resolution as FraymeRenderer: the instance's tokens over the provider's.
-  const style = useMemo(() => themeToStyle(theme ?? ctx.theme) as CSSProperties, [theme, ctx.theme]);
+  // Same resolution as FraymeRenderer (the instance's theme and scheme over the
+  // provider's), through the same hook, so a card beside a render always
+  // paints the same mode with the same tokens.
+  const { style: themeStyle, schemeClass } = useThemeStyle(theme, scheme);
+  const style = themeStyle as CSSProperties;
   const Tag = as as 'section';
   const Heading = `h${headingLevel}` as 'h3';
   // A malformed event with no action has an empty title (core/receipt.ts): no
@@ -116,7 +121,7 @@ export function FraymeActionReceipt({
   const named = model.title !== '';
   return (
     <Tag
-      className={`frayme-root frayme-receipt${className ? ` ${className}` : ''}`}
+      className={`frayme-root frayme-receipt${schemeClass ? ` ${schemeClass}` : ''}${className ? ` ${className}` : ''}`}
       style={style}
       data-theme={dataTheme}
       role={as === 'section' || as === 'div' ? 'group' : undefined}

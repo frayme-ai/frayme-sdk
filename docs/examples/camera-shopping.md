@@ -1,6 +1,6 @@
 # Camera shopping
 
-One price slider live-filters a ratings list and a sortable table — then *Add to cart* triggers a genuine second agent turn.
+One price slider live-filters a ratings list and a sortable table; then *Add to cart* triggers a genuine second agent turn.
 
 ## The ask
 
@@ -19,7 +19,7 @@ The agent researches the market and composes a comparison: five bodies make the 
 
 ## The interesting mechanic: one binding drives two views
 
-The slider writes its bounds into `/priceMin` and `/priceMax`; the ratings list and the `DataTable` both read them. Drag the band and both views thin in real time — entirely inside the renderer, zero round-trips:
+The slider writes its bounds into `/priceMin` and `/priceMax`; the ratings list and the `DataTable` both read them. Drag the band and both views thin in real time, entirely inside the renderer, with zero round-trips:
 
 ```json
 {"op":"add","path":"/elements/price-slider","value":{"type":"RangeSlider","props":{
@@ -35,7 +35,7 @@ This is the shape of most Frayme interactivity: shared state paths instead of wi
 
 ## The follow-up: a real checkout turn
 
-*Add to cart — Sony a6400* is a declared agent action. The agent places the order and answers with a second composition: a success screen, an itemized receipt, and a delivery timeline. In the live demo you can watch the agent's acknowledgment before the new operations stream in.
+*Add to cart* on the Sony a6400 is a declared agent action. The agent places the order and answers with a second composition: a success screen, an itemized receipt, and a delivery timeline. In the live demo you can watch the agent's acknowledgment before the new operations stream in.
 
 ## Compose it yourself
 
@@ -47,7 +47,7 @@ const frayme = new Frayme({ apiKey: process.env.FRAYME_API_KEY });
 const stream = frayme.compose.stream({
   prompt: 'Find me a mirrorless camera under $800.',
   signals: { data_shape: ['table', 'list', 'filters'], density: 'compact' },
-  data: { cameras: [/* the researched bodies — prices, ratings, specs, rendered verbatim */] },
+  data: { cameras: [/* the researched bodies: prices, ratings, specs, rendered verbatim */] },
   actions: [
     {
       name: 'addToCart',
@@ -65,4 +65,4 @@ const stream = frayme.compose.stream({
 
 ## Try it
 
-Open [frayme.ai/examples](https://frayme.ai/examples) and select **Mirrorless under $800**. Drag the price band and watch both views filter — then add the a6400 to your cart.
+Open [frayme.ai/examples](https://frayme.ai/examples) and select **Mirrorless under $800**. Drag the price band and watch both views filter, then add the a6400 to your cart.

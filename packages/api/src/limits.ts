@@ -16,11 +16,23 @@ export const COMPOSE_MAX_OPERATIONS = 200;
 export const CONTEXT_THEME_MAX_CHARS = 40;
 export const CONTEXT_FRAMEWORK_HINT_MAX_CHARS = 60;
 
+/**
+ * Serialized-size ceilings (`JSON.stringify(value).length`) for the free-form
+ * JSON fields. A body over any of them is a 400 before any model call.
+ */
+export const COMPOSE_DATA_MAX_CHARS = 48_000;
+export const PRIOR_SPEC_MAX_CHARS = 48_000;
+export const ACTION_CONTEXT_MAX_CHARS = 16_000;
+
 export const ACTION_NAME_MIN_CHARS = 1;
 export const ACTION_NAME_MAX_CHARS = 60;
 export const ACTION_ROLE_MAX_CHARS = 40;
 export const ACTION_DESCRIPTION_MAX_CHARS = 160;
 export const MAX_ACTIONS_PER_REQUEST = 20;
+
+/** `actions[].requiredItems`: at most this many param names, each at most this long. */
+export const ACTION_REQUIRED_ITEMS_MAX = 20;
+export const ACTION_PARAM_NAME_MAX_CHARS = 60;
 
 /**
  * @deprecated Legacy archetype vocabulary — not part of the compose contract.

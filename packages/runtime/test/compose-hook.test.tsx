@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { Frayme } from '@frayme/api';
 import type { Spec } from '@json-render/core';
-import { useFraymeCompose } from '../src/react/useFraymeCompose.js';
+import { MISSING_CLIENT_MESSAGE, useFraymeCompose, type UseFraymeComposeReturn } from '../src/react/useFraymeCompose.js';
 
 type Handler = (...args: unknown[]) => void;
 
@@ -110,5 +110,92 @@ describe('useFraymeCompose', () => {
   it('throws a setup error when no client is available', () => {
     const { result } = renderHook(() => useFraymeCompose());
     expect(() => result.current.compose({ prompt: 'x' })).rejects.toThrow(/needs a client/);
+  });
+});
+
+describe('useFraymeCompose: snapshots, generation id, and a stream that cannot start', () => {
+  it('hands React a new object for every op, even though the stream reuses one', async () => {
+    const s = fakeStream();
+    const client = fakeClient([s]);
+    const { result } = renderHook(() => useFraymeCompose(client));
+    act(() => {
+      void result.current.compose({ prompt: 'x' });
+    });
+    // The real stream passes its live accumulator, patched in place, on every op.
+    const live = { root: 'a', elements: {} } as unknown as Record<string, unknown>;
+    act(() => s.emit('op', { type: 'op' }, live));
+    const first = result.current.spec;
+    (live.elements as Record<string, unknown>).a = { type: 'Text', props: { text: 'hi' } };
+    act(() => s.emit('op', { type: 'op' }, live));
+    const second = result.current.spec;
+    expect(first).not.toBe(live);
+    expect(second).not.toBe(first);
+    expect(second).toEqual(live);
+    // A snapshot the host kept does not change under it.
+    expect(first).toEqual({ root: 'a', elements: {} });
+  });
+
+  it('exposes the generation id from the first event, keeps it through a restart, clears it on a new compose', async () => {
+    const s1 = fakeStream();
+    const s2 = fakeStream();
+    const client = fakeClient([s1, s2]);
+    const { result } = renderHook(() => useFraymeCompose(client));
+    let p1!: Promise<unknown>;
+    act(() => {
+      p1 = result.current.compose({ prompt: 'x' });
+    });
+    expect(result.current.generationId).toBeUndefined();
+    act(() => s1.emit('started', { type: 'compose.started', generation_id: 'gen_1', model: 'frayme' }));
+    expect(result.current.generationId).toBe('gen_1');
+    act(() => s1.emit('restarted', { type: 'compose.restarted', generation_id: 'gen_1', model: 'fallback', reason: { code: 'x' } }));
+    expect(result.current.generationId).toBe('gen_1');
+    await act(async () => {
+      s1.resolveFinal({ spec: snap('a'), generationId: 'gen_1', model: 'fallback', operationCount: 1, usage: { input_tokens: 1, output_tokens: 1 }, replayed: false });
+      await p1;
+    });
+    expect(result.current.generationId).toBe('gen_1');
+
+    act(() => {
+      void result.current.compose({ prompt: 'y' });
+    });
+    expect(result.current.generationId).toBeUndefined();
+  });
+
+  it('a stream that throws on creation ends in status error, not stuck streaming', async () => {
+    const client = {
+      compose: {
+        stream: () => {
+          throw new TypeError('AbortSignal.any is not a function');
+        },
+      },
+    } as unknown as Frayme;
+    const { result } = renderHook(() => useFraymeCompose(client));
+    let outcome: unknown = 'pending';
+    await act(async () => {
+      outcome = await result.current.compose({ prompt: 'x' });
+    });
+    expect(outcome).toBeUndefined();
+    expect(result.current.status).toBe('error');
+    expect(result.current.error?.message).toContain('AbortSignal.any is not a function');
+  });
+
+  it('a test double written without generationId still satisfies the return type', () => {
+    // Type-level: this file is part of the package type-check, so a required
+    // field added to the interface would fail it here.
+    const double: UseFraymeComposeReturn = {
+      compose: async () => undefined,
+      spec: null,
+      status: 'idle',
+      restartKey: 0,
+      model: undefined,
+      error: undefined,
+      abort: () => {},
+    };
+    expect(double.generationId).toBeUndefined();
+  });
+
+  it('the setup error text is the shared constant', () => {
+    const { result } = renderHook(() => useFraymeCompose());
+    return expect(result.current.compose({ prompt: 'x' })).rejects.toThrow(MISSING_CLIENT_MESSAGE);
   });
 });

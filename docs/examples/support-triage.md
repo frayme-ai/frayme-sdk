@@ -1,18 +1,18 @@
 # Support triage
 
-A working support cockpit — a live notification inbox, a threaded conversation with a rich-text composer, and an agent action that drafts the urgent replies.
+A working support cockpit: a live notification inbox, a threaded conversation with a rich-text composer, and an agent action that drafts the urgent replies.
 
 ## The ask
 
 > Triage my support inbox.
 
-The agent reads the queue — 47 open, 6 urgent, two SLA clocks already red — and composes the cockpit: the live inbox, thread #4821 open underneath, and one button to draft all three urgent replies.
+The agent reads the queue (47 open, 6 urgent, two SLA clocks already red) and composes the cockpit: the live inbox, thread #4821 open underneath, and one button to draft all three urgent replies.
 
 ## What comes back
 
 | Piece | Component | Behavior |
 | --- | --- | --- |
-| The inbox | `NotificationCenter` | Category tabs, mark-as-read, unread-only filter — all live |
+| The inbox | `NotificationCenter` | Category tabs, mark-as-read, unread-only filter; all live |
 | The thread | `CommentThread` | The #4821 duplicate-charge conversation, nested replies |
 | The reply box | `RichComposer` | Rich-text toolbar; *Send reply* queues the draft locally |
 | SLA + volume | `Stat` ×4 + `Progress` | Queue KPIs and the SLA clocks |
@@ -20,7 +20,7 @@ The agent reads the queue — 47 open, 6 urgent, two SLA clocks already red — 
 
 ## The interesting mechanic: three bindings make the inbox real
 
-The `NotificationCenter` is not a mock — its tab, read set, and filter are all state bindings, so every interaction resolves locally:
+The `NotificationCenter` is not a mock. Its tab, read set, and filter are all state bindings, so every interaction resolves locally:
 
 ```json
 {"op":"add","path":"/elements/notif","value":{"type":"NotificationCenter","props":{
@@ -33,13 +33,13 @@ The `NotificationCenter` is not a mock — its tab, read set, and filter are all
     {"key":"features","label":"Feature requests"}
   ],
   "items":[
-    {"id":"t-4821","title":"Meridian Health — charged twice after annual renewal",
+    {"id":"t-4821","title":"Meridian Health: charged twice after annual renewal",
      "category":"billing","timestampLabel":"42m ago","unread":true,"tone":"critical",
      "actions":[{"label":"Open thread","value":"open"},{"label":"Start refund","value":"refund"}]}
   ]}}}
 ```
 
-*(excerpt — items trimmed)*
+*(excerpt: items trimmed)*
 
 Other elements watch the same paths with `visible` conditions: tab to *Billing* and a routing note appears; flip *unread only* and the queue thins; queue a reply and a confirmation shows against `/replyQueued`. Same state, no round-trips.
 
@@ -62,7 +62,7 @@ The `setState` flips the button into its disabled "Drafting…" look instantly; 
 
 ## The follow-up: two full drafts
 
-The agent reads the thread history and answers with a second screen: two complete reply drafts — refund reference, timeline, apology — each with its own approve-and-send button. One declared action produced a whole review workflow.
+The agent reads the thread history and answers with a second screen: two complete reply drafts (refund reference, timeline, apology), each with its own approve-and-send button. One declared action produced a whole review workflow.
 
 ## Compose it yourself
 
@@ -74,7 +74,7 @@ const frayme = new Frayme({ apiKey: process.env.FRAYME_API_KEY });
 const stream = frayme.compose.stream({
   prompt: 'Triage my support inbox.',
   signals: { data_shape: ['feed', 'thread'], density: 'standard' },
-  data: { tickets: [/* subjects, threads, SLA timestamps — rendered verbatim */] },
+  data: { tickets: [/* subjects, threads, SLA timestamps (rendered verbatim) */] },
   actions: [
     {
       name: 'draftReplies',
@@ -88,4 +88,4 @@ const stream = frayme.compose.stream({
 
 ## Try it
 
-Open [frayme.ai/examples](https://frayme.ai/examples) and select **Support triage**. Tab to Billing, mark items read, flip unread-only, queue a reply in the composer — then press *Draft replies to urgent*.
+Open [frayme.ai/examples](https://frayme.ai/examples) and select **Support triage**. Tab to Billing, mark items read, flip unread-only, queue a reply in the composer. Then press *Draft replies to urgent*.

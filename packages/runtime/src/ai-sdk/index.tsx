@@ -14,14 +14,20 @@
  *     message={message}
  *     onDynamicAction={createDynamicActionForwarder({ sendMessage })}
  *   />
+ *
+ * Client side, with the Frayme tools on the host's agent (the tool outputs
+ * carry the screen, and a press goes back as the user's next message):
+ *   {message.parts.map((part, i) => {
+ *     const hit = fraymePart(part, message);
+ *     return hit && <FraymeResult key={i} {...hit} onPress={(e) => sendMessage(pressMessage(e))} />;
+ *   })}
  */
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
 import { SPEC_DATA_PART_TYPE } from '@json-render/core';
 import type { DynamicActionEvent, OnDynamicAction } from '../core/events.js';
-import { paramsWithoutTitleLabel } from '../core/receipt.js';
-import { threadState } from '../core/thread-state.js';
-import { threadText } from '../core/thread-text.js';
+import type { FraymeResultOutput } from '../react/result.js';
+import { pressThreadText } from '../core/press-message.js';
 import { FraymeRenderer, type FraymeRendererProps } from '../react/FraymeRenderer.js';
 import { buildSpecFromParts, type DataPart } from '../react/upstream.js';
 
@@ -42,13 +48,37 @@ export interface FraymeMessageRendererProps extends Omit<FraymeRendererProps, 's
   mode?: FraymeRendererProps['mode'];
 }
 
+/**
+ * The message's `data-spec` parts, deep-copied. `buildSpecFromParts` patches in
+ * place, and a flat part is folded in with `Object.assign`, so every patch after
+ * it wrote INTO that part's own spec: the message in the chat's store changed
+ * under the host, and the next rebuild of the same parts started from the
+ * patched copy and applied each patch a second time. Parts are JSON off the
+ * wire, so the fallbacks only matter for a host that put something else there:
+ * a JSON copy for what structuredClone refuses, then the parts as they are
+ * (the old behaviour) rather than a blank screen.
+ */
+function copySpecParts(parts: DataPart[] | undefined): DataPart[] {
+  if (!Array.isArray(parts)) return [];
+  const specParts = parts.filter((part) => part != null && part.type === SPEC_DATA_PART_TYPE);
+  try {
+    return structuredClone(specParts);
+  } catch {
+    try {
+      return JSON.parse(JSON.stringify(specParts)) as DataPart[];
+    } catch {
+      return specParts;
+    }
+  }
+}
+
 /** Render the json-render spec carried in an AI SDK message's `data-spec` parts. */
 export function FraymeMessageRenderer({
   message,
   mode = 'progressive',
   ...rendererProps
 }: FraymeMessageRendererProps): ReactNode {
-  const spec = useMemo(() => buildSpecFromParts(message.parts ?? []), [message.parts]);
+  const spec = useMemo(() => buildSpecFromParts(copySpecParts(message.parts)), [message.parts]);
   if (!spec) return null;
   return <FraymeRenderer spec={spec} mode={mode} {...rendererProps} />;
 }
@@ -124,22 +154,97 @@ export function createDynamicActionForwarder(
     if (options.onAction) return options.onAction(event); // structured, full event
     const text = options.format
       ? options.format(event.action, event.params, event)
-      : defaultText(event, options.includeState !== false);
+      : pressThreadText(event, options.includeState !== false);
     return options.sendMessage?.({ text }); // text fallback
   };
 }
 
-/**
- * The default `sendMessage` text: the press (`threadText`), then what the user
- * did locally before it (`threadState`), separated by
- * one blank line so a model reading plain text sees two blocks, not one list.
- * The firing control's own mirror entry is excluded: `threadText` just printed
- * it. An empty state block appends nothing, so an event with no state (or
- * nothing in it beyond the press) sends exactly the press text alone.
- */
-function defaultText(event: DynamicActionEvent, includeState: boolean): string {
-  const head = threadText(event.action, paramsWithoutTitleLabel(event));
-  if (!includeState) return head;
-  const tail = threadState(event.state, { exclude: { elementId: event.element_id, verb: event.event } });
-  return tail === '' ? head : `${head}\n\n${tail}`;
+/* ── Frayme tools inside the host's own chat ──────────────────────────────── */
+
+/** The tool names the Frayme agent tools register under. */
+const FRAYME_TOOL_NAMES: ReadonlySet<string> = new Set(['frayme_compose', 'frayme_action']);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
+
+/** The tool a part belongs to: `tool-<name>` for a static tool, `toolName` for a dynamic one. */
+function toolNameOf(part: Record<string, unknown>): string | undefined {
+  const type = part.type;
+  if (type === 'dynamic-tool') return typeof part.toolName === 'string' ? part.toolName : undefined;
+  if (typeof type === 'string' && type.startsWith('tool-')) return type.slice('tool-'.length);
+  return undefined;
+}
+
+/**
+ * Whether a failed Frayme call was followed, in the same message, by another
+ * Frayme call that was not refused: the model tried again, and the old error
+ * would sit above the screen that replaced it. Needs the message's parts; a
+ * caller that passes no message keeps every error.
+ */
+function supersededInMessage(part: Record<string, unknown>, message: { parts?: readonly unknown[] } | undefined): boolean {
+  const parts = message?.parts;
+  if (!Array.isArray(parts)) return false;
+  const at = parts.indexOf(part);
+  if (at < 0) return false;
+  for (let i = at + 1; i < parts.length; i += 1) {
+    const later: unknown = parts[i];
+    if (!isRecord(later)) continue;
+    const name = toolNameOf(later);
+    if (name === undefined || !FRAYME_TOOL_NAMES.has(name)) continue;
+    // Still running, or finished with anything but a refusal.
+    if (later.state === 'input-streaming' || later.state === 'input-available') return true;
+    if (later.state === 'output-available' && !(isRecord(later.output) && later.output.refused === true)) return true;
+  }
+  return false;
+}
+
+/**
+ * What, if anything, a message part has for `<FraymeResult>`:
+ *
+ *  · a `frayme_compose` / `frayme_action` tool part (static `tool-<name>`, or a
+ *    `dynamic-tool` with that `toolName`) in state `output-available` whose
+ *    output is an object with a `status` → `{ output, final }`, where `final`
+ *    is false only for a preliminary (still streaming) output. A refused
+ *    output (`refused: true`, written for the model) is `null`, and so is an
+ *    error the model already retried later in the same message (pass the
+ *    message for that);
+ *  · a text part of a USER message whose `metadata.frayme` is an event with an
+ *    `action` name (what `pressMessage` sends) → `{ press }`;
+ *  · anything else → `null`.
+ *
+ * Reads structurally, so it needs no `ai` import and never throws on a part it
+ * does not recognise. A press whose `params` is not an object is handed on with
+ * `params: {}`; the output is handed on as it is, since `<FraymeResult>` reads
+ * it defensively and never mutates it. A user message carries one text part
+ * per `pressMessage`, so one press yields one card.
+ */
+export function fraymePart(
+  part: unknown,
+  message?: { role?: string; metadata?: unknown; parts?: readonly unknown[] },
+): { output: FraymeResultOutput; final: boolean } | { press: DynamicActionEvent } | null {
+  if (!isRecord(part)) return null;
+
+  const toolName = toolNameOf(part);
+  if (toolName !== undefined) {
+    if (!FRAYME_TOOL_NAMES.has(toolName) || part.state !== 'output-available') return null;
+    const output = part.output;
+    if (!isRecord(output) || typeof output.status !== 'string') return null;
+    // A refusal is the tool talking to the model; the user has nothing to see.
+    if (output.refused === true) return null;
+    if (output.status === 'error' && supersededInMessage(part, message)) return null;
+    return { output: output as unknown as FraymeResultOutput, final: part.preliminary !== true };
+  }
+
+  if (part.type === 'text' && message?.role === 'user' && isRecord(message.metadata)) {
+    const event = message.metadata.frayme;
+    if (!isRecord(event) || typeof event.action !== 'string') return null;
+    const press = (isRecord(event.params) ? event : { ...event, params: {} }) as unknown as DynamicActionEvent;
+    return { press };
+  }
+
+  return null;
+}
+
+// The press message is pure and lives in the core, so a server can write it too.
+export { pressMessage, type PressMessageOptions } from '../core/press-message.js';
