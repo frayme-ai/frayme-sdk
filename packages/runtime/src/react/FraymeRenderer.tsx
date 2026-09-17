@@ -23,9 +23,10 @@ import { createIntrinsicSlots, mergeIntrinsicParams, JSON_RENDER_BUILTIN_ACTIONS
 import { DEFAULT_DYNAMIC_ACTION_TYPES, bindingDispatches, decideDynamicDispatch } from '../core/dynamic-gate.js';
 import { derefItemParams } from '../core/item-params.js';
 import { mergeOnRehydrate, resolveInitialState } from '../core/state-policy.js';
-import { themeToStyle, type ThemeTokens } from '../core/theme.js';
+import type { ThemeInput, ThemeScheme } from '../core/theme.js';
 import { validateFraymeSpec } from '../core/validate.js';
 import { useFrayme } from './FraymeProvider.js';
+import { useThemeStyle } from './color-scheme.js';
 import { isDev } from './dev.js';
 import { DynamicGateContext } from './dynamic-gate.js';
 import { ElementTypesContext, ElementChildrenContext } from './element-types.js';
@@ -109,7 +110,18 @@ export interface FraymeRendererProps {
    * or bare simply contributes nothing.
    */
   actionContract?: readonly ActionDecl[];
-  theme?: ThemeTokens;
+  /**
+   * Per-instance tokens (falls back to the provider's): one set for both
+   * modes, or a `{ light, dark }` pair from which the resolved mode picks.
+   */
+  theme?: ThemeInput;
+  /**
+   * `light` / `dark` force a mode and add `frayme-light` / `frayme-dark` to the
+   * root; `system` follows the OS. Falls back to the provider's. Unset with a
+   * plain token set keeps today's behaviour (the stylesheet follows the OS, no
+   * class); unset with a pair follows the OS so the pair can pick a half.
+   */
+  scheme?: ThemeScheme;
   /**
    * Bump to discard ALL client state (remounts the state tree).
    * `useFraymeCompose` bumps this automatically on `compose.restarted`.
@@ -445,6 +457,7 @@ export function FraymeRenderer({
   dynamicActionTypes,
   actionContract,
   theme,
+  scheme,
   restartKey = 0,
   initialState,
   loading,
@@ -578,9 +591,11 @@ export function FraymeRenderer({
         if (typeof name !== 'string') return undefined;
         // Inert paths still CONSUME their pending intrinsic entry, so a denied
         // fire can't leak a stale payload into the next dispatch of this name.
+        // A display-only screen drops it unrecorded: a mirror written here would
+        // latch the control for when the screen turns interactive.
         if (!interactiveRef.current)
           return () => {
-            slotsRef.current?.take(name);
+            slotsRef.current?.drop(name);
             return undefined;
           }; // display-only
         const actionSpec = resolveSpec(name);
@@ -695,7 +710,7 @@ export function FraymeRenderer({
     [rawSpec, mode, skipValidation, loading, catalog],
   );
 
-  const baseStyle = useMemo(() => themeToStyle(theme ?? ctx.theme), [theme, ctx.theme]);
+  const { style: baseStyle, schemeClass } = useThemeStyle(theme, scheme);
 
   /**
    * DRESS THE CONFIRM IN THE SPEC'S OWN COLOURS.
@@ -837,7 +852,7 @@ export function FraymeRenderer({
   })();
   return (
     <div
-      className={`frayme-root${rootPadded ? '' : ' fr-page-pad'}${className ? ` ${className}` : ''}`}
+      className={`frayme-root${rootPadded ? '' : ' fr-page-pad'}${schemeClass ? ` ${schemeClass}` : ''}${className ? ` ${className}` : ''}`}
       style={style}
       data-interactive={isInteractive ? 'true' : 'false'}
     >

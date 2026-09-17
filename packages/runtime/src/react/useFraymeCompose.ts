@@ -3,6 +3,7 @@ import {
   APIUserAbortError,
   FraymeError,
   type ComposeRequest,
+  type ComposeStream,
   type Frayme,
   type FinalSpec,
   type RequestMethodOptions,
@@ -12,6 +13,11 @@ import { useCallback, useRef, useState } from 'react';
 import { useFrayme } from './FraymeProvider.js';
 
 export type ComposeStatus = 'idle' | 'streaming' | 'restarting' | 'complete' | 'error';
+
+/** Shared with useFraymeScreen, so both entry points fail with the same guidance. */
+export const MISSING_CLIENT_MESSAGE =
+  'useFraymeCompose needs a client. Pass one to the hook, or set `client` or `endpoint` on <FraymeProvider> ' +
+  '(in the browser, use keyless proxy mode: new Frayme({ apiKey: null, baseURL: "/api/your-proxy" })).';
 
 export interface UseFraymeComposeReturn {
   /** Start (or replace) a streaming composition. Resolves with the validated final spec. */
@@ -26,8 +32,34 @@ export interface UseFraymeComposeReturn {
   restartKey: number;
   /** The model that produced the current attempt (changes on restarts). */
   model: string | undefined;
+  /**
+   * The generation the current compose belongs to: known from the stream's
+   * first event, confirmed on completion, cleared when a new compose starts.
+   * A restart keeps it (a restart is a new attempt, not a new generation).
+   * Optional in the type so a host's own implementation or test double of
+   * this interface, written before the field existed, still compiles.
+   */
+  generationId?: string;
   error: FraymeError | undefined;
   abort: () => void;
+}
+
+/**
+ * A new object for every op. The stream's `op` snapshot is its live
+ * accumulator, patched in place, so the SAME object arrives on every op. React
+ * skips a state update whose value is the object it already holds, and the
+ * renderer caches on spec identity, so passing it straight through rendered the
+ * first op and then stopped updating; even a re-render for another reason kept
+ * the renderer's cached view of that first op. A deep copy also means a
+ * snapshot the host kept never changes under it. The shallow copy is only the
+ * fallback for a spec structuredClone refuses, which must not throw here.
+ */
+function freshSnapshot(snapshot: Spec): Spec {
+  try {
+    return structuredClone(snapshot);
+  } catch {
+    return { ...snapshot };
+  }
 }
 
 /**
@@ -44,6 +76,8 @@ export function useFraymeCompose(clientOverride?: Frayme): UseFraymeComposeRetur
   const [status, setStatus] = useState<ComposeStatus>('idle');
   const [restartKey, setRestartKey] = useState(0);
   const [model, setModel] = useState<string | undefined>(undefined);
+  // Named apart from the `generationId` local read off the final envelope below.
+  const [currentGenerationId, setGenerationId] = useState<string | undefined>(undefined);
   const [error, setError] = useState<FraymeError | undefined>(undefined);
   const streamRef = useRef<{ abort: () => void } | null>(null);
 
@@ -53,26 +87,39 @@ export function useFraymeCompose(clientOverride?: Frayme): UseFraymeComposeRetur
       options?: RequestMethodOptions,
     ): Promise<FinalSpec | undefined> => {
       if (!client) {
-        throw new Error(
-          'useFraymeCompose needs a client — pass one to the hook or set `client` on <FraymeProvider> ' +
-            '(use keyless proxy mode in the browser: new Frayme({ apiKey: null, baseURL: "/api/your-proxy" })).',
-        );
+        throw new Error(MISSING_CLIENT_MESSAGE);
       }
       streamRef.current?.abort();
       setSpec(null);
       setError(undefined);
+      setGenerationId(undefined);
       setStatus('streaming');
 
-      const stream = client.compose.stream(request, options);
+      let stream: ComposeStream;
+      try {
+        stream = client.compose.stream(request, options);
+      } catch (err) {
+        // A stream that cannot even start (an engine without AbortSignal.any,
+        // say) must still leave the hook in a state the UI can show, not stuck
+        // on 'streaming' behind an unhandled rejection.
+        streamRef.current = null;
+        setError(err instanceof FraymeError ? err : new FraymeError(String(err)));
+        setStatus('error');
+        return undefined;
+      }
       streamRef.current = stream;
       // Stale-stream guard: a replaced/aborted stream must never clobber the
       // state of the one that superseded it.
       const isCurrent = (): boolean => streamRef.current === stream;
 
-      stream.on('started', (e) => isCurrent() && setModel(e.model));
+      stream.on('started', (e) => {
+        if (!isCurrent()) return;
+        setModel(e.model);
+        setGenerationId(e.generation_id);
+      });
       stream.on('op', (_op, snapshot) => {
         if (!isCurrent()) return;
-        setSpec(snapshot);
+        setSpec(freshSnapshot(snapshot));
         setStatus('streaming');
       });
       stream.on('restarted', (e) => {
@@ -95,6 +142,7 @@ export function useFraymeCompose(clientOverride?: Frayme): UseFraymeComposeRetur
         if (generationId && finalSpec.generation_id == null) finalSpec.generation_id = generationId;
         setSpec(final.spec);
         setModel(final.model);
+        if (generationId) setGenerationId(generationId);
         setStatus('complete');
         return final;
       } catch (err) {
@@ -113,5 +161,5 @@ export function useFraymeCompose(clientOverride?: Frayme): UseFraymeComposeRetur
 
   const abort = useCallback(() => streamRef.current?.abort(), []);
 
-  return { compose, spec, status, restartKey, model, error, abort };
+  return { compose, spec, status, restartKey, model, generationId: currentGenerationId, error, abort };
 }

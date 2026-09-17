@@ -25,6 +25,8 @@ import {
   ACTION_DESCRIPTION_MAX_CHARS,
   ACTION_NAME_MAX_CHARS,
   ACTION_NAME_MIN_CHARS,
+  ACTION_PARAM_NAME_MAX_CHARS,
+  ACTION_REQUIRED_ITEMS_MAX,
   ACTION_ROLE_MAX_CHARS,
   COMPOSE_MAX_OPERATIONS,
   COMPOSE_MIN_OPERATIONS,
@@ -126,6 +128,7 @@ const everyToolKeyAsWire: ComposeRequest = {
       name: 'choosePlan',
       role: 'Choose',
       params: { type: 'object', properties: { plan: { type: 'string' } }, required: ['plan'] },
+      requiredItems: ['plan'],
       live: false,
       confirm: { tone: 'danger', body: 'This cannot be undone.' },
       required: true,
@@ -181,6 +184,9 @@ const everyActionToolKey: ActionToolInput = {
   description: 'User chose a plan.',
   generation_id: 'gen_parity',
   prompt: 'User chose Pro — show the checkout summary.',
+  data: { plan: 'Pro', price: '$99/mo' },
+  actions: [{ name: 'confirmCheckout', role: 'Confirm', required: true }],
+  signals: { data_shape: ['form'], density: 'compact' },
 };
 
 /* Type-level assertions (no runtime cost): the tool input types are assignable
@@ -193,12 +199,18 @@ const _toolSignalsAreWireSignals: NonNullable<ComposeRequest['signals']> = {} as
 const _toolActionIsAWireAction: ComposeAction = {} as NonNullable<ComposeToolInput['actions']>[number];
 const _forwardedEventIsAWireContext: ComposeActionContext = {} as Omit<
   ActionToolInput,
-  'prompt' | 'label' | 'description'
+  'prompt' | 'label' | 'description' | 'data' | 'actions' | 'signals'
+>;
+/* The next-screen inputs frayme_action forwards are top-level request fields. */
+const _actionToolNextScreenIsWire: Pick<ComposeRequest, 'data' | 'actions' | 'signals'> = {} as Pick<
+  ActionToolInput,
+  'data' | 'actions' | 'signals'
 >;
 void _toolInputIsAWireRequest;
 void _toolSignalsAreWireSignals;
 void _toolActionIsAWireAction;
 void _forwardedEventIsAWireContext;
+void _actionToolNextScreenIsWire;
 
 // ---------------------------------------------------------------------------
 // 1. tool schema ⊆ wire type — the literals above carry every tool key.
@@ -308,6 +320,21 @@ describe('compose tool actions[] item ⊆ openapi.json ComposeAction', () => {
     expect(schema('ComposeAction').required).toEqual(['name']);
   });
 
+  it('requiredItems caps match the server: at most 20 names, each at most 60 chars', () => {
+    const requiredItems = schema('ComposeAction').properties!.requiredItems!;
+    expect(requiredItems.type).toBe('array');
+    expect(requiredItems.maxItems).toBe(ACTION_REQUIRED_ITEMS_MAX);
+    expect(requiredItems.items!.maxLength).toBe(ACTION_PARAM_NAME_MAX_CHARS);
+    const item = composeInputSchema.shape.actions.unwrap().element.shape.requiredItems;
+    const within = { name: 'a', requiredItems: Array.from({ length: ACTION_REQUIRED_ITEMS_MAX }, () => 'p'.repeat(ACTION_PARAM_NAME_MAX_CHARS)) };
+    expect(item).toBeDefined();
+    expect(composeInputSchema.safeParse({ prompt: 'x', actions: [within] }).success).toBe(true);
+    const tooMany = { name: 'a', requiredItems: Array.from({ length: ACTION_REQUIRED_ITEMS_MAX + 1 }, () => 'p') };
+    expect(composeInputSchema.safeParse({ prompt: 'x', actions: [tooMany] }).success).toBe(false);
+    const tooLong = { name: 'a', requiredItems: ['p'.repeat(ACTION_PARAM_NAME_MAX_CHARS + 1)] };
+    expect(composeInputSchema.safeParse({ prompt: 'x', actions: [tooLong] }).success).toBe(false);
+  });
+
   it('confirm is boolean | object, as the tool sends it', () => {
     const confirm = schema('ComposeAction').properties!.confirm!;
     const types = (confirm.oneOf ?? []).map((s) => s.type).sort();
@@ -321,7 +348,8 @@ describe('compose tool actions[] item ⊆ openapi.json ComposeAction', () => {
 
 describe('frayme_action input ⊆ openapi.json FraymeActionInput / ComposeActionContext', () => {
   it('FraymeActionInput declares exactly the keys the tool accepts', () => {
-    expect(propertyKeys(schema('FraymeActionInput')).sort()).toEqual([...actionToolKeys].sort());
+    const documented = propertyKeys(schema('FraymeActionInput'));
+    expect([...documented].sort()).toEqual([...actionToolKeys].sort());
     expect(schema('FraymeActionInput').required).toEqual(['action']);
   });
 
@@ -352,6 +380,11 @@ describe('frayme_action input ⊆ openapi.json FraymeActionInput / ComposeAction
     }
     // And nothing the tool accepts but does not forward leaks onto the wire.
     for (const key of ['prompt', 'label', 'description']) expect(ctxKeys).not.toContain(key);
+    // The next screen's inputs ride at the top level, never inside action_context.
+    for (const key of ['data', 'actions', 'signals']) {
+      expect(ctxKeys).not.toContain(key);
+      expect(body[key]).toEqual(everyActionToolKey[key as 'data' | 'actions' | 'signals']);
+    }
   });
 });
 

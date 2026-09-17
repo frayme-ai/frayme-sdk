@@ -1,13 +1,13 @@
 # Custom components
 
-Bring your own components (BYOC): teach Frayme a component it doesn't have, let the model compose with it, and render it with your own React code — validated end-to-end like the built-in 189.
+Bring your own components (BYOC): teach Frayme a component it doesn't have, let the model compose with it, and render it with your own React code. Your component is validated end-to-end like the built-in 189.
 
 ## How BYOC works
 
 A custom component is split across two planes:
 
-- **The manifest** — a serializable description (name, docs, constrained prop schema, events, example). This is all Frayme ever sees: it teaches the model when to use the component, constrains what specs may contain, and generates the prop types your code implements.
-- **The component** — your React code, which never leaves your app.
+- **The manifest**: a serializable description (name, docs, constrained prop schema, events, example). This is all Frayme ever sees. It teaches the model when to use the component, constrains what specs may contain, and generates the prop types your code implements.
+- **The component**: your React code, which never leaves your app.
 
 The flow is: `defineFraymeComponent` compiles and lints the manifest → the manifest rides the compose request in `custom_components` → the returned spec may use your component → `createCustomComponents` wires your React code into the renderer.
 
@@ -50,8 +50,8 @@ export const SeatMapManifest = defineFraymeComponent({
 | Rule | Requirement |
 | --- | --- |
 | `name` | PascalCase, `^[A-Z][A-Za-z0-9]{2,39}$`; unique vs the built-in catalog; `Frayme*`/`Json*` prefixes reserved |
-| `description` | ≥80 chars and ≥2 sentences — this is the model's "when to use this" signal |
-| `props` | 1–30 props from a **closed kind vocabulary**: `string`, `text`, `number`, `boolean`, `enum`, `color`, `dimension`, `count`, `icon`, plus `array`/`object` of scalars (no deeper nesting). Every prop's `doc` ≥40 chars |
+| `description` | ≥80 chars and ≥2 sentences: this is the model's "when to use this" signal |
+| `props` | 1-30 props from a **closed kind vocabulary**: `string`, `text`, `number`, `boolean`, `enum`, `color`, `dimension`, `count`, `icon`, plus `array`/`object` of scalars (no deeper nesting). Every prop's `doc` ≥40 chars |
 | `events` | A subset of the 8 canonical verbs: `commit` `select` `change` `dismiss` `search` `sort` `page` `move`. Each `eventsDoc` entry ≥20 chars |
 | `example` | **Required**, and must pass the compiled prop schema |
 | Size | Serialized manifest ≤6 KB; its model-facing slice ≤1,600 chars |
@@ -67,7 +67,7 @@ const stream = frayme.compose.stream({
 });
 ```
 
-Up to 20 manifests per request (plan limits may be lower). The server re-runs the same lint your client ran — a bad manifest is a `400 INVALID_MANIFEST`, and manifests whose combined model-facing slices exceed the 12,000-char per-request budget are a `400 CUSTOM_SLICE_TOO_LARGE`. Specs that come back are validated against the union of the built-in catalog and your manifests, including your components' props.
+Up to 20 manifests per request (plan limits may be lower). The server re-runs the same lint your client ran: a bad manifest is a `400 INVALID_MANIFEST`, and manifests whose combined model-facing slices exceed the 12,000-char per-request budget are a `400 CUSTOM_SLICE_TOO_LARGE`. Specs that come back are validated against the union of the built-in catalog and your manifests, including your components' props.
 
 ## 3. Render it
 
@@ -106,16 +106,16 @@ Both props matter: `components` merges your renderer in, and `catalog` is the bu
 
 What the wrapper guarantees around your code:
 
-- **Props are gated client-side too**: unknown keys are stripped and invalid values are dropped to `null` — your component never crashes on a bad prop and the element is never dropped.
-- **Custom components are leaf components** — they receive `{ props, emit }` only, never children.
+- **Props are gated client-side too**: unknown keys are stripped and invalid values are dropped to `null`. Your component never crashes on a bad prop and the element is never dropped.
+- **Custom components are leaf components**: they receive `{ props, emit }` only, never children.
 - **`emit` is checked in dev**: emitting an undeclared verb, or a declared verb the spec didn't bind, logs a console warning so dead wiring surfaces early.
-- Add `clientOnly: true` to an entry if the component touches `window`/`document` — it renders a neutral skeleton during SSR and mounts on the client.
+- Add `clientOnly: true` to an entry if the component touches `window`/`document`; the wrapper then renders a neutral skeleton during SSR and mounts the real component on the client.
 
 {% hint style="info" %}
-Write prop docs and the description for the model, not for humans reading source. They are the only thing steering when and how your component gets used — a vague doc produces vague usage.
+Write prop docs and the description for the model, not for humans reading source. They are the only thing steering when and how your component gets used: a vague doc produces vague usage.
 {% endhint %}
 
 ## Next steps
 
-- [Rendering](rendering.md) — the `components` and `catalog` props in context
-- [State and actions](state-and-actions.md) — where your emitted events end up
+- [Rendering](rendering.md): the `components` and `catalog` props in context
+- [State and actions](state-and-actions.md): where your emitted events end up

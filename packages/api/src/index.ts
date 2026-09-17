@@ -70,7 +70,13 @@ export {
   ACTION_NAME_MAX_CHARS,
   ACTION_ROLE_MAX_CHARS,
   MAX_ACTIONS_PER_REQUEST,
+  COMPOSE_DATA_MAX_CHARS,
+  PRIOR_SPEC_MAX_CHARS,
+  ACTION_CONTEXT_MAX_CHARS,
 } from './limits.js';
+
+export { fitContinuation, jsonSize } from './fit.js';
+export type { FitContinuationInput, FitContinuationResult, FraymeTrimmed } from './fit.js';
 
 export { VERSION } from './version.js';
 

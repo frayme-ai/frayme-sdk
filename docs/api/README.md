@@ -1,6 +1,6 @@
 # API reference
 
-The Frayme API is a small REST surface — three endpoints — that turns a natural-language prompt into a validated, interactive UI spec.
+The Frayme API is a small REST surface (three endpoints) that turns a natural-language prompt into a validated, interactive UI spec.
 
 ## Base URL
 
@@ -43,7 +43,7 @@ Every non-streaming response wraps its payload in a common envelope:
 { "success": false, "error": { "message": "…", "code": "RATE_LIMITED" } }
 ```
 
-Branch on `error.code`, not the HTTP status — two distinct conditions share status 429. The full taxonomy is in [errors](errors.md).
+Branch on `error.code`, not the HTTP status, because two distinct conditions share status 429. The full taxonomy is in [errors](errors.md).
 
 One convention to know: `POST /v1/compose` speaks `snake_case` on the wire; `GET /v1/me` responds in `camelCase`. Each endpoint page shows its exact shapes.
 
@@ -53,27 +53,27 @@ One convention to know: `POST /v1/compose` speaks `snake_case` on the wire; `GET
 
 ## The model
 
-Frayme runs its own model, purpose-built for composing interfaces. Every spec is validated against the 189-component catalog before it renders or bills, and weak generations are automatically retried on a stronger model. The `model` field in responses is an opaque identifier — treat it as a label for logging, never as a contract.
+Frayme runs its own model, purpose-built for composing interfaces. Every spec is validated against the 189-component catalog before it renders or bills, and weak generations are automatically retried on a stronger model. The `model` field in responses is an opaque identifier: treat it as a label for logging, never as a contract.
 
 ## Billing
 
-You are billed one generation per **validated success** — a compose that ends in `compose.completed` (or a 200 envelope). Failures of any kind are free, and [idempotent replays](idempotency.md) are free. See [rate limits](rate-limits.md) for quotas.
+You are billed one generation per **validated success**: a compose that ends in `compose.completed` (or a 200 envelope). Failures of any kind are free, and [idempotent replays](idempotency.md) are free. See [rate limits](rate-limits.md) for quotas.
 
 ## Versioning stance
 
 - The API is path-versioned. Breaking changes get a new version path; `/v1` stays stable.
-- **Responses are additive.** New fields, event types, and error codes may appear at any time — ignore response fields you don't recognize.
+- **Responses are additive.** New fields, event types, and error codes may appear at any time. Ignore response fields you don't recognize.
 - **Requests are strict.** Unknown request fields are rejected with `400 BAD_REQUEST` (a typo never silently does nothing).
 - `model` values are opaque and may change without notice.
 
 ## OpenAPI
 
-The machine-readable contract ships with these docs as [`openapi.json`](openapi.json) and is served at [`https://api.frayme.ai/v1/openapi.json`](https://api.frayme.ai/v1/openapi.json) — use it for codegen in languages the [SDK](../sdk/api.md) doesn't cover.
+The machine-readable contract ships with these docs as [`openapi.json`](openapi.json) and is served at [`https://api.frayme.ai/v1/openapi.json`](https://api.frayme.ai/v1/openapi.json). Use it for codegen in languages the [SDK](../sdk/api.md) doesn't cover.
 
 ## In this section
 
-- [Compose](compose.md) — the endpoint, field by field
-- [Me and health](me-and-health.md) — key verification and liveness
-- [Errors](errors.md) — the code-keyed taxonomy
-- [Rate limits](rate-limits.md) — burst limits and monthly quotas
-- [Idempotency](idempotency.md) — safe retries that never double-bill
+- [Compose](compose.md): the endpoint, field by field
+- [Me and health](me-and-health.md): key verification and liveness
+- [Errors](errors.md): the code-keyed taxonomy
+- [Rate limits](rate-limits.md): burst limits and monthly quotas
+- [Idempotency](idempotency.md): safe retries that never double-bill

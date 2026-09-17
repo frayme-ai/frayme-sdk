@@ -1,6 +1,6 @@
 {
   "name": "@frayme/api",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Frayme API client — zero-dependency, fetch-based, streaming generative-UI compose for Node, edge, Bun, Deno, and Workers.",
   "homepage": "https://frayme.ai",
   "keywords": [
@@ -36,6 +36,18 @@
       "types": "./dist/tools/index.d.ts",
       "default": "./dist/tools/index.js"
     },
+    "./agent": {
+      "types": "./dist/agent/index.d.ts",
+      "default": "./dist/agent/index.js"
+    },
+    "./ai-sdk": {
+      "types": "./dist/ai-sdk/index.d.ts",
+      "default": "./dist/ai-sdk/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "default": "./dist/server/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -57,13 +69,20 @@
   },
   "peerDependencies": {
     "@json-render/core": "^0.19.0",
-    "zod": "^4.0.0"
+    "zod": "^4.0.0",
+    "ai": "^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "ai": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@json-render/core": "^0.19.0",
-    "zod": "^4.0.0",
+    "ai": "^6.0.0",
     "tsdown": "^0.22.2",
     "typescript": "^5.3.0",
-    "vitest": "^3.2.6"
+    "vitest": "^3.2.6",
+    "zod": "^4.0.0"
   }
 }

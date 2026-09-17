@@ -67,6 +67,12 @@ export const ERROR_CODE_TO_STATUS: Record<string, number> = {
   INTERNAL_SERVER_ERROR: 500,
   COMPOSITION_FAILED: 502,
   MODEL_UNAVAILABLE: 503,
+  // The codes that share a status with one above come after it, so the first
+  // code listed for a status stays that status's general code.
+  SERVICE_UNAVAILABLE: 503,
+  INVALID_MANIFEST: 400,
+  CUSTOM_SLICE_TOO_LARGE: 400,
+  FEATURE_LIMIT: 403,
 };
 
 export function castError(

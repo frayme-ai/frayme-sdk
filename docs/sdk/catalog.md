@@ -1,6 +1,6 @@
 # @frayme/catalog
 
-The component vocabulary a Frayme spec may use — 189 components as Zod schemas — plus the public validation surface, the BYOC manifest kernel, and the canonical event contract.
+The component vocabulary a Frayme spec may use (189 components as Zod schemas), plus the public validation surface, the BYOC manifest kernel, and the canonical event contract.
 
 ```bash
 npm i @frayme/catalog
@@ -15,7 +15,7 @@ import { fraymeCatalog, CATALOG_COMPONENT_COUNT, CATALOG_VERSION } from '@frayme
 
 const result = fraymeCatalog.validate(spec); // { success, data?, error? }
 
-CATALOG_COMPONENT_COUNT; // 189 — derived from the catalog, never hardcoded
+CATALOG_COMPONENT_COUNT; // 189: derived from the catalog, never hardcoded
 CATALOG_VERSION;         // 'frayme-0.18.0'
 ```
 
@@ -40,12 +40,12 @@ if (!r.valid) console.error(r.failureCategory, r.errors);
 | `validateOps(opsJsonl, opts?)` | Convenience: `validateSpec(compileOps(opsJsonl))`. |
 | `validateManifestProps(spec, manifests)` | BYOC: validate the props of every custom-typed element against its manifest's compiled schema. |
 
-`validateSpec` and `validateOps` return an `OpsValidationResult` — `{ valid, errors, warnings, spec?, failureCategory? }`, with `spec` set only on success. `compileOps` returns `{ spec }` or `{ failure }`.
+`validateSpec` and `validateOps` return an `OpsValidationResult` (`{ valid, errors, warnings, spec?, failureCategory? }`), with `spec` set only on success. `compileOps` returns `{ spec }` or `{ failure }`.
 
 `ValidateOptions`:
 
-- `resolution: true` — additionally run the render-resolution gate (binding syntax, visibility directives, action kinds, value-channel safety). Off by default; authoring and CI pipelines turn it on.
-- `catalog` — validate against a [union catalog](#byoc-authoring) instead of the built-in singleton.
+- `resolution: true` additionally runs the render-resolution gate (binding syntax, visibility directives, action kinds, value-channel safety). Off by default; authoring and CI pipelines turn it on.
+- `catalog`: validate against a [union catalog](#byoc-authoring) instead of the built-in singleton.
 
 Failed results carry a `FailureCategory` so you can track which kinds of mistakes occur:
 
@@ -59,7 +59,7 @@ The entrypoint also exports the value-channel guards used across the SDK (`safeC
 
 ## BYOC authoring
 
-A custom component is described by a manifest — the only thing Frayme sees. Your React code stays in your app; the manifest teaches the composer, constrains the validator, and generates the props types your component honours.
+A custom component is described by a manifest: the only thing Frayme sees. Your React code stays in your app; the manifest teaches the composer, constrains the validator, and generates the props types your component honours.
 
 ```ts
 import { defineFraymeComponent } from '@frayme/catalog';
@@ -87,45 +87,45 @@ export const SeatMapManifest = defineFraymeComponent({
 });
 ```
 
-Prop kinds are a closed vocabulary — `string`, `text`, `number`, `boolean`, `enum`, `color`, `dimension`, `count`, `icon`, plus one level of `array` / `object` containers — compiled to the same Zod atoms the built-ins use, so `safeColor` / `safeDimension` gate automatically. Custom components are leaf components (no children). `defineFraymeComponent` lints the manifest (a `ManifestLintError` names the rule) and returns a `CompiledManifest`:
+Prop kinds are a closed vocabulary (`string`, `text`, `number`, `boolean`, `enum`, `color`, `dimension`, `count`, `icon`, plus one level of `array` / `object` containers), compiled to the same Zod atoms the built-ins use, so `safeColor` / `safeDimension` gate automatically. Custom components are leaf components (no children). `defineFraymeComponent` lints the manifest (a `ManifestLintError` names the rule) and returns a `CompiledManifest`:
 
 | Member | Description |
 | --- | --- |
 | `manifest` | The original manifest (literal-typed). Send it as `custom_components` on a compose request. |
 | `zod` | The compiled props schema, shape-identical to a built-in catalog entry. |
-| `version` | Content hash of the canonical manifest — a stable identity token for change detection. |
-| `promptChars` | Measured size of the manifest's prompt slice — your budget signal. |
+| `version` | Content hash of the canonical manifest: a stable identity token for change detection. |
+| `promptChars` | Measured size of the manifest's prompt slice: your budget signal. |
 | `validateProps(props)` | Check a props object against the compiled schema. |
-| `cleanProps(props)` | Strip-mode cleaner: unknown keys removed, invalid values dropped to `null` — never a crash. |
+| `cleanProps(props)` | Strip-mode cleaner: unknown keys removed, invalid values dropped to `null`, never a crash. |
 
-`extendCatalog(manifests)` builds a `FraymeCatalogUnion` — built-ins ∪ your manifests — whose `.validate()` plugs into `validateSpec({ catalog })` and `<FraymeRenderer catalog>`. On the rendering side, pair manifests with your components via [`createCustomComponents`](runtime.md#custom-components-byoc); the full walkthrough is the [custom components guide](../guides/custom-components.md).
+`extendCatalog(manifests)` builds a `FraymeCatalogUnion` (built-ins ∪ your manifests) whose `.validate()` plugs into `validateSpec({ catalog })` and `<FraymeRenderer catalog>`. On the rendering side, pair manifests with your components via [`createCustomComponents`](runtime.md#custom-components-byoc); the full walkthrough is the [custom components guide](../guides/custom-components.md).
 
 ## The event contract
 
-Every interaction a spec can emit collapses into 8 canonical verbs — exported as `CANONICAL_EVENTS`:
+Every interaction a spec can emit collapses into 8 canonical verbs, exported as `CANONICAL_EVENTS`:
 
 | Verb | Meaning |
 | --- | --- |
-| `commit` | The primary affordance fired — a CTA press, Enter in an input, a form submit. |
+| `commit` | The primary affordance fired: a CTA press, Enter in an input, a form submit. |
 | `select` | Pick an item from a set (row, date, option, menu item). |
 | `change` | A value or disclosure state changed. |
 | `dismiss` | Close, discard, remove, or clear. |
 | `search` | Query-text input for filtering. |
 | `sort` | Request a sort column/direction. |
 | `page` | Pagination change. |
-| `move` | Reposition — reorder, drag, resize. |
+| `move` | Reposition: reorder, drag, resize. |
 
-`EVENT_CONTRACT` is the machine-readable version: per verb, a description plus the documented payload keys the runtime intrinsically attaches (e.g. `commit` may carry `value`, `fields`, `label`, `index`). It is the same data the `frayme_compose` tool definition embeds, and the runtime's payload types are conformance-tested against it — the documented contract cannot drift from the implemented one.
+`EVENT_CONTRACT` is the machine-readable version: per verb, a description plus the documented payload keys the runtime intrinsically attaches (e.g. `commit` may carry `value`, `fields`, `label`, `index`). It is the same data the `frayme_compose` tool definition embeds, and the runtime's payload types are conformance-tested against it. The documented contract cannot drift from the implemented one.
 
 Helpers: `canonicalize(name)` maps legacy event names to their verb (`press` → `commit`, `selectRow` → `select`); `isCanonical(name)` tests membership; `EVENT_ALIASES` is the full mapping.
 
-`IconName` exports the closed icon vocabulary — 280 glyph names, matched exactly by the runtime's icon registry.
+`IconName` exports the closed icon vocabulary: 280 glyph names, matched exactly by the runtime's icon registry.
 
 ## Version policy
 
 Two versions travel with the package, deliberately decoupled:
 
-- **npm version** (`0.4.0`) — the JavaScript API surface. Semver over exports and types.
-- **`CATALOG_VERSION`** (`'frayme-0.18.0'`) — the component vocabulary. Bumped whenever component schemas, prop shapes, or descriptions change, even when the code surface is untouched.
+- **npm version** (`0.4.0`): the JavaScript API surface. Semver over exports and types.
+- **`CATALOG_VERSION`** (`'frayme-0.18.0'`): the component vocabulary. Bumped whenever component schemas, prop shapes, or descriptions change, even when the code surface is untouched.
 
 Pin against `CATALOG_VERSION` when you cache prompts, store specs long-term, or assert vocabulary compatibility; the live API reports its own as `catalog_version` on [`GET /v1/health`](../api/me-and-health.md). `JSON_RENDER_PIN` (`'0.19.x'`) records the upstream `@json-render/core` line this catalog targets. `CATALOG_COMPONENT_COUNT` is computed from the catalog at import time, so a count you display can never go stale.

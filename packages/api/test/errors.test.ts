@@ -12,6 +12,7 @@ import {
   QuotaExceededError,
   RateLimitError,
   ValidationError,
+  ERROR_CODE_TO_STATUS,
   castError,
   errorFromEventCode,
 } from '../src/core/errors.js';
@@ -65,6 +66,29 @@ describe('errorFromEventCode (in-band stream errors)', () => {
     expect(err).toBeInstanceOf(CompositionFailedError);
     expect(err.status).toBe(502);
   });
+  it('maps the codes that share a status to that status\'s class, keeping the code', () => {
+    const cases = [
+      ['SERVICE_UNAVAILABLE', 503, ModelUnavailableError],
+      ['INVALID_MANIFEST', 400, BadRequestError],
+      ['CUSTOM_SLICE_TOO_LARGE', 400, BadRequestError],
+      ['FEATURE_LIMIT', 403, AuthorizationError],
+    ] as const;
+    for (const [code, status, cls] of cases) {
+      const err = errorFromEventCode(code, 'x');
+      expect(err, code).toBeInstanceOf(cls);
+      expect(err.status, code).toBe(status);
+      expect(err.code, code).toBe(code);
+    }
+  });
+
+  it('lists the general code first for each shared status', () => {
+    const firstCodeFor = (status: number) =>
+      Object.entries(ERROR_CODE_TO_STATUS).find(([, mapped]) => mapped === status)?.[0];
+    expect(firstCodeFor(400)).toBe('BAD_REQUEST');
+    expect(firstCodeFor(403)).toBe('FORBIDDEN');
+    expect(firstCodeFor(503)).toBe('MODEL_UNAVAILABLE');
+  });
+
   it('unknown codes fall back to InternalServerError', () => {
     expect(errorFromEventCode('SOMETHING_NEW', 'x')).toBeInstanceOf(InternalServerError);
   });

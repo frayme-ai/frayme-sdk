@@ -5,7 +5,8 @@
  * object works in:
  *   - Vercel AI SDK 6:   tool({ ...composeToolDefinition, execute })
  *   - Mastra:            createTool({ ...composeToolDefinition, execute })
- *   - OpenAI Agents JS:  tool({ name, description, parameters: composeToolDefinition.inputSchema, execute })
+ *   - OpenAI Agents JS:  tool({ name, description, parameters: anthropicToolDefinitions()[0].input_schema, strict: false, execute })
+ *                        (JSON Schema, parsed with composeInputSchema inside execute)
  *   - LangChain.js:      tool(execute, { name, description, schema: composeToolDefinition.inputSchema })
  *
  * Fields are authored as standard (optional) JSON Schema. OpenAI Structured
@@ -30,6 +31,7 @@
 import { z } from 'zod';
 import type { Frayme } from '../client.js';
 import type { ComposeRequest, ComposeResult } from '../api-types.js';
+import { fitContinuation } from '../fit.js';
 import { CANONICAL_EVENTS, EVENT_CONTRACT, CATALOG_COMPONENT_COUNT } from '@frayme/catalog';
 import {
   COMPOSE_PROMPT_MIN_CHARS,
@@ -43,6 +45,8 @@ import {
   ACTION_ROLE_MAX_CHARS,
   ACTION_DESCRIPTION_MAX_CHARS,
   MAX_ACTIONS_PER_REQUEST,
+  ACTION_REQUIRED_ITEMS_MAX,
+  ACTION_PARAM_NAME_MAX_CHARS,
   COMPOSE_MODES,
 } from '../limits.js';
 
@@ -172,6 +176,17 @@ export const composeInputSchema = z.object({
           .optional()
           .describe(
             'JSON Schema (object) for the data you want back; keys bind to live UI state and are returned (resolved) on the action. ALWAYS list the mandatory keys in a top-level "required" array — e.g. {"type":"object","properties":{...},"required":["customerName","mobileNumber"]}. Those fields are marked on the form AND genuinely block the submit control until filled. Omit it and the generator has to guess mandatory-ness from your prose, which is far less reliable.',
+          ),
+        /* `requiredItems` mirrors `ComposeAction.requiredItems` (the wire type)
+           and the server's action schema, with the server's limits. Without it
+           here, `z.object` would strip the field silently, and a host sending
+           the flat params map could not mark a param mandatory through the tool. */
+        requiredItems: z
+          .array(z.string().max(ACTION_PARAM_NAME_MAX_CHARS))
+          .max(ACTION_REQUIRED_ITEMS_MAX)
+          .optional()
+          .describe(
+            'Names of the mandatory params, at action level. The same claim as a "required" array inside `params`, for when `params` is a flat map such as {"amount":{"description":"..."}}. Listed params are marked on the form and block the submit until filled.',
           ),
         /* THE ONE FIELD WHOSE DEFAULT THE RUNTIME ENFORCES (carrier gate,
            @frayme/runtime core/dynamic-gate.ts). Earlier copy described the
@@ -658,6 +673,21 @@ export const actionInputSchema = z.object({
     .max(COMPOSE_PROMPT_MAX_CHARS)
     .optional()
     .describe('What to do next; default: continue the journey for this action.'),
+  /* THE NEXT SCREEN'S INPUTS. A continue_journey compose is a whole new screen,
+     so the agent needs the same three dials it has on frayme_compose: the facts
+     to show, the controls to wire, and the steering. The schemas are the
+     compose tool's own (one set of limits), re-described for this call. They
+     travel as top-level request fields, never inside `action_context`, which
+     the server keeps strict. */
+  data: composeInputSchema.shape.data.describe(
+    'Facts the NEXT screen must show verbatim, exactly as `data` on frayme_compose: the result of what the user just did (the saved record, the new total, the confirmation number) plus anything else the next screen displays.',
+  ),
+  actions: composeInputSchema.shape.actions.describe(
+    'Controls the NEXT screen needs, exactly as `actions` on frayme_compose. Re-declare every action the next screen needs, including ones declared on the screen the user just used: an action left out comes back unwired.',
+  ),
+  signals: composeInputSchema.shape.signals.describe(
+    'Steering for the NEXT screen, exactly as `signals` on frayme_compose. Send only the values you are confident about.',
+  ),
 });
 
 export type ActionToolInput = z.infer<typeof actionInputSchema>;
@@ -684,7 +714,7 @@ export const actionToolDefinition = {
   name: 'frayme_action',
   description:
     'Respond to a user interaction on a Frayme-rendered UI. Call this when the user presses a control bound to an action you declared in a prior frayme_compose `actions` contract.\n\n' +
-    'The loop: when the user presses a control bound to a declared action (a Button, a Confirmation, a Form submit, a DataTable or a row/bulk action; any gesture on a `live:true` action), your host receives a DynamicActionEvent — `{action, event, params, state, element_id, label, description, generation_id}` — on its onAction/AG-UI channel. Call frayme_action with those fields VERBATIM (do not re-shape, rename, or drop any of them); add `prompt` only to steer what happens next beyond the default "continue the journey" instruction. Frayme recomposes the next step IN CONTEXT (continue_journey), preserving the live UI state the user already entered, and returns a NEW validated spec with its own `spec.actions` for the next round. The event carries the RESOLVED value the user produced — the selected rows themselves, the signed strokes, the edited cells, the picked date, the uploaded file — in `params`/`state`, not just an id or a bare signal, so you rarely need to re-ask; `state._ui.<elementId>.<verb>` holds the latest gesture per verb (board moves, picks, toggles) — never cleared by a press, so treat an entry as what the user last did, not what changed since you were last called, and read the result from the declared param or bound state; `element_id` names the control that fired and `label` is what it said (absent for a Form submit, whose `element_id` is the Form).\n\n' +
+    'The loop: when the user presses a control bound to a declared action (a Button, a Confirmation, a Form submit, a DataTable or a row/bulk action; any gesture on a `live:true` action), your host receives a DynamicActionEvent — `{action, event, params, state, element_id, label, description, generation_id}` — on its onAction/AG-UI channel. Call frayme_action with those fields VERBATIM (do not re-shape, rename, or drop any of them); add `prompt` only to steer what happens next beyond the default "continue the journey" instruction. For the next screen you may also pass `data` (the facts it shows), `actions` (its controls; re-declare every action it needs) and `signals` (steering), as on frayme_compose. Frayme recomposes the next step IN CONTEXT (continue_journey), preserving the live UI state the user already entered, and returns a NEW validated spec with its own `spec.actions` for the next round. The event carries the RESOLVED value the user produced — the selected rows themselves, the signed strokes, the edited cells, the picked date, the uploaded file — in `params`/`state`, not just an id or a bare signal, so you rarely need to re-ask; `state._ui.<elementId>.<verb>` holds the latest gesture per verb (board moves, picks, toggles) — never cleared by a press, so treat an entry as what the user last did, not what changed since you were last called, and read the result from the declared param or bound state; `element_id` names the control that fired and `label` is what it said (absent for a Form submit, whose `element_id` is the Form).\n\n' +
     'The `event` field is always one of these 8 canonical verbs; `params` carries the verb\'s documented payload keys (spec-authored keys win over these intrinsic ones):\n' +
     VERBS_BLOCK +
     '\n\n' + ACTION_CALL_EXAMPLES,
@@ -710,11 +740,26 @@ export function createActionTool(client: Frayme): typeof actionToolDefinition & 
     // `action_context` fields with 400 BAD_REQUEST and does not carry them yet.
     // Dropping them here — not in the schema — keeps the tool honest about what
     // it accepts while the wire catches up.
-    execute: ({ prompt, label: _label, description: _description, ...ctx }: ActionToolInput) =>
+    // `data` / `actions` / `signals` describe the NEXT screen, so they ride as
+    // top-level request fields beside `action_context`, never inside it.
+    // A press over the API's action_context ceiling (a big table's rows) is
+    // cut to fit: state first, then params (`fitContinuation`), never refused.
+    execute: ({
+      prompt,
+      data,
+      actions,
+      signals,
+      label: _label,
+      description: _description,
+      ...ctx
+    }: ActionToolInput) =>
       client.compose.create({
         prompt: prompt ?? `The user triggered the "${ctx.action}" action — continue the journey.`,
         mode: 'continue_journey',
-        action_context: ctx,
+        action_context: fitContinuation({ action_context: ctx }).action_context,
+        data,
+        actions,
+        signals,
         stream: false,
       }),
   };

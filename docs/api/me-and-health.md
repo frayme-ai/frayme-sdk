@@ -4,7 +4,7 @@ Two utility endpoints: `/v1/me` verifies a key and reports your plan state; `/v1
 
 ## GET /v1/me
 
-The "whoami" endpoint — the fastest way to confirm a key works and see what's left of your quota.
+The "whoami" endpoint: the fastest way to confirm a key works and see what's left of your quota.
 
 ```bash
 curl https://api.frayme.ai/v1/me \
@@ -28,7 +28,7 @@ curl https://api.frayme.ai/v1/me \
 ```
 
 {% hint style="info" %}
-**This endpoint responds in `camelCase`** — unlike `/v1/compose`, which speaks `snake_case`. It's the one casing exception in the API.
+**This endpoint responds in `camelCase`**, unlike `/v1/compose`, which speaks `snake_case`. It's the one casing exception in the API.
 {% endhint %}
 
 ### Response fields
@@ -38,7 +38,7 @@ curl https://api.frayme.ai/v1/me \
 | `workspace.id` / `name` / `slug` | string | The workspace the key belongs to. |
 | `plan.tierKey` | string \| null | Your plan's identifier (`null` if no plan is attached). |
 | `plan.monthlyGenerations` | number | Generations included per month on your plan. |
-| `plan.rateLimitPerMin` | number | Your per-key burst limit, in requests per minute. This field is the source of truth for the number — it is set by your plan and not published elsewhere. See [rate limits](rate-limits.md). |
+| `plan.rateLimitPerMin` | number | Your per-key burst limit, in requests per minute. This field is the source of truth for the number. It is set by your plan and not published elsewhere. See [rate limits](rate-limits.md). |
 | `plan.generationsRemaining` | number | Generations left in the current cycle. **Poll this** to alert before you hit the cap. |
 | `plan.inlineComponentsLimit` | number | Max inline `custom_components` per compose request on your plan (0 = BYOC not included). |
 
@@ -57,12 +57,12 @@ if (me.plan.generationsRemaining < 500) {
 
 ### Notes
 
-- Requires a valid key: a bad key returns `401 AUTHENTICATION_REQUIRED` — which makes `/v1/me` the right smoke test for deployments.
+- Requires a valid key: a bad key returns `401 AUTHENTICATION_REQUIRED`, which makes `/v1/me` the right smoke test for deployments.
 - Counts against the same per-key burst limit as compose, so poll it on a schedule (say, once a minute), not per request.
 
 ## GET /v1/health
 
-Unauthenticated liveness probe. Static by design — it confirms the API is up without exercising the composition path.
+Unauthenticated liveness probe. Static by design: it confirms the API is up without exercising the composition path.
 
 ```bash
 curl https://api.frayme.ai/v1/health
@@ -89,5 +89,5 @@ Use it for uptime checks and load-balancer probes. A healthy `/v1/health` plus a
 
 ## Related
 
-- [Rate limits](rate-limits.md) — what `rateLimitPerMin` and `generationsRemaining` govern
-- [Production checklist](../resources/production-checklist.md) — monitoring recommendations
+- [Rate limits](rate-limits.md): what `rateLimitPerMin` and `generationsRemaining` govern
+- [Production checklist](../resources/production-checklist.md): monitoring recommendations

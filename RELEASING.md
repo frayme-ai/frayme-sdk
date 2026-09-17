@@ -21,7 +21,7 @@ Publishing is automated. To release:
    installable yet. The workflow authenticates through npm Trusted Publishing
    (GitHub OIDC); no token is stored in the repository.
 4. Promote the staged versions from a logged-in terminal (`npm login` first if
-   needed; npm 12 or newer). Approve in dependency order — each approval
+   needed; npm 12 or newer). Approve in dependency order: each approval
    prompts for 2FA:
 
    ```bash
@@ -40,4 +40,4 @@ Publishing is automated. To release:
 The trusted publisher for each package is configured on npmjs.com:
 package → Settings → Trusted Publisher → GitHub Actions, with owner
 `frayme-ai`, repository `frayme-sdk`, workflow `release.yml`, environment `npm`,
-and "Allow npm publish" left unticked — the connection may stage, never publish.
+and "Allow npm publish" left unticked, the connection may stage, never publish.

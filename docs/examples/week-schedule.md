@@ -1,6 +1,6 @@
 # Week schedule
 
-A fully editable week calendar — drag, resize, and create blocks on the grid, with every edit mirrored into live state and a one-click reschedule action.
+A fully editable week calendar: drag, resize, and create blocks on the grid, with every edit mirrored into live state and a one-click reschedule action.
 
 ## The ask
 
@@ -19,7 +19,7 @@ The agent pulls the week of 3 August and composes an editable schedule: the Wedn
 
 ## The interesting mechanic: an editable grid bound to state
 
-The `Scheduler` is not a picture of a calendar — `editable: true` plus a state binding makes every drag and resize write into `/events`, live:
+The `Scheduler` is not a picture of a calendar. `editable: true` plus a state binding makes every drag and resize write into `/events`, live:
 
 ```json
 {"op":"add","path":"/elements/sched","value":{"type":"Scheduler","props":{
@@ -30,18 +30,18 @@ The `Scheduler` is not a picture of a calendar — `editable: true` plus a state
   "events":[
     {"id":"e1","title":"Product roadmap review","subtitle":"Meet · Sasha, Priya +4",
      "start":"10:00","end":"11:00","column":0,"color":"#6366f1"},
-    {"id":"e2","title":"Focus — Q3 planning doc","subtitle":"Deep work",
+    {"id":"e2","title":"Focus: Q3 planning doc","subtitle":"Deep work",
      "start":"13:00","end":"15:00","column":0,"color":"#10b981"}
   ]}}}
 ```
 
-*(excerpt — events trimmed)*
+*(excerpt: events trimmed)*
 
-Because the grid state lives at a bound path, the agent can read exactly what the user changed when an action fires — the edits travel with the round-trip.
+Because the grid state lives at a bound path, the agent can read exactly what the user changed when an action fires: the edits travel with the round-trip.
 
 ## The follow-up: "Clear Friday afternoon"
 
-One button is a declared agent action. Press it and the agent does real scheduling work — moving the vendor demo to Monday, shifting the retro to Thursday, declining the debrief — then answers with the rescheduled week plus a timeline of what moved.
+One button is a declared agent action. Press it and the agent does real scheduling work (moving the vendor demo to Monday, shifting the retro to Thursday, declining the debrief), then answers with the rescheduled week plus a timeline of what moved.
 
 ## Compose it yourself
 
@@ -67,4 +67,4 @@ const stream = frayme.compose.stream({
 
 ## Try it
 
-Open [frayme.ai/examples](https://frayme.ai/examples) and select **Week schedule**. Drag a block, resize another, create a new one in an empty slot — then press *Clear Friday afternoon*.
+Open [frayme.ai/examples](https://frayme.ai/examples) and select **Week schedule**. Drag a block, resize another, create a new one in an empty slot. Then press *Clear Friday afternoon*.

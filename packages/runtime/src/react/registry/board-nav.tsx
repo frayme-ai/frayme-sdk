@@ -76,11 +76,13 @@ const GAP_CLASS: Record<string, string> = {
  * card, and the bg-muted/40 column track.
  *
  * REJECTED — the solid `bg-<tone> text-<tone>-foreground` pairing. It clears AA in
- * light (4.83-5.17), but frayme.css re-points only --color-danger-foreground for
- * dark; success/warning/info-foreground keep the @theme #ffffff, so a dark solid
- * chip would paint white on #22c55e at 2.2:1. (That token gap is real and belongs
- * to the stylesheet, not here.) And a card repeats these labels on every row,
- * where a saturated slab reads as an alarm rather than a tag.
+ * light (4.83-5.17), but when this was measured frayme.css re-pointed only
+ * --color-danger-foreground for dark; success/warning/info-foreground kept the
+ * @theme #ffffff, so a dark solid chip painted white on #22c55e at 2.2:1. That
+ * token gap belonged to the stylesheet and is now closed there (all four
+ * foregrounds follow their --frayme-*-fg). The reason that still stands: a card
+ * repeats these labels on every row, where a saturated slab reads as an alarm
+ * rather than a tag.
  *
  * `neutral` is DELIBERATELY untouched. It measured 4.40:1 alongside the others,
  * but the cause was the --color-muted-foreground / --color-muted token pair, not

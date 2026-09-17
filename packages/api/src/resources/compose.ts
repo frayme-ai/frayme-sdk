@@ -76,6 +76,11 @@ export class ComposeResource {
     const controller = new AbortController();
     const signals = [controller.signal];
     if (options?.signal) signals.push(options.signal);
+    // Read from the body before the request starts. A body that is not an
+    // object (JavaScript callers can pass anything) then goes to the API and
+    // fails there as a typed error on the stream, instead of throwing here
+    // with the request already in flight and nobody to handle its failure.
+    const seed = body?.prior_spec;
 
     const responsePromise = request(this.cfg, {
       method: 'POST',
@@ -87,11 +92,20 @@ export class ComposeResource {
       maxRetries: options?.maxRetries,
     });
 
-    return new ComposeStream(responsePromise, {
-      firstEventTimeoutMs: this.cfg.firstEventTimeout,
-      controller,
-      // Seed the accumulator with prior_spec so an evolve patch applies in place.
-      seed: body.prior_spec,
-    });
+    try {
+      return new ComposeStream(responsePromise, {
+        firstEventTimeoutMs: this.cfg.firstEventTimeout,
+        controller,
+        // Seed the accumulator with prior_spec so an evolve patch applies in place.
+        seed,
+      });
+    } catch (err) {
+      // The stream could not be built (a prior_spec that cannot be copied):
+      // cancel the request that already started, and keep its rejection from
+      // going unhandled, since no stream will ever read it.
+      controller.abort();
+      responsePromise.catch(() => {});
+      throw err;
+    }
   }
 }

@@ -15,6 +15,15 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+// The package ships without Node types; this is the part of `process` the
+// tests below listen on.
+const nodeProcess = (globalThis as unknown as {
+  process: {
+    on(event: string, listener: (value: never) => void): void;
+    off(event: string, listener: (value: never) => void): void;
+  };
+}).process;
+
 function client(script: ScriptedResponse[]): { frayme: Frayme; calls: ReturnType<typeof buildMockFetch>['calls'] } {
   const mock = buildMockFetch(script);
   return {
@@ -86,6 +95,32 @@ describe('ComposeStream', () => {
     expect(final.model).toBe('frayme/fallback-model');
     expect((final.spec as { root?: string }).root).toBe('card');
     expect(Object.keys((final.spec as { elements: object }).elements)).toHaveLength(2);
+  });
+
+  it('snapshot() is a deep copy that later ops never change; currentSpec() stays the live object', async () => {
+    const { frayme } = client([{ status: 200, sse: true, body: () => sseStream(happyPayload()) }]);
+    const stream = frayme.compose.stream({ prompt: 'a card' });
+    // Handler errors are swallowed by the stream, so record here and assert below.
+    const taken: Array<{ snapshot: unknown; copy: unknown; live: unknown; same: boolean }> = [];
+    stream.on('op', () => {
+      const snapshot = stream.snapshot();
+      const live = stream.currentSpec();
+      taken.push({ snapshot, copy: structuredClone(snapshot), live: structuredClone(live), same: snapshot === live });
+    });
+    const final = await stream.finalSpec();
+
+    expect(taken).toHaveLength(3);
+    for (const { snapshot, live, same } of taken) {
+      expect(same).toBe(false);
+      expect(snapshot).toEqual(live);
+    }
+    // Each snapshot still holds exactly what it held when taken.
+    for (const { snapshot, copy } of taken) expect(snapshot).toEqual(copy);
+    expect(Object.keys((taken[0]!.snapshot as { elements: object }).elements)).toEqual([]);
+    expect(stream.currentSpec()).toBe(final.spec);
+    const late = stream.snapshot();
+    (late as { root?: string }).root = 'changed';
+    expect((stream.currentSpec() as { root?: string }).root).toBe('card');
   });
 
   it('replay burst delivered in ONE chunk parses fully and carries replayed:true', async () => {
@@ -219,5 +254,61 @@ describe('ComposeStream', () => {
     const { frayme } = client([{ status: 200, sse: true, body: () => sseStream(payload) }]);
     const stream = frayme.compose.stream({ prompt: 'x' });
     await expect(stream.finalSpec()).rejects.toThrow(/ended before compose.completed/);
+  });
+
+  it('an op event read late still holds only its own op, never what later ops did to its value', async () => {
+    const ops = [
+      { op: 'add', path: '/root', value: 'card' },
+      { op: 'add', path: '/elements/card', value: { type: 'Card', props: {}, children: [] } },
+      { op: 'add', path: '/elements/card/children/-', value: 'txt' },
+      { op: 'add', path: '/elements/txt', value: { type: 'Text', props: { content: 'Hi' } } },
+    ];
+    const payload = frame.started() + ops.map((p) => frame.op(p)).join('') + frame.completed({ operation_count: 4 });
+    const { frayme } = client([{ status: 200, sse: true, body: () => sseStream(payload) }]);
+    const stream = frayme.compose.stream({ prompt: 'x' });
+    const seen: string[] = [];
+    for await (const event of stream) {
+      // By the time this runs again the stream has applied every later op.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      seen.push(JSON.stringify(event));
+    }
+    expect(seen.slice(1, 5)).toEqual(ops.map((p) => JSON.stringify({ type: 'op', ...p })));
+    const final = await stream.finalSpec();
+    expect(final.spec.elements.card).toEqual({ type: 'Card', props: {}, children: ['txt'] });
+  });
+
+  it('a body that is not an object fails on the stream as a typed error, never as a throw', async () => {
+    const { frayme, calls } = client([
+      { status: 400, body: JSON.stringify({ success: false, error: { code: 'BAD_REQUEST', message: 'prompt is required' } }) },
+    ]);
+    const stream = frayme.compose.stream(null as never);
+    await expect(stream.finalSpec()).rejects.toMatchObject({ status: 400, code: 'BAD_REQUEST' });
+    expect(JSON.parse(calls[0]!.body!)).toEqual({ stream: true });
+  });
+
+  it('a prior_spec that cannot be copied throws at once, cancels the request, and leaves no unhandled rejection', async () => {
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown) => unhandled.push(reason);
+    nodeProcess.on('unhandledRejection', onUnhandled);
+    try {
+      const uncopyable = { root: 'r', elements: {}, render: () => null } as never;
+
+      let signal: AbortSignal | undefined;
+      const open = client([{ status: 200, sse: true, body: (s) => ((signal = s), openStream('', s)) }]);
+      expect(() => open.frayme.compose.stream({ prompt: 'x', prior_spec: uncopyable })).toThrow();
+      await vi.waitFor(() => expect(signal?.aborted).toBe(true));
+
+      // A request that fails after the throw has nobody to report to, and must stay quiet.
+      const failing = client([
+        { status: 400, body: JSON.stringify({ success: false, error: { code: 'BAD_REQUEST', message: 'no' } }) },
+      ]);
+      expect(() =>
+        failing.frayme.compose.stream({ prompt: 'x', prior_spec: uncopyable }, { maxRetries: 0 }),
+      ).toThrow();
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(unhandled).toEqual([]);
+    } finally {
+      nodeProcess.off('unhandledRejection', onUnhandled);
+    }
   });
 });

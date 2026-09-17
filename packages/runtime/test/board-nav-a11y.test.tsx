@@ -69,7 +69,7 @@ type Mode = 'light' | 'dark';
 /** Resolve a custom property to a hex, following the ONE alias hop frayme.css
  *  uses (`--color-success: var(--frayme-success)`). Unaliased --color-* tokens
  *  fall through to their @theme default — which is exactly how they behave in the
- *  browser, and exactly why a dark-mode `text-success-foreground` would be white. */
+ *  browser. (The four tone foregrounds are aliased, so they follow dark mode.) */
 function resolveVar(name: string, mode: Mode): string {
   const seen = new Set<string>();
   let cur = name;

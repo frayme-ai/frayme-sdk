@@ -133,6 +133,16 @@ export class ComposeStream implements AsyncIterable<ComposeStreamEvent> {
     return this.#acc;
   }
 
+  /**
+   * A deep copy of the spec as accumulated so far. `currentSpec()` hands out
+   * the live accumulator, which the next op patches in place; a snapshot is
+   * safe to keep, yield across an `await`, or hand to a renderer that
+   * compares by reference.
+   */
+  snapshot(): Spec {
+    return structuredClone(this.#acc);
+  }
+
   #emit<K extends keyof ComposeStreamHandlers>(
     event: K,
     ...args: Parameters<ComposeStreamHandlers[K]>
@@ -177,7 +187,16 @@ export class ComposeStream implements AsyncIterable<ComposeStreamEvent> {
             this.#emit('started', event);
             break;
           case 'op': {
-            const { type: _type, ...patch } = event;
+            const { type: _type, ...rest } = event;
+            // The accumulator gets its own copy of the op's value. The patch
+            // stores `value` by reference and later ops patch the accumulator
+            // in place, so without the copy an op event still queued for (or
+            // held by) a consumer would change after the fact and carry ops
+            // that came later: a proxy re-sending it would apply them twice.
+            const patch =
+              typeof rest.value === 'object' && rest.value !== null
+                ? { ...rest, value: structuredClone(rest.value) }
+                : rest;
             // applySpecStreamPatch is generic over Record<string, unknown> and
             // mutates+returns the base; Spec lacks an index signature so cast
             // through unknown (same pattern as @frayme/runtime ag-ui/events).

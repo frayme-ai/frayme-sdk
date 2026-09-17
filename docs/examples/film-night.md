@@ -1,12 +1,12 @@
 # Film night
 
-Mood tabs, embedded trailers, and a live cinema seat map with a running total — ending in a booking confirmation.
+Mood tabs, embedded trailers, and a live cinema seat map with a running total, all the way to a booking confirmation.
 
 ## The ask
 
 > What should we watch tonight?
 
-The agent lines up four contenders, embeds two official trailers, and — because the IMAX Dune screening has seats left — includes a live seat map for the 7:30.
+The agent lines up four contenders, embeds two official trailers, and (because the IMAX Dune screening has seats left) includes a live seat map for the 7:30.
 
 ## What comes back
 
@@ -20,7 +20,7 @@ The agent lines up four contenders, embeds two official trailers, and — becaus
 
 ## The interesting mechanic: a seat map is just a component
 
-The cinema map is one `FloorPlan` operation — regions with position, price, and status, selection bound to state so the running total updates as you pick:
+The cinema map is one `FloorPlan` operation. Its regions carry position, price, and status, and selection is bound to state so the running total updates as you pick:
 
 ```json
 {"op":"add","path":"/elements/seatmap","value":{"type":"FloorPlan","props":{
@@ -33,9 +33,9 @@ The cinema map is one `FloorPlan` operation — regions with position, price, an
   ]}}}
 ```
 
-*(excerpt — regions trimmed)*
+*(excerpt: regions trimmed)*
 
-Tapping seats writes into `/seats`; the total reads the same path. All local. Only *Book tickets* — a declared agent action — leaves the page.
+Tapping seats writes into `/seats`; the total reads the same path. All local. Only *Book tickets*, a declared agent action, leaves the page.
 
 ## The follow-up: a confirmation code
 
@@ -51,7 +51,7 @@ const frayme = new Frayme({ apiKey: process.env.FRAYME_API_KEY });
 const stream = frayme.compose.stream({
   prompt: 'What should we watch tonight?',
   data: {
-    films: [/* tonight's picks — rendered verbatim */],
+    films: [/* tonight's picks, rendered verbatim */],
     screening: { seats: [/* seat grid with prices and availability */] },
   },
   actions: [
@@ -68,7 +68,7 @@ const stream = frayme.compose.stream({
 });
 ```
 
-The `seats` param key binds to live UI state — when the button fires, the agent receives the seat ids the user actually selected.
+The `seats` param key binds to live UI state: when the button fires, the agent receives the seat ids the user actually selected.
 
 ## Try it
 

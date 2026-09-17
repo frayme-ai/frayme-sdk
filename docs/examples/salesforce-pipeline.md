@@ -1,6 +1,6 @@
 # Sales pipeline
 
-A CRM cockpit composed from one sentence — KPI row, stage funnel, at-risk analysis, and a searchable opportunity table with a close-the-deal agent action.
+A CRM cockpit composed from one sentence: KPI row, stage funnel, at-risk analysis, and a searchable opportunity table with a close-the-deal agent action.
 
 ## The ask
 
@@ -14,7 +14,7 @@ The agent fetches the pipeline from the CRM, then calls Frayme to turn it into a
 | --- | --- | --- |
 | KPI row | `StatGroup` + `Stat` | Pipeline value, win rate, deals at risk |
 | Stage funnel | `FunnelChart` | Prospecting → Closed won, with stage percentages |
-| At-risk panel | `Alert` + `BarList` behind a `Switch` | Flip "At-risk analysis" and the panel folds away — conditional visibility on a state binding |
+| At-risk panel | `Alert` + `BarList` behind a `Switch` | Flip "At-risk analysis" and the panel folds away: conditional visibility on a state binding |
 | Opportunity table | `DataTable` + search `Input` | Filters as you type, row actions on each deal |
 
 The funnel is a single operation on the stream:
@@ -33,7 +33,7 @@ The funnel is a single operation on the stream:
 
 ## The interesting mechanic: search is local, closing a deal is not
 
-Typing in the search box filters the `DataTable` instantly — that interaction resolves inside the renderer via a state binding and never leaves the page. But *Mark closed-won* on the Acme renewal is a declared action:
+Typing in the search box filters the `DataTable` instantly. That interaction resolves inside the renderer via a state binding and never leaves the page. But *Mark closed-won* on the Acme renewal is a declared action:
 
 ```json
 {"op":"add","path":"/actions","value":{"closeWon":{"kind":"agent"}}}
@@ -66,8 +66,8 @@ const stream = frayme.compose.stream({
 });
 ```
 
-When the user fires `closeWon`, your agent receives it, performs the CRM update, and calls compose again with `mode: 'continue_journey'` and the fired action in `action_context` — that second call is what produces the confirmation screen.
+When the user fires `closeWon`, your agent receives it, performs the CRM update, and calls compose again with `mode: 'continue_journey'` and the fired action in `action_context`. That second call is what produces the confirmation screen.
 
 ## Try it
 
-Open [frayme.ai/examples](https://frayme.ai/examples) and select **Q2 pipeline — Salesforce**. Type in the search box, flip the at-risk switch, then close the Acme renewal.
+Open [frayme.ai/examples](https://frayme.ai/examples) and select **Q2 pipeline in Salesforce**. Type in the search box, flip the at-risk switch, then close the Acme renewal.

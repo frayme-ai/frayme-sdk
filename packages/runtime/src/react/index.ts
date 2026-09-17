@@ -17,6 +17,21 @@ export {
   type UseFraymeComposeReturn,
   type ComposeStatus,
 } from './useFraymeCompose.js';
+// One Frayme tool result inside the host's own chat: the live snapshot, the
+// validated screen, an error or interruption notice, or the card for a press.
+export { FraymeResult, type FraymeResultOutput, type FraymeResultProps } from './result.js';
+// A composed screen with no chat around it, driven by its props, moved on
+// through the handle (edit / continue / abort).
+export {
+  FraymeScreen,
+  useFraymeScreen,
+  type FraymeScreenHandle,
+  type FraymeScreenProps,
+  type UseFraymeScreenOptions,
+  type UseFraymeScreenReturn,
+} from './screen.js';
+// The mode a `scheme` resolves to (`system` follows the OS, SSR-safe).
+export { useColorScheme } from './color-scheme.js';
 export { defaultRegistry, createRegistry, Fallback } from './registry/index.js';
 export { useIntrinsicEmit, IntrinsicProvider, type EmitWith, type EmitWithOptions } from './intrinsic.js';
 // The carrier gate: the default list (spread it into `dynamicActionTypes` to
@@ -34,7 +49,7 @@ export {
 export { DynamicGateContext, useDynamicGateTypes } from './dynamic-gate.js';
 export type { ComponentRegistry, ComponentRenderProps, ComponentRenderer } from './upstream.js';
 export type { DynamicActionEvent, OnDynamicAction } from '../core/events.js';
-export type { ThemeTokens } from '../core/theme.js';
+export type { ThemeInput, ThemePair, ThemeScheme, ThemeTokens } from '../core/theme.js';
 
 /* ── BYOC (custom components) ─────────────────────────────────────────────── */
 export {

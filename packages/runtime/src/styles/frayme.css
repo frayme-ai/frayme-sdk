@@ -74,6 +74,15 @@
   --color-success: var(--frayme-success);
   --color-warning: var(--frayme-warning);
   --color-info: var(--frayme-info);
+  /* Linked like --color-danger-foreground above. Without these three the
+     text-success-foreground / -warning- / -info- utilities kept the @theme
+     white in every mode, while the fills they sit on move to brighter shades
+     in dark, whose --frayme-*-fg is near-black because white on them fails:
+     white text on a bright green, amber or blue fill. A theme's *Foreground
+     tokens did not reach those utilities either. */
+  --color-success-foreground: var(--frayme-success-fg);
+  --color-warning-foreground: var(--frayme-warning-fg);
+  --color-info-foreground: var(--frayme-info-fg);
   --radius-frayme: var(--frayme-radius);
 
   /* The interactive-UI accent — toggle ON, row/field selection, focus ring,
@@ -81,8 +90,13 @@
      (e.g. to var(--color-primary)) to colour all interactive UI at once.
      Because its value is --color-foreground (which itself flips light↔dark via
      --frayme-fg), --fr-accent tracks the theme automatically — no per-mode
-     redeclaration needed in the dark blocks below. */
-  --fr-accent: var(--color-foreground);
+     redeclaration needed in the dark blocks below.
+     The `accent` theme token lands as --frayme-accent (inline, on this same
+     element), so a host can set it through the theme prop like any other
+     token. It is deliberately NOT declared in this file: undeclared, the
+     fallback is the neutral default above, unchanged, and a declared value
+     would have to be restated in every dark block and preset. */
+  --fr-accent: var(--frayme-accent, var(--color-foreground));
 
   --frayme-primary: #2563eb;
   --frayme-primary-fg: #ffffff;
@@ -1102,6 +1116,52 @@
   border-radius: calc(var(--frayme-radius) / 2);
   background: var(--frayme-muted);
   color: var(--frayme-fg);
+}
+
+/* ── Result notice (react/notice.tsx) ────────────────────────────────────────
+   The one-line card FraymeResult and FraymeScreen show in place of a screen:
+   a compose that failed, or a stream that stopped before it finished.
+   Same shape as the receipt above and for the same reasons: its own
+   `.frayme-root`, so the token block and dark remaps reach it, re-painted as a
+   CARD because the root rule paints a page ground. Tokens only.
+   The error tone is (0,3,0) so it outranks the (0,2,0) card rule it sits on
+   without leaning on source order. */
+.frayme-root.frayme-notice {
+  display: block;
+  max-width: 100%;
+  margin: 0;
+  background: var(--frayme-card);
+  color: var(--frayme-muted-fg);
+  border: 1px solid var(--frayme-border);
+  border-radius: var(--frayme-radius);
+  padding: 0.5rem 0.75rem;
+  font-family: var(--frayme-font);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.frayme-root.frayme-notice[data-tone='error'] {
+  color: var(--frayme-danger);
+  border-color: var(--frayme-danger);
+}
+/* The retry control reads as a link in the notice's own colour, so the card
+   stays one line and one tone. No preflight here, so every property a UA gives
+   a button is set. The focus ring is the root's shared fallback. */
+.frayme-notice__retry {
+  margin: 0 0 0 0.5rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+/* An interrupted screen shows the notice ABOVE what did render. */
+.frayme-root.frayme-notice + .frayme-root {
+  margin-top: 0.5rem;
 }
 
 /* ── Theme presets ───────────────────────────────────────────────────────────

@@ -1,12 +1,12 @@
 # AI news brief
 
-A whole morning briefing from one sentence — breaking-news ticker, a scrubbable chaptered audio waveform, and three tab-filtered story feeds.
+A whole morning briefing from one sentence: breaking-news ticker, a scrubbable chaptered audio waveform, and three tab-filtered story feeds.
 
 ## The ask
 
 > Brief me on today's AI news.
 
-The agent gathers six lead stories across research, products, and policy and composes the brief — with the 4-minute audio version sitting at the top.
+The agent gathers six lead stories across research, products, and policy and composes the brief, with the 4-minute audio version sitting at the top.
 
 ## What comes back
 
@@ -17,11 +17,11 @@ The agent gathers six lead stories across research, products, and policy and com
 | Story feeds | `Tabs` + `FeedItem` | Research / Products / Policy, tab-filtered |
 | Sources | `Sources` | The 6 of 14 consulted sources, as a grid |
 | Video | `YouTube` | An embedded segment |
-| Save brief | `Button` | A fully local optimistic flip — no round-trip |
+| Save brief | `Button` | A fully local optimistic flip, no round-trip |
 
 ## The interesting mechanic: everything here is local
 
-This is the gallery's pure local-interactivity showcase — there is no agent action in the whole screen. The scrubber binds its playhead into state and carries its chapters in the spec:
+This is the gallery's pure local-interactivity showcase. There is no agent action in the whole screen. The scrubber binds its playhead into state and carries its chapters in the spec:
 
 ```json
 {"op":"add","path":"/elements/scrubber","value":{"type":"MediaScrubber","props":{
@@ -37,9 +37,9 @@ This is the gallery's pure local-interactivity showcase — there is no agent ac
   "showTime":true,"accent":"#dc2626"}}}
 ```
 
-*(excerpt — waveform trimmed)*
+*(excerpt: waveform trimmed)*
 
-The tab filter is the same pattern: `Tabs` binds `value` to `/activeTab`, and each feed section declares `visible` against that state path — switching tabs swaps feeds without touching the network.
+The tab filter is the same pattern: `Tabs` binds `value` to `/activeTab`, and each feed section declares `visible` against that state path. Switching tabs swaps feeds without touching the network.
 
 The *Save brief* button shows conditional bindings doing optimistic UI on their own:
 
@@ -51,7 +51,7 @@ The *Save brief* button shows conditional bindings doing optimistic UI on their 
   "on":{"commit":[{"action":"setState","params":{"statePath":"/saved","value":true}}]}}}
 ```
 
-One press writes `/saved`, the label and disabled state react through `$cond` — all inside the renderer.
+One press writes `/saved`, and the label and disabled state react through `$cond`, all inside the renderer.
 
 ## Compose it yourself
 
@@ -63,7 +63,7 @@ const frayme = new Frayme({ apiKey: process.env.FRAYME_API_KEY });
 const stream = frayme.compose.stream({
   prompt: "Brief me on today's AI news.",
   signals: { data_shape: ['feed'], density: 'rich', patterns: ['tabs'] },
-  data: { stories: [/* headline, outlet, url, summary — rendered verbatim */] },
+  data: { stories: [/* headline, outlet, url, summary, all rendered verbatim */] },
 });
 ```
 
