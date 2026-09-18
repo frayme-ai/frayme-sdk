@@ -6,7 +6,7 @@ A chatless screen is a composed UI with no chat around it: your component's prop
 
 - **In the browser**, `<FraymeProvider endpoint="/api/frayme">` builds a keyless client (`new Frayme({ apiKey: null, baseURL: endpoint })`), so no key ships in your bundle.
 - **On your server**, a route running [`createFraymeHandler`](server-handler.md) checks the user, adds the key and forwards the request to `https://api.frayme.ai`.
-- **No agent is involved.** The screen composes straight from its props, and your code decides what a press does. When an agent should decide, use chat mode instead: see [Vercel AI SDK](../frameworks/ai-sdk.md).
+- **No agent runs inside the component.** The screen composes straight from its props, and what a press does next is your code's decision. That code may call an agent of your own, or none at all. What chatless means here is that Frayme does not put a model between the press and the compose, and there is no chat thread to read. For a screen an agent drives turn by turn inside a conversation, use chat mode instead: see [Vercel AI SDK](../frameworks/ai-sdk.md).
 
 ```bash
 npm i @frayme/api @frayme/runtime
@@ -90,11 +90,17 @@ The second argument of `onAction` is the screen's handle:
 | Method | What it sends |
 | --- | --- |
 | `edit(prompt, extra?)` | `mode: 'edit'` with the last complete screen as `prior_spec`: the same screen, changed. With no finished screen there is nothing to edit, so it sends a fresh create. |
-| `continue(event, prompt?, extra?)` | `mode: 'continue_journey'`, the press as `action_context` and the last complete screen as `prior_spec`: the next step. Without `prompt` (or `extra.prompt`), it asks the composer to continue after the named action. |
+| `continue(event, prompt?, extra?)` | A plain create for the next step. The prompt names the control that was pressed, and the pressed action's params ride in `data` over the props' own. The screen the user pressed is **not** sent. Without `prompt` (or `extra.prompt`), it writes one naming the control. |
 | `retry()` | The last request again, unchanged. It does nothing unless `status` is `error`. |
 | `abort()` | Stops the compose in flight, if any. |
 
-`edit` and `continue` resend the props' `data`, `actions`, `signals` and `context`, and `extra` overrides any of them. The method sets `mode`, `prior_spec` and `action_context` itself and ignores those keys (and `stream`) in `extra`. An action left out of the request comes back unwired. `extra` goes through your server handler, so it can carry only the [fields the handler allows](server-handler.md#what-the-browser-may-send).
+`edit` and `continue` resend the props' `data`, `actions`, `signals` and `context`, and `extra` overrides any of them. Each method owns `mode` and `prior_spec`, so those keys (and `stream`) are ignored in `extra`. An action left out of the request comes back unwired. `extra` goes through your server handler, so it can carry only the [fields the handler allows](server-handler.md#what-the-browser-may-send).
+
+`continue` derives only what you did not give it. Pass a `prompt` and yours is used. Name `data` in `extra` and the derived values are left out entirely, because your code knew better than a mechanical guess.
+
+{% hint style="warning" %}
+**A press composes the next screen, it does not edit the last one.** So a value the user typed appears on the next screen only if it is in `data`. `continue` puts the pressed action's params there for you, but anything else the next screen must show is yours to name. Two things are deliberately left out: the event's raw `state`, which is the whole screen's store and reached no prompt even when it was sent, and the control's own `label`, because a `data` key the composer does not use is drawn on the screen as a stray detail.
+{% endhint %}
 
 A press usually does real work first. Your code runs it, then asks for the next screen with the fresh facts:
 
@@ -127,7 +133,7 @@ A press usually does real work first. Your code runs it, then asks for the next 
 
 ### Only a complete screen is ever a `prior_spec`
 
-A snapshot taken mid-stream, or one left behind by `abort()`, can point at elements that never arrived, and the server rejects it. So a follow-up always starts from the last screen that finished. A fresh create (a prop change) clears that screen.
+This applies to `edit`, the one call that sends a screen. A snapshot taken mid-stream, or one left behind by `abort()`, can point at elements that never arrived, and the server rejects it. So an edit always starts from the last screen that finished, and a fresh create (a prop change) clears that screen. `continue` sends no screen at all, so it is never affected.
 
 ### While a follow-up runs, and when it fails
 

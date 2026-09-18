@@ -65,7 +65,7 @@ describe('frayme_action round-trip tool', () => {
     expect(actionInputSchema.safeParse({}).success).toBe(false); // action is required
   });
 
-  it('executes a continue_journey compose carrying the action_context', async () => {
+  it('executes a plain create: the press is named in the prompt, nothing else is sent', async () => {
     const mock = buildMockFetch([
       {
         status: 200,
@@ -92,17 +92,15 @@ describe('frayme_action round-trip tool', () => {
     });
     expect(result.generation_id).toBe('gen_a');
     const body = JSON.parse(mock.calls[0]!.body!);
-    expect(body).toMatchObject({
-      mode: 'continue_journey',
-      stream: false,
-      action_context: {
-        action: 'approveRefund',
-        params: { amount: 50 },
-        event: 'commit',
-        generation_id: 'gen_a',
-      },
-    });
-    expect(body.prompt).toMatch(/approveRefund/); // default continue-the-journey prompt
+    expect(body).toMatchObject({ stream: false });
+    // A PRESS IS A CREATE. action_context reached no prompt, so the params and the
+    // state posted there told the model nothing while still crossing the wire.
+    expect(body).not.toHaveProperty('mode');
+    expect(body).not.toHaveProperty('action_context');
+    expect(body).not.toHaveProperty('prior_spec');
+    // The press still reaches the model, named in the prompt.
+    expect(body.prompt).toMatch(/approveRefund/);
+    expect(body.prompt).not.toMatch(/[\u2013\u2014]/);
   });
 
   /*
@@ -112,7 +110,7 @@ describe('frayme_action round-trip tool', () => {
    * fields with 400 — so the bound tool must leave them out of the request.
    * The request must otherwise be byte-for-byte what it was.
    */
-  it('drops the event\'s label + description from action_context (the wire is strict) and forwards the rest', async () => {
+  it('sends none of the event: not its label, not its params, not the state it was pressed on', async () => {
     const mock = buildMockFetch([
       {
         status: 200,
@@ -142,17 +140,15 @@ describe('frayme_action round-trip tool', () => {
       generation_id: 'gen_b',
     });
     const body = JSON.parse(mock.calls[0]!.body!);
-    expect(body.action_context).toEqual({
-      action: 'saveDayPlan',
-      event: 'commit',
-      element_id: 'savePlanBtn',
-      params: { board: [] },
-      state: { _ui: { jobBoard: { move: { card: 'J-2229' } } } },
-      generation_id: 'gen_b',
-    });
-    expect(body.action_context).not.toHaveProperty('label');
-    expect(body.action_context).not.toHaveProperty('description');
+    expect(body).not.toHaveProperty('action_context');
     expect(body).not.toHaveProperty('label');
+    expect(body).not.toHaveProperty('description');
+    // The card the user moved never leaves the browser.
+    const wire = JSON.stringify(body);
+    expect(wire).not.toContain('J-2229');
+    expect(wire).not.toContain('jobBoard');
+    // The action is still named, so the model knows what happened.
+    expect(body.prompt).toMatch(/saveDayPlan/);
   });
 
   it('createComposeTool / createActionTool carry `inputExamples` alongside the definition (AI SDK / Mastra core field)', () => {

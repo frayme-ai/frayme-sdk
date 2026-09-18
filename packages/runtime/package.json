@@ -1,6 +1,6 @@
 {
   "name": "@frayme/runtime",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Frayme runtime — render validated generative-UI specs in React, with Vercel AI SDK and AG-UI transport adapters. The last mile between an agent and live, interactive UI.",
   "license": "MIT",
   "homepage": "https://frayme.ai",

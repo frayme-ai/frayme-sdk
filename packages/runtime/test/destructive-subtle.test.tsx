@@ -82,8 +82,8 @@ describe('IconButton — destructive is tinted, primary is neutral', () => {
   it('variant:primary → Button parity (neutral high-contrast), not the brand slab', () => {
     const { container } = draw('IconButton', { ...base, variant: 'primary' });
     const btn = container.querySelector('button')!;
-    expect(has(btn, 'bg-foreground')).toBe(true);
-    expect(has(btn, 'text-card')).toBe(true);
+    expect(has(btn, 'bg-[color:var(--fr-btn-fill,var(--color-foreground))]')).toBe(true);
+    expect(has(btn, 'text-[color:var(--fr-btn-ink,var(--color-card))]')).toBe(true);
     expect(has(btn, 'bg-primary')).toBe(false);
   });
 
@@ -117,7 +117,7 @@ describe('ButtonGroup — pressed segment', () => {
     expect(has(pressed, 'aria-pressed:text-danger')).toBe(true);
     expect(has(pressed, 'aria-pressed:bg-danger/10')).toBe(false);
     expect(has(pressed, 'aria-pressed:bg-danger')).toBe(false);
-    expect(has(pressed, 'aria-pressed:bg-foreground')).toBe(false); // no near-black bleed
+    expect(has(pressed, 'aria-pressed:bg-[color:var(--fr-btn-fill,var(--color-foreground))]')).toBe(false); // no near-black bleed
     expect(has(pressed, 'aria-pressed:text-danger-foreground')).toBe(false);
     // the border still routes through the var channel, never a border-{tone} utility
     expect(has(pressed, 'aria-pressed:[--fr-bgroup-border:var(--color-danger)]')).toBe(true);
@@ -126,8 +126,8 @@ describe('ButtonGroup — pressed segment', () => {
   it('variant:solid (default) → the pressed fill is neutral high-contrast, not the brand fill', () => {
     const { container } = draw('ButtonGroup', { buttons, selected: 'a' });
     const pressed = pressedOf(container);
-    expect(has(pressed, 'aria-pressed:bg-foreground')).toBe(true);
-    expect(has(pressed, 'aria-pressed:text-card')).toBe(true);
+    expect(has(pressed, 'aria-pressed:bg-[color:var(--fr-btn-fill,var(--color-foreground))]')).toBe(true);
+    expect(has(pressed, 'aria-pressed:text-[color:var(--fr-btn-ink,var(--color-card))]')).toBe(true);
     expect(has(pressed, 'aria-pressed:bg-primary')).toBe(false);
     expect(has(pressed, 'aria-pressed:text-primary-foreground')).toBe(false);
   });
@@ -151,8 +151,8 @@ describe('Confirmation — the confirm button', () => {
   it('tone unset (neutral) → the neutral high-contrast primary, not bg-primary', () => {
     const { container } = draw('Confirmation', { message: 'Proceed?' });
     const confirm = container.querySelectorAll('button')[0];
-    expect(has(confirm, 'bg-foreground')).toBe(true);
-    expect(has(confirm, 'text-card')).toBe(true);
+    expect(has(confirm, 'bg-[color:var(--fr-btn-fill,var(--color-foreground))]')).toBe(true);
+    expect(has(confirm, 'text-[color:var(--fr-btn-ink,var(--color-card))]')).toBe(true);
     expect(has(confirm, 'bg-primary')).toBe(false);
   });
 });
@@ -182,8 +182,8 @@ describe('Link variant:button — matches Button, not the old px-4/py-2 brand sl
   it('neutral high-contrast fill, Button md footprint, no resting shadow', () => {
     const { container } = draw('Link', { label: 'Open dashboard', href: 'https://example.com', variant: 'button' });
     const a = container.querySelector('a')!;
-    expect(has(a, 'bg-foreground')).toBe(true);
-    expect(has(a, 'text-card')).toBe(true);
+    expect(has(a, 'bg-[color:var(--fr-btn-fill,var(--color-foreground))]')).toBe(true);
+    expect(has(a, 'text-[color:var(--fr-btn-ink,var(--color-card))]')).toBe(true);
     expect(has(a, 'bg-primary')).toBe(false);
     expect(has(a, 'text-primary-foreground')).toBe(false);
     // Button's md size step: px-3.5 py-1.5 / 0.875rem with the paired leading ratio
@@ -207,7 +207,7 @@ describe('Link variant:button — matches Button, not the old px-4/py-2 brand sl
     const { container } = draw('Link', { label: 'Read more', href: 'https://example.com' });
     const a = container.querySelector('a')!;
     expect(has(a, '[--fr-link-fs-default:1rem]')).toBe(true);
-    expect(has(a, 'bg-foreground')).toBe(false);
+    expect(has(a, 'bg-[color:var(--fr-btn-fill,var(--color-foreground))]')).toBe(false);
   });
 });
 
@@ -251,8 +251,12 @@ describe('the deliberate boundary: indicators keep the solid colour', () => {
 
   it('Pagination selected page uses the neutral high-contrast fill', () => {
     const html = draw('Pagination', { page: 2, totalPages: 5 }).container.innerHTML;
-    expect(html).toContain('var(--color-foreground)');
+    // Neutral by default: the fill routes through the accent knob, whose own
+    // default is the foreground. Never the brand colour.
+    expect(html).toContain('[background:var(--fr-page-accent,var(--fr-accent))]');
     expect(html).not.toContain('var(--color-primary)');
+    // And the label is made for whatever the fill turns out to be.
+    expect(html).toContain('var(--fr-page-accent-text,var(--fr-accent-ink,var(--color-card)))');
   });
 
   it('semantic tones are tinted CONSISTENTLY, not just critical', () => {

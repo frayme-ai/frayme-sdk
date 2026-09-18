@@ -339,12 +339,17 @@ export function MediaAnnotator({ element, emit, bindings }: ComponentRenderProps
     // The ink for the accent SLAB (chip / Save), pinned to the accent the author
     // fixed. Absent when they set none — the slab is --color-foreground then, and
     // --color-card is already its partner in both modes. See fixedInk above.
-    ...(fixedInk(p.accent) === null ? {} : { '--fr-ma-ink': fixedInk(p.accent) as string }),
+    // A spec that set its OWN accent owns its ink: a readable colour gets a derived
+    // ink, one we cannot read pins the token pair it always had. Only with no accent
+    // of its own does the slab fall through to the theme's --fr-accent-ink, because
+    // only then is the fill actually the theme's accent. Letting an unreadable spec
+    // accent fall through would print an ink computed for a DIFFERENT colour.
+    ...(safeColor(p.accent) === null ? {} : { '--fr-ma-ink': fixedInk(p.accent) ?? 'var(--color-card)' }),
   } as CSSProperties;
   const mutedText = 'text-[color:var(--fr-ma-muted,var(--color-muted-foreground))]';
   // The slab's ink, as one expression: the pinned value when the accent is
   // authored, the token pair otherwise (byte-identical to the old `text-card`).
-  const slabInk = 'text-[color:var(--fr-ma-ink,var(--color-card))]';
+  const slabInk = 'text-[color:var(--fr-ma-ink,var(--fr-accent-ink,var(--color-card)))]';
   const accentVar = 'var(--fr-ma-accent, var(--fr-accent))';
   const inkFor = (m: Mark): string => safeColor(m.color) ?? 'var(--fr-ma-active, var(--color-primary))';
   /** Same pairing for a pin head, whose fill is per-MARK rather than per-chart —
@@ -375,7 +380,7 @@ export function MediaAnnotator({ element, emit, bindings }: ComponentRenderProps
                 role="radio"
                 aria-checked={tool === t.key}
                 onClick={() => switchTool(t.key)}
-                className={cn('flex items-center gap-1 px-2.5 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-ma-accent,var(--fr-accent))_20%,transparent)]', tool === t.key ? cn('bg-[color:var(--fr-ma-accent,var(--color-foreground))]', slabInk) : 'bg-card text-foreground hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))]')}
+                className={cn('flex items-center gap-1 px-2.5 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-ma-accent,var(--color-foreground))_20%,transparent)]', tool === t.key ? cn('bg-[color:var(--fr-ma-accent,var(--fr-accent))]', slabInk) : 'bg-card text-foreground hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))]')}
               >
                 <span aria-hidden="true">{t.glyph}</span>
                 <span className="hidden sm:inline">{t.label}</span>
@@ -505,7 +510,7 @@ export function MediaAnnotator({ element, emit, bindings }: ComponentRenderProps
                 onClick={() => openMark(m)}
                 aria-label={(m.label || m.kind) + (selected ? ', selected' : '')}
                 disabled={captureActive}
-                className={cn('absolute -translate-y-full rounded px-1 text-[10px] font-medium shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-ma-accent,var(--fr-accent))_20%,transparent)]', captureActive && 'pointer-events-none', selected ? cn('bg-[color:var(--fr-ma-accent,var(--color-foreground))]', slabInk) : 'bg-card/90 text-foreground')}
+                className={cn('absolute -translate-y-full rounded px-1 text-[10px] font-medium shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-ma-accent,var(--color-foreground))_20%,transparent)]', captureActive && 'pointer-events-none', selected ? cn('bg-[color:var(--fr-ma-accent,var(--fr-accent))]', slabInk) : 'bg-card/90 text-foreground')}
                 style={{ left: `${ax * 100}%`, top: `${ay * 100}%` }}
               >
                 {showLabels && m.label ? m.label : m.kind}
@@ -535,7 +540,7 @@ export function MediaAnnotator({ element, emit, bindings }: ComponentRenderProps
                 </button>
                 <div className="flex items-center gap-2">
                   <button type="button" onClick={() => setOpenId(null)} className="rounded-md border border-border px-2.5 py-1.5 text-sm text-foreground transition-colors hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))] focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-ma-accent,var(--fr-accent))_20%,transparent)]">Cancel</button>
-                  <button type="button" onClick={saveLabel} className={cn('rounded-md bg-[color:var(--fr-ma-accent,var(--color-foreground))] px-2.5 py-1.5 text-sm font-medium shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-ma-accent,var(--fr-accent))_20%,transparent)]', slabInk)}>Save</button>
+                  <button type="button" onClick={saveLabel} className={cn('rounded-md bg-[color:var(--fr-ma-accent,var(--fr-accent))] px-2.5 py-1.5 text-sm font-medium shadow-sm transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-ma-accent,var(--fr-accent))_20%,transparent)]', slabInk)}>Save</button>
                 </div>
               </div>
             </div>

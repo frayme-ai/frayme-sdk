@@ -13,7 +13,7 @@ import { type ComponentRenderProps } from '../upstream.js';
 import { useIntrinsicEmit } from '../intrinsic.js';
 import { useLocalOrBound as useBoundProp } from './_state.js';
 import { cn } from '../cn.js';
-import { styleVars } from './_style.js';
+import { accentTextVar, styleVars } from './_style.js';
 import { useAriaId } from './_aria.js';
 import { Icon } from './icons.js';
 
@@ -275,9 +275,9 @@ const dayBtn = cva(
         // still fills brand. The in-range fill's fallback moves in lockstep so the band
         // between neutral endpoints reads as a faint neutral tint, not a brand wash.
         selected:
-          'font-semibold text-[color:var(--fr-cal-accent-fg,var(--color-card))] [background:var(--fr-cal-accent,var(--color-foreground))]',
+          'font-semibold text-[color:var(--fr-cal-accent-fg,var(--fr-accent-ink,var(--color-card)))] [background:var(--fr-cal-accent,var(--fr-accent))]',
         // a day inside a range (not an endpoint) — subtle fill, coherent with the neutral endpoints.
-        inRange: 'text-[color:var(--fr-cal-fg,var(--color-foreground))] [background:color-mix(in_srgb,var(--fr-cal-accent,var(--color-foreground))_18%,transparent)]',
+        inRange: 'text-[color:var(--fr-cal-fg,var(--color-foreground))] [background:color-mix(in_srgb,var(--fr-cal-accent,var(--fr-accent))_18%,transparent)]',
         // resting/out-of-range day text follows the settable muted channel.
         muted: 'cursor-not-allowed opacity-45 text-[color:var(--fr-cal-muted,var(--color-muted-foreground))]',
       },
@@ -578,7 +578,7 @@ export function DatePicker({ element, emit, bindings }: ComponentRenderProps): R
   const grid = buildMonth(ym, 'monday', { monthNames, weekdays });
   const styles = styleVars(
     { var: '--fr-cal-accent', value: p.accent, kind: 'color' },
-    { var: '--fr-cal-accent-fg', value: p.accentText, kind: 'color' },
+    accentTextVar('--fr-cal-accent-fg', p.accent, p.accentText),
     { var: '--fr-cal-border', value: p.borderColor, kind: 'color' },
     { var: '--fr-cal-bg', value: p.bg, kind: 'color' },
     { var: '--fr-cal-muted', value: p.mutedColor, kind: 'color' },
@@ -758,7 +758,7 @@ export function DateRangePicker({ element, emit, bindings }: ComponentRenderProp
   const grid = buildMonth(ym, 'monday', { monthNames, weekdays });
   const styles = styleVars(
     { var: '--fr-cal-accent', value: p.accent, kind: 'color' },
-    { var: '--fr-cal-accent-fg', value: p.accentText, kind: 'color' },
+    accentTextVar('--fr-cal-accent-fg', p.accent, p.accentText),
     { var: '--fr-cal-border', value: p.borderColor, kind: 'color' },
     { var: '--fr-cal-bg', value: p.bg, kind: 'color' },
     { var: '--fr-cal-muted', value: p.mutedColor, kind: 'color' },
@@ -1086,7 +1086,7 @@ export function Calendar({ element, emit, bindings }: ComponentRenderProps): Rea
   const todayIso = typeof p.today === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(p.today) ? p.today : null;
   const styles = styleVars(
     { var: '--fr-cal-accent', value: p.accent, kind: 'color' },
-    { var: '--fr-cal-accent-fg', value: p.accentText, kind: 'color' },
+    accentTextVar('--fr-cal-accent-fg', p.accent, p.accentText),
     { var: '--fr-cal-border', value: p.borderColor, kind: 'color' },
     { var: '--fr-cal-bg', value: p.bg, kind: 'color' },
     { var: '--fr-cal-muted', value: p.mutedColor, kind: 'color' },

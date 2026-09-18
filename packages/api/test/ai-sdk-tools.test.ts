@@ -275,24 +275,23 @@ describe('fraymeTools: frayme_action', () => {
     const body = bodyOf(calls[0]);
     expect(body).toMatchObject({
       prompt: 'Only delayed orders now.',
-      mode: 'continue_journey',
       action_policy: 'declared_only',
       data: { orders: [{ id: 'A-1', status: 'Delayed' }] },
       actions: [{ name: 'showAll', role: 'Show all' }],
       signals: { density: 'compact' },
     });
-    expect(body.action_context).toEqual({
-      action: 'showDelayed',
-      event: 'commit',
-      params: PRESS.params,
-      state: PRESS.state,
-      element_id: 'btn',
-      generation_id: 'gen_1',
-    });
-    expect(body.prior_spec).toEqual(SCREEN);
+    // A PRESS IS A CREATE. The pressed screen turns the request into an edit, and
+    // action_context reaches no prompt, so neither is sent and there is no mode.
+    expect(body).not.toHaveProperty('mode');
+    expect(body).not.toHaveProperty('prior_spec');
+    expect(body).not.toHaveProperty('action_context');
+    // Nothing the user typed, and nothing the screen held, crosses the wire.
+    const wire = JSON.stringify(body);
+    expect(wire).not.toContain('ordersTable');
+    expect(wire).not.toContain('elements');
   });
 
-  it('the page event wins over what the model copied', async () => {
+  it('a model that invents params or state sends neither, because neither is on the wire', async () => {
     const { tools, calls } = setup([ok()], { messages: history() });
     await outputs(tools.frayme_action.execute, {
       action: 'showDelayed',
@@ -300,10 +299,12 @@ describe('fraymeTools: frayme_action', () => {
       state: { made: 'up' },
       element_id: 'other',
     });
-    const context = bodyOf(calls[0]).action_context as Record<string, unknown>;
-    expect(context.params).toEqual(PRESS.params);
-    expect(context.state).toEqual(PRESS.state);
-    expect(context.element_id).toBe('btn');
+    // The old shape forwarded the page's own event so the model could not fake it.
+    // A create carries no event at all, so an invention has nowhere to land.
+    const wire = JSON.stringify(bodyOf(calls[0]));
+    expect(wire).not.toContain('Invented');
+    expect(wire).not.toContain('made');
+    expect(bodyOf(calls[0])).not.toHaveProperty('action_context');
   });
 
   it('writes a plain default prompt when the model gives none', async () => {
@@ -345,16 +346,20 @@ describe('fraymeTools: frayme_action', () => {
       generation_id: 'gen_1',
     });
     const body = bodyOf(calls[0]);
-    expect(body.action_context).toEqual({ action: 'approve', params: { id: '7' }, generation_id: 'gen_1' });
+    expect(body).not.toHaveProperty('action_context');
     expect(body).not.toHaveProperty('prior_spec');
+    // The press still reaches the composer, by name, in the prompt.
+    expect(String(body.prompt)).toContain('approve');
   });
 
-  it('continues from the press alone when the pressed screen is not in the history', async () => {
-    const messages = [pressFromUser()];
-    const { tools, calls } = setup([ok()], { messages });
-    await outputs(tools.frayme_action.execute, { action: 'showDelayed' });
-    expect(bodyOf(calls[0])).not.toHaveProperty('prior_spec');
-    expect((bodyOf(calls[0]).action_context as Record<string, unknown>).params).toEqual(PRESS.params);
+  it('composes the same way whether or not the pressed screen is in the history', async () => {
+    const withScreen = setup([ok()], { messages: history() });
+    await outputs(withScreen.tools.frayme_action.execute, { action: 'showDelayed' });
+    const without = setup([ok()], { messages: [pressFromUser()] });
+    await outputs(without.tools.frayme_action.execute, { action: 'showDelayed' });
+    // The screen is never attached, so having it changes nothing about the request.
+    expect(bodyOf(without.calls[0])).toEqual(bodyOf(withScreen.calls[0]));
+    expect(bodyOf(without.calls[0])).not.toHaveProperty('prior_spec');
   });
 
   it('reads a press sent the 0.4.0 way, as __frayme_action__ text', () => {
@@ -461,15 +466,36 @@ describe('fraymeTools: what the user sees and what the turn allows', () => {
     expect(calls).toHaveLength(1);
   });
 
-  it('a rejected screen on a press continues fresh, and the model is told', async () => {
+  it('a rejected screen on a continue_journey is retried without it, and the model is told', async () => {
+    // The ONE live path for this retry now: a model that names a screen with
+    // edit_of but asks to move on rather than to change it in place.
     const { tools, calls } = setup([invalid, ok()], { messages: history() });
-    const out = await outputs(tools.frayme_action.execute, { action: 'showDelayed' });
+    const out = await outputs(tools.frayme_compose.execute, {
+      prompt: 'Next step', edit_of: 'gen_1', mode: 'continue_journey',
+    });
     expect(calls).toHaveLength(2);
+    expect(bodyOf(calls[0]).prior_spec).toEqual(SCREEN);
     expect(bodyOf(calls[1])).not.toHaveProperty('prior_spec');
-    expect(bodyOf(calls[1]).mode).toBe('continue_journey');
     expect(out.at(-1)).toMatchObject({ status: 'complete', prior_spec_dropped: true });
-    const view = await tools.frayme_action.toModelOutput?.({ toolCallId: 'c', input: { action: 'showDelayed' }, output: out.at(-1)! });
+    const view = await tools.frayme_compose.toModelOutput?.({ toolCallId: 'c', input: { prompt: 'Next step' }, output: out.at(-1)! });
     expect(view).toMatchObject({ value: { prior_screen_dropped: true } });
+  });
+
+  it('a rejected screen on an EDIT is an error, never a silently fresh screen', async () => {
+    // Dropping the spec would answer "change this screen" with a different one.
+    const { tools, calls } = setup([invalid], { messages: history() });
+    const out = await outputs(tools.frayme_compose.execute, { prompt: 'Red button', edit_of: 'gen_1' });
+    expect(calls).toHaveLength(1);
+    expect(out.at(-1)?.status).toBe('error');
+    expect(out.at(-1)?.prior_spec_dropped).toBeUndefined();
+  });
+
+  it('a press cannot hit that retry, because it never sends a screen', async () => {
+    const { tools, calls } = setup([ok()], { messages: history() });
+    const out = await outputs(tools.frayme_action.execute, { action: 'showDelayed' });
+    expect(calls).toHaveLength(1);
+    expect(bodyOf(calls[0])).not.toHaveProperty('prior_spec');
+    expect(out.at(-1)?.prior_spec_dropped).toBeUndefined();
   });
 
   it('edit_of with mode create edits', async () => {
@@ -590,7 +616,10 @@ describe('fraymeTools: presses read as the page sent them', () => {
     const { tools, calls } = setup([ok()], { messages: [assistantWithScreen(), pressFromUser(odd)] });
     const out = await outputs(tools.frayme_action.execute, { action: 'showDelayed' });
     expect(out.at(-1)?.status).toBe('complete');
-    expect(bodyOf(calls[0]).action_context).toEqual({ action: 'showDelayed', generation_id: 'gen_1' });
+    // The odd fields were only ever a problem for action_context, which is gone.
+    // What matters is that the press is still READ, so the turn is not refused.
+    expect(bodyOf(calls[0])).not.toHaveProperty('action_context');
+    expect(String(bodyOf(calls[0]).prompt)).toContain('showDelayed');
   });
 
   it('an action name the wire cannot take is PRESS_INVALID, not "no press"', async () => {
@@ -615,24 +644,23 @@ describe('fraymeTools: requests cut to the API size ceilings', () => {
     elements: { r: { type: 'Text', props: { content: 'y'.repeat(50_000) } } },
   });
 
-  it('a big table press is sent without its state, and the model is told', async () => {
+  it('a press on a huge table sends none of it, so there is nothing to trim', async () => {
     const big = { ...PRESS, params: { row: { id: 'R-1' } }, state: { rows: rows(400) } };
     const { tools, calls } = setup([ok()], { messages: [assistantWithScreen(), pressFromUser(big)] });
     const out = await outputs(tools.frayme_action.execute, { action: 'showDelayed' });
-    const context = bodyOf(calls[0]).action_context as Record<string, unknown>;
-    expect(context.params).toEqual({ row: { id: 'R-1' } });
-    expect(context).not.toHaveProperty('state');
-    expect(out.every((o) => o.trimmed?.join() === 'state')).toBe(true);
-    const view = await tools.frayme_action.toModelOutput?.({ toolCallId: 'c', input: { action: 'showDelayed' }, output: out.at(-1)! });
-    expect(view).toMatchObject({ value: { status: 'complete', trimmed: ['state'], trimmed_note: expect.stringContaining('state was left out') } });
+    const wire = JSON.stringify(bodyOf(calls[0]));
+    expect(wire).not.toContain('R-1');
+    expect(wire.length).toBeLessThan(400);
+    // Trimming existed to fit the state and the screen. Neither is sent now.
+    expect(out.every((o) => (o.trimmed ?? []).length === 0)).toBe(true);
   });
 
-  it('a pressed screen too large to send is left out', async () => {
+  it('a pressed screen too large to send changes nothing, because none is sent', async () => {
     const screen = { ...assistantWithScreen(), parts: [{ ...assistantWithScreen().parts[0], output: { status: 'complete', generation_id: 'gen_1', op_count: 1, restart_count: 0, spec: hugeScreen() } }] };
     const { tools, calls } = setup([ok()], { messages: [screen, pressFromUser()] });
     const out = await outputs(tools.frayme_action.execute, { action: 'showDelayed' });
     expect(bodyOf(calls[0])).not.toHaveProperty('prior_spec');
-    expect(out.at(-1)?.trimmed).toEqual(['prior_spec']);
+    expect(out.at(-1)?.trimmed ?? []).toEqual([]);
   });
 
   it('an edit of a screen too large to send is refused; continuing from it is not', async () => {
@@ -850,9 +878,10 @@ describe('fraymeTools in a streamText turn', () => {
     expect(first).not.toContain('"elements"');
 
     const body = bodyOf(calls[0]);
-    expect(body.mode).toBe('continue_journey');
-    expect(body.prior_spec).toEqual(SCREEN);
-    expect(body.action_context).toMatchObject({ action: 'showDelayed', params: PRESS.params, state: PRESS.state });
+    expect(body).not.toHaveProperty('mode');
+    expect(body).not.toHaveProperty('prior_spec');
+    expect(body).not.toHaveProperty('action_context');
+    expect(body.prompt).toBe('Show only the delayed orders.');
   });
 
   it('two composes in one step: one runs, the other is refused and draws nothing', async () => {

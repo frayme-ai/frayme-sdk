@@ -1,5 +1,15 @@
 # @frayme/catalog
 
+## 0.4.1
+
+- Prop descriptions corrected where they named a default the renderer does not have. These strings are the vocabulary a model composes against, so a wrong default teaches a wrong spec.
+  - `accent` on the action family: the default is the neutral high-contrast fill, not the primary token.
+  - `accentText` on the action family, and on `Link`: the on-fill ink defaults to the `card` token, which is the inverse of the fill in both light and dark, not the primary-foreground token.
+  - `accent` on `Link` (`variant:button`): the default is the neutral high-contrast fill, matching `Button`.
+  - `accent` on the field family: the default is the `accent` token, which is a neutral until a theme sets one.
+  - `Button.variant`: `primary` is described as a solid neutral high-contrast fill. The `At most one primary per view` rule is unchanged.
+- No schema, no enum and no validation behaviour changes.
+
 ## 0.4.0
 
 - `CATALOG_VERSION` is now `frayme-0.19.0`.

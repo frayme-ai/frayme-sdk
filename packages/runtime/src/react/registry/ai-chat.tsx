@@ -562,7 +562,7 @@ export function PromptInput({ element, emit, bindings }: ComponentRenderProps): 
         className={cn(
           // quiet defaults: neutral high-contrast send button by default; a
           // supplied `accent` still recolors the fill via the var path below.
-          'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full border border-transparent bg-foreground text-card shadow-sm transition hover:brightness-95 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50',
+          'inline-flex shrink-0 cursor-pointer items-center justify-center rounded-full border border-transparent bg-[color:var(--fr-btn-fill,var(--color-foreground))] text-[color:var(--fr-btn-ink,var(--color-card))] shadow-sm transition hover:brightness-95 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50',
           send.btn,
           // value > token default: a model-named accent recolors the send fill.
           // In-var primary fallback: an INVALID accent (var omitted by styleVars)

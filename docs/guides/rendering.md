@@ -90,6 +90,36 @@ Prefer the [`data` field](data-binding.md) at compose time for facts the UI shou
 | `catalog` | BYOC catalog union so strict mode accepts custom component types. See [Custom components](custom-components.md). |
 | `className` | Extra class on the `.frayme-root` wrapper. |
 
+## Your own CSS can overrule the stylesheet
+
+`@frayme/runtime/styles.css` puts its utilities inside `@layer utilities`, so you can restyle a screen without fighting specificity. That convenience has a sharp edge: **author styles outside any layer beat every layered style, whatever their specificity.** A one-line reset in your own stylesheet therefore reaches inside a rendered screen and wins.
+
+The usual culprits are element resets, the kind most apps carry:
+
+```css
+/* Reaches into every rendered screen: buttons lose their fill, their border,
+   and the label colour that sat on that fill. */
+button { border: 0; background: none }
+button, input, select, textarea { color: inherit }
+a { color: inherit; text-decoration: none }
+h1, h2, h3, h4 { margin: 0 }
+```
+
+Keep such rules off the renderer's subtree. Every screen, and the receipt card, sits under `.frayme-root`, so exclude its descendants. Wrapping the exclusion in `:where()` keeps the specificity you already had, so the rest of your CSS still wins exactly where it did:
+
+```css
+button:where(:not(.frayme-root *)) { border: 0; background: none }
+:is(button, input, select, textarea):where(:not(.frayme-root *)) { color: inherit }
+a:where(:not(.frayme-root *)) { color: inherit; text-decoration: none }
+:is(h1, h2, h3, h4):where(:not(.frayme-root *)) { margin: 0 }
+```
+
+The same applies to broad element styling such as `table`, `th` and `td` rules: a screen with a `DataTable`, or a `FraymeActionReceipt` and its params table, will pick them up. To restyle a screen on purpose, use the `theme` tokens or target `.frayme-root` yourself; both survive a runtime upgrade in a way a reset does not.
+
+{% hint style="info" %}
+Symptom to recognise: the screen's inputs and layout look right, but buttons render as bare text. That is an unlayered `background`/`border` reset, not a broken spec.
+{% endhint %}
+
 ## A complete streaming setup
 
 ```tsx

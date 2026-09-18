@@ -266,7 +266,7 @@ export const formFieldBase = {
     .nullable()
     .describe('Label position: top (default) · hidden (visually removed but kept for a11y via sr-only).'),
   labelColor: colorSchema.describe('Text colour of the field label/legend line above or beside the control (default the foreground token — inherits). Help text stays `mutedColor`; the error line stays the danger token.'),
-  accent: colorSchema.describe('Brand color lever: focus ring + checked/active fill (default primary token).'),
+  accent: colorSchema.describe('Brand color lever: focus ring + checked/active fill. Defaults to the accent token, a neutral until a theme sets one.'),
   width: dimensionSchema({ units: ['px', 'rem', '%'], max: 900 }).describe('Field width (e.g. "12rem" or "100%"; default 100%). For Checkbox/Radio/Switch (default auto) it constrains the whole field incl. label wrap.'),
 } as const;
 
@@ -289,8 +289,8 @@ export const formFieldBase = {
  * convergent. `Radius` (none·sm·md·lg·full) IS the shared atom.
  */
 export const actionShared = {
-  accent: colorSchema.describe('Dominant/active color (button fill, selected pill, active page). Drives `--fr-<comp>-accent` (default primary token).'),
-  accentText: colorSchema.describe('Text colour of the label printed on the `accent` fill — the on-fill ink (default the primary-foreground token).'),
+  accent: colorSchema.describe('Dominant/active color (button fill, selected pill, active page). Drives `--fr-<comp>-accent`. Defaults to the neutral high-contrast fill, not a brand colour.'),
+  accentText: colorSchema.describe('Text colour of the label printed on the `accent` fill, the on-fill ink. Defaults to the card token, the inverse of the fill in both light and dark.'),
   radius: z.enum(['none', 'sm', 'md', 'lg', 'full']).nullable().describe('Corner-radius token for the control (default `md`); drop to `sm`/`none` on dense toolbars, `lg` or `full` for a pill-shaped button.'),
   size: z.enum(['sm', 'md', 'lg']).nullable().describe('Control height + padding + font-size together (default md).'),
   fullWidth: z.boolean().nullable().describe('Stretch the control to fill its container width (default false); set true for stacked mobile CTAs or a button that spans a form row.'),

@@ -550,10 +550,14 @@ export const composeInputExamples: ReadonlyArray<ComposeToolInput> = [
 ];
 
 /**
- * Structured input examples for `frayme_action` — the return-loop half of the
- * contract: a DynamicActionEvent forwarded verbatim, plus an optional steering
- * `prompt`. Attached by `createActionTool` as `inputExamples`; same channels
- * and same schema-valid guarantee as `composeInputExamples`.
+ * Structured input examples for `frayme_action`: the event forwarded verbatim,
+ * AND the next screen named. Both examples carry `prompt`, `data` and `actions`
+ * on purpose, because the next screen is composed fresh: an example that
+ * forwarded only the event would teach that a press alone is enough, and the
+ * screen would come back without the values the user just entered.
+ *
+ * Attached by `createActionTool` as `inputExamples`; same channels and the same
+ * schema-valid guarantee as `composeInputExamples`.
  */
 export const actionInputExamples: ReadonlyArray<ActionToolInput> = [
   {
@@ -563,13 +567,24 @@ export const actionInputExamples: ReadonlyArray<ActionToolInput> = [
     element_id: 'choosePro',
     label: 'Choose Pro',
     generation_id: 'gen_abc123',
-    prompt: 'User chose Pro — show the checkout summary.',
+    // The press, described. This is the only channel that carries it.
+    prompt: 'The user chose the Pro plan. Show the checkout summary for it.',
+    // The value the user picked, named again because the next screen is fresh.
+    // The control's own label is not a fact, so it stays out.
+    data: { plan: 'Pro', price: '29 per month', billing: 'Monthly' },
+    // FORWARD actions only. `choosePlan` is not re-declared: the user is past it.
+    actions: [
+      { name: 'confirmCheckout', role: 'Pay and start the plan' },
+      { name: 'changePlan', role: 'Go back to the plan list' },
+    ],
   },
   {
     // A row action on a table: `element_id` is the table, `label` the row-action
-    // entry's label. The sort the user clicked earlier never called the agent —
-    // it sits in the `_ui` mirror, nested element → verb → the verb's payload
-    // keys (`sortBy`/`sortDir` per EVENT_CONTRACT), latest per verb.
+    // entry's label. The sort the user clicked earlier never called the agent, it
+    // sits in the `_ui` mirror, nested element then verb then the verb's payload
+    // keys (`sortBy`/`sortDir` per EVENT_CONTRACT), latest per verb. Forward it
+    // verbatim as here; the tool reads it and sends none of it, so whatever the
+    // next screen must show is named in `data`.
     action: 'escalateTicket',
     event: 'commit',
     params: { id: 'TCK-101' },
@@ -577,6 +592,9 @@ export const actionInputExamples: ReadonlyArray<ActionToolInput> = [
     label: 'Escalate',
     state: { _ui: { tickets: { sort: { sortBy: 'priority', sortDir: 'desc' } } } },
     generation_id: 'gen_def456',
+    prompt: 'The user escalated ticket TCK-101. Confirm the escalation and say what happens next.',
+    data: { id: 'TCK-101', escalatedTo: 'Tier 2', responseTarget: '4 hours' },
+    actions: [{ name: 'backToQueue', role: 'Return to the ticket queue' }],
   },
 ];
 
@@ -643,9 +661,10 @@ export const actionInputSchema = z.object({
      (the host's own words for the action) so the host can head a thread card
      with them. The tool says "forward the event VERBATIM", and `z.object` strips
      unknown keys SILENTLY — the exact shape of the old `role` gap — so the two
-     fields are declared here rather than dropped without a trace. The wire's
-     `action_context` is strict and does not carry them yet, so `createActionTool`
-     omits them from the request (see its WHY).
+     fields are declared here rather than dropped without a trace. Nothing of the
+     event is sent to the server at all now (see the tool's execute), so these two
+     are in good company: they are read, used for the thread card, and left in the
+     browser.
 
      UNBOUNDED. An earlier cut capped `label` at 200 and
      `description` at ACTION_DESCRIPTION_MAX_CHARS, but the runtime bounds
@@ -672,18 +691,20 @@ export const actionInputSchema = z.object({
     .string()
     .max(COMPOSE_PROMPT_MAX_CHARS)
     .optional()
-    .describe('What to do next; default: continue the journey for this action.'),
-  /* THE NEXT SCREEN'S INPUTS. A continue_journey compose is a whole new screen,
-     so the agent needs the same three dials it has on frayme_compose: the facts
-     to show, the controls to wire, and the steering. The schemas are the
-     compose tool's own (one set of limits), re-described for this call. They
-     travel as top-level request fields, never inside `action_context`, which
-     the server keeps strict. */
+    .describe(
+      'What the NEXT screen should show. This is the ONLY place the press is described to the composer, so say what just happened and what comes next. Default: a plain line naming the pressed control.',
+    ),
+  /* THE NEXT SCREEN'S INPUTS, AND THEY ARE THE WHOLE REQUEST. A press composes a
+     FRESH screen, so the agent needs the same three dials it has on
+     frayme_compose: the facts to show, the controls to wire, and the steering.
+     The schemas are the compose tool's own (one set of limits), re-described for
+     this call. Nothing of the event itself is sent, so a value the user typed
+     reaches the composer only if it is named in `data`. */
   data: composeInputSchema.shape.data.describe(
-    'Facts the NEXT screen must show verbatim, exactly as `data` on frayme_compose: the result of what the user just did (the saved record, the new total, the confirmation number) plus anything else the next screen displays.',
+    'Facts the NEXT screen must show verbatim, exactly as `data` on frayme_compose: the values the user just entered, the saved record, the new total, the confirmation number, plus anything else the next screen displays. THE NEXT SCREEN IS COMPOSED FRESH, so a value the user typed that is not here will not appear on it. Facts only: a key the composer does not use is drawn on the screen as a stray detail, so what was pressed belongs in `prompt`, never here.',
   ),
   actions: composeInputSchema.shape.actions.describe(
-    'Controls the NEXT screen needs, exactly as `actions` on frayme_compose. Re-declare every action the next screen needs, including ones declared on the screen the user just used: an action left out comes back unwired.',
+    'Controls the NEXT screen needs, exactly as `actions` on frayme_compose. Declare the actions that lead FORWARD from here, since an action left out comes back unwired. Do NOT re-declare the control just pressed with required params: a declared action that nothing binds makes the server add a button plus a blank input per param, putting back the form the next screen was meant to replace.',
   ),
   signals: composeInputSchema.shape.signals.describe(
     'Steering for the NEXT screen, exactly as `signals` on frayme_compose. Send only the values you are confident about.',
@@ -714,7 +735,7 @@ export const actionToolDefinition = {
   name: 'frayme_action',
   description:
     'Respond to a user interaction on a Frayme-rendered UI. Call this when the user presses a control bound to an action you declared in a prior frayme_compose `actions` contract.\n\n' +
-    'The loop: when the user presses a control bound to a declared action (a Button, a Confirmation, a Form submit, a DataTable or a row/bulk action; any gesture on a `live:true` action), your host receives a DynamicActionEvent — `{action, event, params, state, element_id, label, description, generation_id}` — on its onAction/AG-UI channel. Call frayme_action with those fields VERBATIM (do not re-shape, rename, or drop any of them); add `prompt` only to steer what happens next beyond the default "continue the journey" instruction. For the next screen you may also pass `data` (the facts it shows), `actions` (its controls; re-declare every action it needs) and `signals` (steering), as on frayme_compose. Frayme recomposes the next step IN CONTEXT (continue_journey), preserving the live UI state the user already entered, and returns a NEW validated spec with its own `spec.actions` for the next round. The event carries the RESOLVED value the user produced — the selected rows themselves, the signed strokes, the edited cells, the picked date, the uploaded file — in `params`/`state`, not just an id or a bare signal, so you rarely need to re-ask; `state._ui.<elementId>.<verb>` holds the latest gesture per verb (board moves, picks, toggles) — never cleared by a press, so treat an entry as what the user last did, not what changed since you were last called, and read the result from the declared param or bound state; `element_id` names the control that fired and `label` is what it said (absent for a Form submit, whose `element_id` is the Form).\n\n' +
+    'The loop: when the user presses a control bound to a declared action (a Button, a Confirmation, a Form submit, a DataTable or a row/bulk action; any gesture on a `live:true` action), your host receives a DynamicActionEvent — `{action, event, params, state, element_id, label, description, generation_id}` — on its onAction/AG-UI channel. Call frayme_action with those fields VERBATIM (do not re-shape, rename, or drop any of them). The NEXT SCREEN IS THEN COMPOSED FRESH from what you send: `prompt` says what just happened and what to show now, `data` carries the values it must display, `actions` declares the controls that lead FORWARD from here, and `signals` steers, all exactly as on frayme_compose. The screen the user pressed is not carried over and their typed state is not resent, so every value the next screen must show has to be named in `data`. You get back a NEW validated spec with its own `spec.actions` for the next round. The event carries the RESOLVED value the user produced — the selected rows themselves, the signed strokes, the edited cells, the picked date, the uploaded file — in `params`/`state`, not just an id or a bare signal, so you rarely need to re-ask; `state._ui.<elementId>.<verb>` holds the latest gesture per verb (board moves, picks, toggles) — never cleared by a press, so treat an entry as what the user last did, not what changed since you were last called, and read the result from the declared param or bound state; `element_id` names the control that fired and `label` is what it said (absent for a Form submit, whose `element_id` is the Form).\n\n' +
     'The `event` field is always one of these 8 canonical verbs; `params` carries the verb\'s documented payload keys (spec-authored keys win over these intrinsic ones):\n' +
     VERBS_BLOCK +
     '\n\n' + ACTION_CALL_EXAMPLES,
@@ -735,15 +756,16 @@ export function createActionTool(client: Frayme): typeof actionToolDefinition & 
   return {
     ...actionToolDefinition,
     inputExamples: actionInputExamples.map((input) => ({ input })),
-    // `label` / `description` are accepted by the schema (the host forwards the
-    // event verbatim) but NOT forwarded: `/v1/compose` rejects unknown
-    // `action_context` fields with 400 BAD_REQUEST and does not carry them yet.
-    // Dropping them here — not in the schema — keeps the tool honest about what
-    // it accepts while the wire catches up.
-    // `data` / `actions` / `signals` describe the NEXT screen, so they ride as
-    // top-level request fields beside `action_context`, never inside it.
-    // A press over the API's action_context ceiling (a big table's rows) is
-    // cut to fit: state first, then params (`fitContinuation`), never refused.
+    // A PRESS IS A CREATE. The whole event the host forwards is read here and then
+    // deliberately left off the wire: `action_context` reaches no prompt, so the
+    // params and state posted there conveyed nothing to the model while still
+    // crossing the network, typed values and all. `mode: continue_journey` is gone
+    // for the same reason it never belonged: with nothing to continue FROM, it only
+    // framed the request as a redraw.
+    //
+    // What reaches the model is the prompt and `data`. The caller names the press in
+    // the prompt and puts the values the next screen must show in `data`, and
+    // `actions` names only what leads FORWARD, never the control just pressed.
     execute: ({
       prompt,
       data,
@@ -754,9 +776,7 @@ export function createActionTool(client: Frayme): typeof actionToolDefinition & 
       ...ctx
     }: ActionToolInput) =>
       client.compose.create({
-        prompt: prompt ?? `The user triggered the "${ctx.action}" action — continue the journey.`,
-        mode: 'continue_journey',
-        action_context: fitContinuation({ action_context: ctx }).action_context,
+        prompt: prompt ?? `The user pressed the "${ctx.action}" control. Show the next step.`,
         data,
         actions,
         signals,

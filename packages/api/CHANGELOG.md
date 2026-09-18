@@ -1,5 +1,31 @@
 # @frayme/api
 
+## 0.6.0
+
+### A press composes the next screen, it does not edit the last one
+
+`frayme_action` and `createActionTool` no longer attach `mode: 'continue_journey'`, `prior_spec` or `action_context`. A press is sent as a plain create: the prompt names what was pressed, `data` carries the values the next screen must show, and `actions` declares the controls that lead forward.
+
+Why, measured on one filled 16-field form with a 12-value press:
+
+| sent | usable next screen | the user's 12 values |
+| --- | --- | --- |
+| prior_spec + action_context + continue_journey | 0 of 2 runs | 0 of 2 |
+| the same minus prior_spec | 0 of 2 runs | 0 of 2 |
+| a create carrying the values | 2 of 2, single pass | 12 of 12 |
+
+`prior_spec` reaches the composer inside an "the user is EDITING an existing UI, REUSE the same element ids" instruction, which answers a press by handing the same screen back. `action_context` reaches no prompt at all, so the params and state posted there told the composer nothing while still crossing the network. On a large table the press body went from over 5 KB to under 200 bytes.
+
+**`prior_spec` is unchanged for `mode: 'edit'`**, which is the one request that legitimately carries a screen: the server has no copy of it, and reusing the same element ids is what keeps a user's half-typed input alive through an edit.
+
+Two rules the tool descriptions and examples now teach, both learned the hard way:
+
+- **Press meta goes in the prompt, never in `data`.** A `data` key the composer does not use is drawn on the screen, so "pressed action: X" arrived as a stray detail card.
+- **Declare forward actions only.** Re-declaring the pressed control with required params makes the server add a button plus a blank input per param, putting back the form the next screen was meant to replace. Every request that did so returned a spec the catalog rejects.
+
+**Upgrading:** if you pass `prompt`, `data` and `actions` on a press already, nothing changes for you. If you forwarded only the event and relied on the server continuing from the screen, name the values in `data`, or the next screen will not show them.
+
+
 ## 0.5.0
 
 - New entry point `@frayme/api/ai-sdk`: `fraymeTools({ messages?, intents?, sources?, client?, actionPolicy?, scheme?, snapshotEveryMs? })` returns `frayme_compose` and `frayme_action` as Vercel AI SDK 6 tools, plus `lookup_intent` when you pass intents and `query_source` when you pass sources.

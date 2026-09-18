@@ -426,7 +426,7 @@ describe('value > enum precedence + active-state recipe (actions)', () => {
     expect(el).toBeTruthy();
     // primary renders as the NEUTRAL high-contrast surface — the assertion
     // tracks the variant class, not the old brand-fill token.
-    expect(el.className).toContain('bg-foreground');
+    expect(el.className).toContain('bg-[color:var(--fr-btn-fill,var(--color-foreground))]');
     expect(el.className).not.toContain('[background:var(--fr-btn-accent)]');
     expect(el.getAttribute('style') ?? '').not.toContain('--fr-btn-accent:');
   });

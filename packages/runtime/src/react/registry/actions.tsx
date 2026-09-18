@@ -11,7 +11,7 @@ import { useFormCommit } from './forms-extended.js';
 import { useScrollEdges } from '../use-scroll-edges.js';
 import { safeUrl, linkTargetRel } from './url-safety.js';
 import { safeDimension } from '@frayme/catalog/validate';
-import { fontClass, leadingClass, motionClass, styleVars, trackingClass, weightClass } from './_style.js';
+import { accentTextVar, fontClass, leadingClass, motionClass, styleVars, trackingClass, weightClass } from './_style.js';
 import { useAriaId } from './_aria.js';
 import { Icon, hasIcon } from './icons.js';
 
@@ -94,7 +94,7 @@ const button = cva(
   // is a later class in the same tailwind-merge group and dedupe-wins over it —
   // verified button-by-button across the 75-cell variant x tone x surface matrix,
   // where the only two painted surfaces that changed were the two UA ones.
-  'inline-flex cursor-pointer items-center justify-center gap-1.5 border border-transparent bg-transparent font-medium transition hover:brightness-95 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_40%,transparent)] [border-radius:var(--fr-btn-radius,var(--fr-btn-radius-default,var(--radius-frayme)))] [min-width:var(--fr-btn-minw,0px)]',
+  'inline-flex cursor-pointer items-center justify-center gap-1.5 border border-transparent bg-transparent font-medium transition hover:brightness-95 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_50%,transparent)] [border-radius:var(--fr-btn-radius,var(--fr-btn-radius-default,var(--radius-frayme)))] [min-width:var(--fr-btn-minw,0px)]',
   {
     variants: {
       variant: {
@@ -106,7 +106,7 @@ const button = cva(
         // — the modern default, and unmistakably the page's main action without
         // competing with status colour. A spec-supplied `accent` still overrides
         // (the "unless asked in the prompt/spec" rule).
-        primary: 'bg-foreground text-card',
+        primary: 'bg-[color:var(--fr-btn-fill,var(--color-foreground))] text-[color:var(--fr-btn-ink,var(--color-card))]',
         secondary: 'border-border bg-[color:var(--fr-surface-sunken,var(--color-muted))] text-foreground shadow-none',
         // danger is QUIETER still — red, but not shouting:
         // no resting fill, a HAIRLINE red border (30% mix), a red label + red glyph
@@ -419,7 +419,7 @@ const link = cva(
       // Button's neutral high-contrast primary and md footprint. The font size lands via
       // the compoundVariant below (the `size` block emits after this one in cva order).
       button:
-        '[border-radius:var(--fr-link-radius,var(--radius-frayme))] border border-transparent bg-foreground px-3.5 py-1.5 font-medium text-card no-underline hover:brightness-95',
+        '[border-radius:var(--fr-link-radius,var(--radius-frayme))] border border-transparent bg-[color:var(--fr-btn-fill,var(--color-foreground))] px-3.5 py-1.5 font-medium text-[color:var(--fr-btn-ink,var(--color-card))] no-underline hover:brightness-95',
     },
     tone: {
       // INHERITED FOREGROUND (same class as Button ghost/outline above). A text
@@ -585,7 +585,7 @@ const ddItem = cva(
   // break-words, not truncate: a menu item's label IS the choice, and the panel has
   // no fixed row height (it is `max-h-… overflow-y-auto`, so it scrolls in the
   // BLOCK axis) — a long option takes a second line instead of losing its tail.
-  'block w-full cursor-pointer break-words rounded-[calc(var(--radius-frayme)/2)] border-none bg-none px-2.5 py-1.5 text-left text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_40%,transparent)]',
+  'block w-full cursor-pointer break-words rounded-[calc(var(--radius-frayme)/2)] border-none bg-none px-2.5 py-1.5 text-left text-inherit focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_50%,transparent)]',
   {
     variants: {
       // selected-item accent text: TEXT-COLOR group form so it dedupes-and-wins
@@ -854,7 +854,7 @@ const toggle = cva(
   // in the render cn() so the accent-derived hover (--fr-toggle-active, 12% tint) and the
   // token hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))] stay MUTUALLY-EXCLUSIVE (an arbitrary [background:color-mix]
   // hover does NOT dedupe a co-located hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))] utility — the tw-merge trap).
-  'inline-flex cursor-pointer items-center gap-1.5 border bg-card text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_40%,transparent)] [border-radius:var(--fr-toggle-radius,var(--fr-toggle-radius-default,var(--radius-frayme)))] aria-pressed:border-[var(--fr-toggle-active,var(--fr-surface-sunken,var(--color-muted)))] aria-pressed:[background:var(--fr-toggle-active,var(--fr-surface-sunken,var(--color-muted)))] aria-pressed:text-[color:var(--fr-toggle-active-text,var(--fr-surface-fg,var(--color-foreground)))]',
+  'inline-flex cursor-pointer items-center gap-1.5 border bg-card text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_50%,transparent)] [border-radius:var(--fr-toggle-radius,var(--fr-toggle-radius-default,var(--radius-frayme)))] aria-pressed:border-[var(--fr-toggle-active,var(--fr-surface-sunken,var(--color-muted)))] aria-pressed:[background:var(--fr-toggle-active,var(--fr-surface-sunken,var(--color-muted)))] aria-pressed:text-[color:var(--fr-toggle-active-text,var(--fr-surface-fg,var(--color-foreground)))]',
   {
     variants: {
       variant: {
@@ -1281,7 +1281,7 @@ const bgItem = cva(
   // The 1px seam overlap is NOT baked here: it is axis-dependent (a column joins on
   // the block axis, a row on the inline axis) and it must pair with the matching
   // gutter on the wrapper that absorbs it, so it rides on the wrapper — see there.
-  'inline-flex min-w-0 cursor-pointer items-center justify-center gap-1.5 border bg-card text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_40%,transparent)] [border-color:var(--fr-bgroup-border,var(--color-border))]',
+  'inline-flex min-w-0 cursor-pointer items-center justify-center gap-1.5 border bg-card text-foreground transition focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_50%,transparent)] [border-color:var(--fr-bgroup-border,var(--color-border))]',
   {
     variants: {
       size: { sm: 'px-3 py-1 text-sm', md: 'px-3.5 py-1.5', lg: 'px-4 py-2 text-lg' },
@@ -1300,7 +1300,7 @@ const bgItem = cva(
         // (bg-foreground/text-card) instead of the brand fill — identical to tone
         // `neutral` below, which is the point: an un-toned segmented control should
         // read as "selected", not as a second brand accent competing with the page.
-        solid: 'aria-pressed:[--fr-bgroup-border:var(--color-foreground)] aria-pressed:bg-foreground aria-pressed:text-card',
+        solid: 'aria-pressed:[--fr-bgroup-border:var(--fr-btn-fill,var(--color-foreground))] aria-pressed:bg-[color:var(--fr-btn-fill,var(--color-foreground))] aria-pressed:text-[color:var(--fr-btn-ink,var(--color-card))]',
         // INHERITED FOREGROUND on the RESTING outline segment: `bg-transparent`
         // dedupes the base `bg-card`, so an unpressed outline segment shows the
         // ancestor's surface while the base `text-foreground` reset its label to
@@ -1312,7 +1312,7 @@ const bgItem = cva(
         outline: 'bg-transparent text-[color:currentColor] aria-pressed:[color:var(--fr-bgroup-accent,var(--fr-accent))] aria-pressed:[border-color:var(--fr-bgroup-accent,var(--fr-accent))]',
       },
       tone: {
-        neutral: 'aria-pressed:[--fr-bgroup-border:var(--color-foreground)] aria-pressed:bg-foreground aria-pressed:text-card',
+        neutral: 'aria-pressed:[--fr-bgroup-border:var(--fr-btn-fill,var(--color-foreground))] aria-pressed:bg-[color:var(--fr-btn-fill,var(--color-foreground))] aria-pressed:text-[color:var(--fr-btn-ink,var(--color-card))]',
         // Tinted like `critical` below — a pressed segment marks a selection, it is
         // not an alarm (an earlier pass tinted critical alone, which left one
         // recipe speaking two languages).
@@ -1537,7 +1537,7 @@ export function ButtonGroup({ element, emit, bindings }: ComponentRenderProps): 
 const pageBtn = cva(
   // shared focus-visible ring recipe (Button parity) so keyboard focus on a page
   // cell is visible — consistent across the action family.
-  'inline-flex h-8 min-w-8 cursor-pointer items-center justify-center border text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_40%,transparent)] disabled:cursor-not-allowed disabled:opacity-40 [border-color:var(--color-border)]',
+  'inline-flex h-8 min-w-8 cursor-pointer items-center justify-center border text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_50%,transparent)] disabled:cursor-not-allowed disabled:opacity-40 [border-color:var(--color-border)]',
   {
     variants: {
       size: { sm: 'h-7 min-w-7 text-sm', md: 'h-8 min-w-8', lg: 'h-10 min-w-10 text-lg' },
@@ -1564,7 +1564,7 @@ const pageBtn = cva(
         // would win the cascade, leaving the accent border inert). On-fill text
         // uses the TEXT-COLOR group form (added LAST) so it dedupes-and-wins
         // over `text-primary-foreground`.
-        true: 'text-card [background:var(--fr-page-accent,var(--color-foreground))] [border-color:var(--fr-page-accent,var(--color-foreground))] text-[color:var(--fr-page-accent-text,var(--color-card))]',
+        true: 'text-card [background:var(--fr-page-accent,var(--fr-accent))] [border-color:var(--fr-page-accent,var(--fr-accent))] text-[color:var(--fr-page-accent-text,var(--fr-accent-ink,var(--color-card)))]',
         false: '',
       },
     },
@@ -1665,7 +1665,7 @@ export function Pagination({ element, emit, bindings }: ComponentRenderProps): R
       aria-label="Pagination"
       style={styleVars(
         { var: '--fr-page-accent', value: p.accent, kind: 'color' },
-        { var: '--fr-page-accent-text', value: p.accentText, kind: 'color' },
+        accentTextVar('--fr-page-accent-text', p.accent, p.accentText),
         { var: '--fr-page-resting', value: p.color, kind: 'color' },
         { var: '--fr-page-border', value: p.borderColor, kind: 'color' },
         { var: '--fr-page-muted', value: p.mutedColor, kind: 'color' },

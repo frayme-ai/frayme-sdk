@@ -61,7 +61,7 @@ import {
   type FraymeIntent,
   type FraymeIntentExample,
 } from '../agent/intents.js';
-import { actionContextOf, type FraymePress } from '../agent/press.js';
+import { type FraymePress } from '../agent/press.js';
 import {
   querySourceTool,
   type FraymeSources,
@@ -127,7 +127,7 @@ const COMPOSE_NO_HISTORY_NOTE =
   '\n\nIN THIS APP: earlier screens are not available to this tool, so never pass `prior_spec`. Describe each screen in full.';
 
 const ACTION_HOST_NOTE =
-  '\n\nIN THIS APP: a press reaches you as the user\'s message, ending in a line that starts with "frayme_action" followed by the event JSON. Call frayme_action with that JSON as it is, plus `prompt`, `data`, `actions` and `signals` for the next screen. The tool restores the params, the state and the pressed screen itself. Call frayme_action only for such a press; for anything else, call frayme_compose.';
+  '\n\nIN THIS APP: a press reaches you as the user\'s message, ending in a line that starts with "frayme_action" followed by the event JSON. Call frayme_action with that JSON as it is, plus `prompt`, `data`, `actions` and `signals` for the next screen. The tool reads the press from that message and sends none of it onward: the next screen is composed fresh, so name in `data` every value the user entered that it must show, and describe the press in `prompt`. Call frayme_action only for such a press; for anything else, call frayme_compose.';
 
 export interface FraymeToolsOptions {
   /** The API client. Default: `new Frayme()`, which reads `FRAYME_API_KEY` and `FRAYME_BASE_URL`. */
@@ -548,25 +548,36 @@ export function fraymeTools(options: FraymeToolsOptions = {}): FraymeTools {
           if (input.signals !== undefined) press.signals = input.signals;
         }
 
-        // Found only when the pressed screen finished in this chat; without it
-        // the server still continues from the press alone.
-        const prior = press.generation_id !== undefined ? screenIn(messages, press.generation_id) : undefined;
-        // A big table press, or a big screen, is cut to fit rather than refused.
-        const fit = fitContinuation({ action_context: actionContextOf(press), prior_spec: prior });
+        // A PRESS IS A CREATE, NOT AN EDIT, and the pressed screen is deliberately
+        // NOT attached. `prior_spec` reaches the composer as "the user is EDITING an
+        // existing UI, REUSE the same element ids", so a press answered that way
+        // hands the same screen back instead of moving the journey on. Measured on a
+        // filled 16-element form: with the screen attached, two runs produced no
+        // usable next screen; as a create carrying the values, both produced one on a
+        // single pass, at an eighth of the bytes.
+        //
+        // `action_context` is not attached either. No prompt reads that field, so the
+        // state posted there conveyed nothing to the model while still crossing the
+        // wire, typed values and all.
+        //
+        // A press therefore reaches the composer the way an ask does: named in the
+        // prompt, with the values the next screen must show in `data`. Two rules the
+        // caller has to keep, both of which the tool's description states:
+        //   press meta goes in the PROMPT, never in `data`, because a `data` key the
+        //     composer does not use is rendered on the screen as a detail card;
+        //   `actions` names only what leads FORWARD, never the control just pressed,
+        //     because a declared action with required params that nothing binds makes
+        //     the server re-inject the form the next screen was meant to replace.
         const request: Omit<ComposeRequest, 'stream'> = {
-          prompt:
-            press.prompt ?? `The user pressed the "${press.action}" control. Continue the journey from that screen.`,
-          mode: 'continue_journey',
+          prompt: press.prompt ?? `The user pressed the "${press.action}" control. Show the next step.`,
           action_policy: actionPolicy,
         };
-        if (fit.action_context) request.action_context = fit.action_context;
-        if (fit.prior_spec) request.prior_spec = fit.prior_spec;
         const context = withContext(undefined);
         if (context) request.context = context;
         if (press.data !== undefined) request.data = press.data;
         if (press.actions !== undefined) request.actions = press.actions;
         if (press.signals !== undefined) request.signals = press.signals;
-        return { request, trimmed: fit.trimmed };
+        return { request, trimmed: [] };
       }, abortSignal),
     toModelOutput,
   };

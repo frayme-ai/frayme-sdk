@@ -53,7 +53,7 @@ const useIsomorphicLayoutEffect = typeof document !== 'undefined' ? useLayoutEff
 /* Focus-visible ring shared with Button (actions.tsx) and the DataTable sort
  * headers — one keyboard-focus signal across every interactive surface. */
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_40%,transparent)]';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_50%,transparent)]';
 
 /* CVA recipes — one per component, faithful to the legacy frayme.css design.
  *
@@ -1907,7 +1907,7 @@ export function Carousel({ element, emit, bindings }: ComponentRenderProps): Rea
                 aria-hidden
                 className={cn(
                   'block h-1.5 rounded-full transition-all',
-                  i === activeDot ? 'w-4 bg-foreground' : 'w-1.5 bg-muted-foreground/40',
+                  i === activeDot ? 'w-4 [background:var(--fr-accent)]' : 'w-1.5 bg-muted-foreground/40',
                 )}
               />
             </button>

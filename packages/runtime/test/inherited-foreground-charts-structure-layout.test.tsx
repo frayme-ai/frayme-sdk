@@ -195,8 +195,10 @@ describe('structure-flow — unpainted text inherits, painted discs do not', () 
   it('Stepper: the COMPLETED marker disc keeps the token — it paints its own fill', () => {
     const { container } = draw('Stepper', { steps: [{ label: 'Account' }, { label: 'Billing' }], current: 1 });
     const disc = container.querySelector('span.rounded-full')!;
-    expect(has(disc, '[background:var(--fr-stepper-accent,var(--color-foreground))]')).toBe(true);
-    expect(has(disc, 'text-[var(--color-card)]')).toBe(true);
+    // Still its own fill and its own ink, both tokens, never inherited: the fill now
+    // routes through the accent knob and the ink is made for whatever that fill is.
+    expect(has(disc, '[background:var(--fr-stepper-accent,var(--fr-accent))]')).toBe(true);
+    expect(has(disc, 'text-[color:var(--fr-stepper-accent-text,var(--fr-accent-ink,var(--color-card)))]')).toBe(true);
   });
 
   it('Tree rows inherit: unselected is text-current, selected accent falls to currentColor', () => {
@@ -218,7 +220,7 @@ describe('structure-flow — unpainted text inherits, painted discs do not', () 
   it('the selection WASH keeps the token: it is a background, not ink', () => {
     const { container } = draw('Tree', { nodes: [{ label: 'src' }], selectable: true, value: 'src' });
     const row = container.querySelector('li > div')!;
-    expect(has(row, '[background:color-mix(in_srgb,var(--fr-tree-accent,var(--color-foreground))_14%,transparent)]')).toBe(true);
+    expect(has(row, '[background:color-mix(in_srgb,var(--fr-tree-accent,var(--fr-accent))_14%,transparent)]')).toBe(true);
   });
 });
 

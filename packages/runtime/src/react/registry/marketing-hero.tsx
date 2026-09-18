@@ -80,7 +80,7 @@ const ctaButton = cva(
         // quiet defaults: the first (primary) CTA is neutral high-contrast by
         // default, not a brand slab; an author `accent` still fills brand via the
         // `accented` var path below (a set accent recolors the primary fill).
-        primary: 'bg-foreground text-card hover:bg-foreground/90',
+        primary: 'bg-[color:var(--fr-btn-fill,var(--color-foreground))] text-[color:var(--fr-btn-ink,var(--color-card))] hover:brightness-95',
         secondary: 'bg-[color:var(--fr-surface-sunken,var(--color-muted))] text-foreground hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))]/80',
         outline: 'border border-border bg-transparent text-foreground hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))]',
         ghost: 'bg-transparent text-foreground hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))]',

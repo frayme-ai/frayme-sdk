@@ -184,7 +184,7 @@ describe('Tree — furniture + selected-row treatment', () => {
     // quiet-defaults: the 14% color-mix row fill is unchanged; only the unset
     // fallback moved from the brand token to the neutral high-contrast foreground.
     expect(
-      has(rowDiv, '[background:color-mix(in_srgb,var(--fr-tree-accent,var(--color-foreground))_14%,transparent)]'),
+      has(rowDiv, '[background:color-mix(in_srgb,var(--fr-tree-accent,var(--fr-accent))_14%,transparent)]'),
     ).toBe(true);
     expect(has(rowDiv, 'text-current')).toBe(true);
   });

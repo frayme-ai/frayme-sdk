@@ -16,6 +16,7 @@
 
 import type { CSSProperties } from 'react';
 import { safeColor, safeDimension, type DimOpts } from '@frayme/catalog/validate';
+import { onFillInk } from '../../core/theme.js';
 
 type ColorVar = { var: `--${string}`; value: unknown; kind: 'color' };
 type DimVar = { var: `--${string}`; value: unknown; kind: 'dim'; opts?: DimOpts };
@@ -43,6 +44,30 @@ export function styleVars(...vars: Array<ColorVar | DimVar | TrackVar | RawVar>)
     if (safe !== null) out[v.var] = safe;
   }
   return out as CSSProperties;
+}
+
+/**
+ * The ink for a label sitting on a component's OWN accent fill, as a styleVars
+ * entry to spread beside the accent it pairs with.
+ *
+ * An authored `accentText` wins. Otherwise, when the spec set an `accent`, the ink
+ * is picked against THAT colour, so a pale accent gets dark text instead of the
+ * white it cannot carry. With neither, nothing is written and the class chain
+ * falls through to the theme's `--fr-accent-ink`, then to `card`.
+ *
+ * `raw` for the derived case: `onFillInk` only ever returns one of two fixed inks,
+ * never the model's string, so there is nothing for `safeColor` to prove.
+ */
+export function accentTextVar(name: `--${string}`, accent: unknown, accentText: unknown): ColorVar | RawVar {
+  if (accentText != null) return { var: name, value: accentText, kind: 'color' };
+  const fill = typeof accent === 'string' ? safeColor(accent) : null;
+  // No accent of its own: write nothing, so the label falls through to the theme's
+  // --fr-accent-ink, which WAS computed for the colour that fills it.
+  if (fill === null) return { var: name, value: null, kind: 'color' };
+  // The spec set its own accent, so it owns its ink. A colour we cannot read pins
+  // `card`, the pair it always had. Falling through instead would print the theme
+  // accent's ink on a different colour, and a wrong luminance is worse than none.
+  return { var: name, value: onFillInk(fill) ?? 'var(--color-card)', kind: 'raw' };
 }
 
 /**

@@ -1399,7 +1399,7 @@ export const shadcnBaseComponents = {
       variant: z
         .enum(['primary', 'secondary', 'danger', 'ghost', 'outline'])
         .nullable()
-        .describe('Visual hierarchy: primary (solid, the main CTA, default) · secondary (muted fill) · danger (destructive-action red) · ghost (transparent until hover) · outline (border only, transparent fill). At most one `primary` per view.'),
+        .describe('Visual hierarchy: primary (solid neutral high-contrast fill, the main CTA, default) · secondary (muted fill) · danger (destructive-action red) · ghost (transparent until hover) · outline (border only, transparent fill). At most one `primary` per view.'),
       tone: toneSchema,
       disabled: z.boolean().nullable().describe('Grey out the button and block clicks (adds the `disabled` attribute; default false).'),
       // component-specific; accent/accentText/radius/size/fullWidth/align from actionShared
@@ -1449,8 +1449,8 @@ export const shadcnBaseComponents = {
       weight: z.enum(['normal', 'medium', 'semibold']).nullable().describe('Font weight (bounded — NOT a number; default normal).'),
       underline: z.enum(['always', 'hover', 'none']).nullable().describe('Underline behavior: always (default) · hover (underline only on hover) · none. No effect on `variant:button`.'),
       color: colorSchema.describe('Custom link text color (default primary token; muted-foreground for `variant:subtle`). No effect on `variant:button`.'),
-      accent: colorSchema.describe('Background of the button surface (`variant:button` only) — repaints the whole button fill (default the primary token). No effect on inline/subtle text links, whose text uses `color`.'),
-      accentText: colorSchema.describe('Text colour of the label on the accent-filled button surface (`variant:button` only; default the primary-foreground token). Set when a saturated `accent` needs a legible label.'),
+      accent: colorSchema.describe('Background of the button surface (`variant:button` only), repaints the whole button fill. Defaults to the neutral high-contrast fill, matching Button. No effect on inline/subtle text links, whose text uses `color`.'),
+      accentText: colorSchema.describe('Text colour of the label on the accent-filled button surface (`variant:button` only). Defaults to the card token. Set when a saturated `accent` needs a legible label.'),
       radiusValue: dimensionSchema({ units: ['px', 'rem'], min: 0, max: 64 }).describe('Exact corner radius of the button surface (variant:button only), e.g. "12px" / "1rem". Default the theme radius; no effect on inline/subtle text links.'),
       icon: z.string().nullable().describe('Leading icon glyph by NAME from the closed icon registry (or a single emoji glyph, rendered as-is). Never raw SVG; unknown names render nothing.'),
       externalIcon: z

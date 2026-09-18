@@ -196,7 +196,7 @@ const helpRecipe = cva('text-[0.8125rem] leading-snug', {
    quiet defaults: the checked box/dot defaults to neutral high-contrast
    (foreground → near-black, shadcn-style), not a saturated brand fill; a supplied
    `accent` still overrides. */
-const checkboxBox = cva('shrink-0 [accent-color:var(--fr-check-accent,var(--color-foreground))]', {
+const checkboxBox = cva('shrink-0 [accent-color:var(--fr-check-accent,var(--fr-accent))]', {
   variants: {
     size: { sm: 'h-3.5 w-3.5', md: 'h-4 w-4', lg: 'h-5 w-5' },
     disabled: { true: 'cursor-not-allowed opacity-60', false: '' },
@@ -215,7 +215,7 @@ const radioGroupRecipe = cva('m-0 flex border-none p-0 [gap:var(--fr-radio-gap,v
   defaultVariants: { orientation: 'vertical' },
 });
 
-const radioOption = cva('flex items-center gap-2 [accent-color:var(--fr-radio-accent,var(--color-foreground))]', {
+const radioOption = cva('flex items-center gap-2 [accent-color:var(--fr-radio-accent,var(--fr-accent))]', {
   variants: {
     size: { sm: 'text-sm', md: 'text-[0.9375rem]', lg: 'text-lg' },
     disabled: { true: 'cursor-not-allowed opacity-60', false: '' },

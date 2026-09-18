@@ -71,12 +71,14 @@ afterEach(() => {
 
 describe('core theme helpers', () => {
   it('maps the accent token to --frayme-accent', () => {
-    expect(themeToStyle({ accent: '#7c3aed' })).toEqual({ '--frayme-accent': '#7c3aed' });
+    // A passed accent also gets an ink made for it, so an accent fill can carry a label.
+    expect(themeToStyle({ accent: '#7c3aed' })).toEqual({ '--frayme-accent': '#7c3aed', '--fr-accent-ink': '#ffffff' });
   });
 
   it('ignores keys that are not tokens, so an unresolved pair writes nothing', () => {
     expect(themeToStyle(PAIR)).toEqual({});
-    expect(themeToStyle({ primary: '#123456', bogus: 'x' } as never)).toEqual({ '--frayme-primary': '#123456' });
+    expect(themeToStyle({ primary: '#123456', bogus: 'x' } as never)).toEqual(
+      { '--frayme-primary': '#123456', '--fr-btn-fill': '#123456', '--fr-btn-ink': '#ffffff' });
   });
 
   it("takes whatever a provider or prop theme holds, so themeToStyle(useFrayme().theme) still compiles", () => {
@@ -84,7 +86,8 @@ describe('core theme helpers', () => {
     const fromProvider: FraymeContextValue['theme'] = PAIR;
     const fromProp: FraymeRendererProps['theme'] = { primary: '#123456' };
     expect(themeToStyle(fromProvider)).toEqual({});
-    expect(themeToStyle(fromProp)).toEqual({ '--frayme-primary': '#123456' });
+    expect(themeToStyle(fromProp)).toEqual(
+      { '--frayme-primary': '#123456', '--fr-btn-fill': '#123456', '--fr-btn-ink': '#ffffff' });
   });
 
   it('keeps writing every existing token exactly as before', () => {
@@ -92,6 +95,9 @@ describe('core theme helpers', () => {
       '--frayme-primary': '#2563eb',
       '--frayme-radius': '0.5rem',
       '--frayme-font': 'serif',
+      // A passed `primary` also drives the main action; see the block below.
+      '--fr-btn-fill': '#2563eb',
+      '--fr-btn-ink': '#ffffff',
     });
     expect(themeToStyle(undefined)).toEqual({});
   });
@@ -302,5 +308,68 @@ describe('stylesheet: the accent token', () => {
 
   it('--frayme-accent is never declared, so an unset accent keeps the default', () => {
     expect(css).not.toMatch(/--frayme-accent\s*:/);
+  });
+});
+
+/* THE MAIN ACTION WEARS A PASSED BRAND COLOUR.
+ * The button family fills from var(--fr-btn-fill, var(--color-foreground)), so the
+ * neutral high-contrast default stands until a host passes `primary`. The test is
+ * PRESENCE: a brand whose colour happens to equal the shipped default must still
+ * get its buttons coloured, which a "differs from the default" check would miss.
+ */
+describe('a passed primary drives the main action', () => {
+  it('writes nothing when no primary is passed', () => {
+    expect(themeToStyle({ accent: '#7c3aed' })['--fr-btn-fill']).toBeUndefined();
+    expect(themeToStyle({})['--fr-btn-fill']).toBeUndefined();
+  });
+
+  it('writes the fill when primary is passed, even if it equals the shipped default', () => {
+    expect(themeToStyle({ primary: '#2563eb' })['--fr-btn-fill']).toBe('#2563eb');
+  });
+
+  it('picks the ink by comparing contrast, not by a lightness threshold', () => {
+    // A pale fill takes the dark ink, a deep fill the light one.
+    expect(themeToStyle({ primary: '#fde047' })['--fr-btn-ink']).toBe('#0b1220');
+    expect(themeToStyle({ primary: '#1e3a8a' })['--fr-btn-ink']).toBe('#ffffff');
+    // The middle of the range is where a threshold picks wrong: at #615fff the
+    // light ink gives more contrast than the dark one.
+    expect(themeToStyle({ primary: '#615fff' })['--fr-btn-ink']).toBe('#ffffff');
+  });
+
+  it('a passed primaryForeground wins over the picked ink', () => {
+    expect(themeToStyle({ primary: '#fde047', primaryForeground: '#4a044e' })['--fr-btn-ink']).toBe('#4a044e');
+  });
+
+  it('leaves the ink alone for a colour it cannot read, so the stylesheet default stands', () => {
+    const out = themeToStyle({ primary: 'oklch(0.7 0.2 250)' });
+    expect(out['--fr-btn-fill']).toBe('oklch(0.7 0.2 250)');
+    expect(out['--fr-btn-ink']).toBeUndefined();
+  });
+
+  it('an unresolved pair still writes nothing', () => {
+    expect(themeToStyle(PAIR)['--fr-btn-fill']).toBeUndefined();
+  });
+});
+
+/* AN ACCENT FILL CARRIES A LABEL ONLY WITH AN INK MADE FOR IT. A passed accent
+ * gets --fr-accent-ink, picked against THAT colour, so a pale brand accent prints
+ * dark text rather than the white it cannot carry. */
+describe('a passed accent gets an ink made for it', () => {
+  it('a pale accent takes the dark ink, a deep one the light ink', () => {
+    expect(themeToStyle({ accent: '#fde047' })['--fr-accent-ink']).toBe('#0b1220');
+    expect(themeToStyle({ accent: '#1e3a8a' })['--fr-accent-ink']).toBe('#ffffff');
+  });
+
+  it('accentForeground wins over the picked ink', () => {
+    expect(themeToStyle({ accent: '#fde047', accentForeground: '#3b0764' })['--fr-accent-ink']).toBe('#3b0764');
+  });
+
+  it('writes nothing with no accent, so the stylesheet default stands', () => {
+    expect(themeToStyle({ primary: '#2563eb' })['--fr-accent-ink']).toBeUndefined();
+    expect(themeToStyle({})['--fr-accent-ink']).toBeUndefined();
+  });
+
+  it('writes no ink for an accent it cannot read, rather than guessing', () => {
+    expect(themeToStyle({ accent: 'oklch(0.9 0.1 100)' })['--fr-accent-ink']).toBeUndefined();
   });
 });

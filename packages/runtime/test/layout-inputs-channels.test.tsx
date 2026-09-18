@@ -473,7 +473,7 @@ describe('Hero/CTA — secondary/outline/ghost buttons read the band fg on a sur
     // the primary (filled) button keeps its own treatment — quiet-defaults
     // made that the neutral high-contrast fill (bg-foreground), not the brand slab.
     const primary = buttons.find((b) => b.textContent === 'A')!;
-    expect(has(primary, 'bg-foreground')).toBe(true);
+    expect(has(primary, 'bg-[color:var(--fr-btn-fill,var(--color-foreground))]')).toBe(true);
     expect(has(primary, 'bg-primary')).toBe(false);
   });
 

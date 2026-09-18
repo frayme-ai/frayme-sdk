@@ -1,6 +1,6 @@
 {
   "name": "@frayme/catalog",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Frayme component catalog — Zod schemas + descriptions for the Frayme component vocabulary. Zero React deps. Single source of truth for validation, runtime, and framework adapters.",
   "license": "MIT",
   "publishConfig": {

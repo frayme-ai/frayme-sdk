@@ -22,15 +22,18 @@
  * moves the screen on without a chat:
  *  · `edit(prompt)`             the same screen, changed: `mode: 'edit'` with
  *                               the last complete screen as `prior_spec`.
- *  · `continue(event, prompt?)` the next step after a press:
- *                               `mode: 'continue_journey'`, the press as
- *                               `action_context`, the last complete screen as
- *                               `prior_spec`, both cut to the API's size
- *                               ceilings (`fitContinuation`).
+ *  · `continue(event, prompt?)` the next step after a press: a plain CREATE that
+ *                               names the press in its prompt and carries the
+ *                               pressed action's params as `data`. The screen is
+ *                               NOT attached: as `prior_spec` it reads to the
+ *                               composer as "edit this", which hands the same
+ *                               screen back instead of moving on.
  *  · `retry()`                  the last request again, after it failed.
  * Edit and continue resend the props' `data`, `actions`, `signals` and
  * `context` (an action left out of an edit comes back unwired), and `extra`
- * overrides any of them.
+ * overrides any of them. On a continue, pass your own `prompt` and `data` when
+ * your code knows better than the derived ones; they are only derived when you
+ * name none.
  *
  * ONLY A COMPLETE SCREEN IS EVER A `prior_spec`. A snapshot taken mid-stream,
  * or left behind by `abort()`, can point at elements that never arrived; the
@@ -51,8 +54,7 @@
  * Built on `useFraymeCompose`, so restarts, stale-stream guards and aborts
  * behave exactly as they do there.
  */
-import type { ComposeAction, ComposeActionContext, ComposeRequest, Frayme, FraymeError } from '@frayme/api';
-import { fitContinuation } from '@frayme/api';
+import type { ComposeAction, ComposeRequest, Frayme, FraymeError } from '@frayme/api';
 import type { Spec } from '@json-render/core';
 import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
@@ -172,19 +174,30 @@ function baseRequest(options: UseFraymeScreenOptions): ComposeBody {
 }
 
 /**
- * What the server needs to know about a press. The receipt fields (`label`,
- * `description`) are for the thread card, not the model, and anything else a
- * host hung on the event is not part of the wire contract, so the context is
- * built from the known fields rather than by deleting two.
+ * The values a press carries, with the control's own identity taken out.
+ *
+ * A Button, IconButton, Fab, Confirmation or Link payload carries its `label`
+ * (and sometimes a `description`) alongside the fields the user filled in. Those
+ * name the control, not the data, and a `data` key the composer does not use is
+ * DRAWN ON THE SCREEN as a stray detail card. So they go in the prompt, which
+ * names the press, and never in `data`.
  */
-function actionContextOf(event: DynamicActionEvent): ComposeActionContext {
-  const context: ComposeActionContext = { action: event.action };
-  if (event.event !== undefined) context.event = event.event;
-  if (event.params !== undefined) context.params = event.params;
-  if (event.state !== undefined) context.state = event.state;
-  if (event.element_id !== undefined) context.element_id = event.element_id;
-  if (event.generation_id !== undefined) context.generation_id = event.generation_id;
-  return context;
+function pressValues(event: DynamicActionEvent): Record<string, unknown> {
+  const { label: _label, description: _description, ...values } = event.params ?? {};
+  return values;
+}
+
+/**
+ * A press, put the way a person would type it. This prompt is the ONLY channel
+ * that tells the composer a control was pressed, so it names the control. It
+ * matches the wording the agent-facing tools use, so a chat host and a chatless
+ * one send the composer the same shape.
+ */
+function pressPrompt(event: DynamicActionEvent): string {
+  const label = typeof event.label === 'string' ? event.label.trim() : '';
+  return label !== ''
+    ? `The user pressed "${label}". Show the next step.`
+    : `The user pressed the "${event.action}" control. Show the next step.`;
 }
 
 /** `extra` without the fields each handle method owns, and without `stream`. */
@@ -305,21 +318,32 @@ export function useFraymeScreen(options: UseFraymeScreenOptions): UseFraymeScree
     async (event: DynamicActionEvent, prompt?: string, extra?: Partial<ComposeRequest>): Promise<void> => {
       const prior = lastCompleteRef.current;
       heldRef.current = prior;
+      const extras = extraFields(extra);
       const body: ComposeBody = {
         ...baseRef.current,
-        ...extraFields(extra),
+        ...extras,
         prompt:
           prompt ??
           (typeof extra?.prompt === 'string' ? extra.prompt : undefined) ??
-          `The user triggered the "${event.action}" action. Continue the journey.`,
-        mode: 'continue_journey',
+          pressPrompt(event),
       };
-      // A big table press, or a big screen, is cut to the API's ceilings
-      // rather than refused: the state goes first, then the params, and a
-      // screen too large to send is left out.
-      const fit = fitContinuation({ action_context: actionContextOf(event), prior_spec: prior ?? undefined });
-      if (fit.action_context) body.action_context = fit.action_context;
-      if (fit.prior_spec) body.prior_spec = fit.prior_spec;
+      // THE VALUES, NOT THE STATE. The params the pressed action collected are what
+      // the next screen has to show, so they ride in `data` over the props' own,
+      // which describe the screen just left. The event's raw `state` is the whole
+      // store: sending it is what made a press many kilobytes, and it reached no
+      // prompt anyway. Press meta stays out of `data` too, because a key the
+      // composer does not use is drawn on the screen as a stray detail card; the
+      // press is named in the prompt instead.
+      //
+      // Naming `data` in `extra` opts out entirely: your code knew better.
+      const values = pressValues(event);
+      if (extras.data === undefined && Object.keys(values).length > 0) {
+        const base = body.data;
+        body.data =
+          base && typeof base === 'object' && !Array.isArray(base)
+            ? { ...(base as Record<string, unknown>), ...values }
+            : values;
+      }
       await send(body);
     },
     [send],

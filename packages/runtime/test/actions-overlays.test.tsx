@@ -292,7 +292,7 @@ describe('focus-visible ring across the action family', () => {
     const { container } = draw('Toggle', { label: 'Bold' });
     const btn = container.querySelector('button')!;
     expect(has(btn, 'focus-visible:ring-2')).toBe(true);
-    expect(has(btn, 'focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_40%,transparent)]')).toBe(true);
+    expect(has(btn, 'focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_50%,transparent)]')).toBe(true);
   });
 
   it('ButtonGroup segments carry the ring', () => {

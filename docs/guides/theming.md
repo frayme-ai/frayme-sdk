@@ -4,7 +4,7 @@ Every visual token in Frayme's rendered UI is a `--frayme-*` CSS variable. Set t
 
 ## The token set
 
-`@frayme/runtime/styles.css` styles all 189 components against a small set of CSS custom properties on the `.frayme-root` wrapper. The `ThemeTokens` type maps one-to-one onto them:
+`@frayme/runtime/styles.css` declares a small set of CSS custom properties on the `.frayme-root` wrapper, and all 189 components are styled against them. The `ThemeTokens` type maps one-to-one onto those properties:
 
 | Token | CSS variable | Example |
 | --- | --- | --- |
@@ -18,6 +18,7 @@ Every visual token in Frayme's rendered UI is a `--frayme-*` CSS variable. Set t
 | `warning` / `warningForeground` | `--frayme-warning` / `--frayme-warning-fg` | |
 | `info` / `infoForeground` | `--frayme-info` / `--frayme-info-fg` | |
 | `accent` | `--frayme-accent` | `'#7c3aed'` |
+| `accentForeground` | `--frayme-accent-fg` | |
 | `radius` | `--frayme-radius` | `'0.5rem'` |
 | `fontFamily` | `--frayme-font` | `'Inter, sans-serif'` |
 
@@ -25,7 +26,11 @@ Tone tokens are semantic: components that take a `tone` prop resolve `critical` 
 
 The foreground tokens of every tone apply to the text drawn on that tone's fill, in both modes. Before 0.5.0, only `dangerForeground` reached that text. Success, warning and info text stayed white, even on the brighter fills of dark mode.
 
-`accent` is the interactive color: a switch that is on, a selected row or option, a checked box, the focus ring. If you leave it unset, it follows the foreground color, a neutral that tracks light and dark by itself. Set it, often to the same value as `primary`, to color every interactive state at once.
+`accent` is the interactive color: a switch that is on, a selected row or option, a checked box, the focus ring. If you leave it unset, it follows the foreground color, a neutral that tracks light and dark by itself. Set it, often to the same value as `primary`, to color every interactive state at once. A state that fills with the accent and carries a label, such as a selected day or the current page, prints that label in `accentForeground`. Leave it out and it is chosen for you by comparing contrast against this accent, so a pale brand accent gets dark text instead of white text it cannot carry.
+
+`primary` is your brand color, and the rule for it is presence. Leave it unset and it paints inline links and the first chart series, while the main action stays a neutral high-contrast fill. **Pass it and every main action wears it**: a `variant:"primary"` button, a `Link` rendered as a button, a pressed segment, an icon button, a dialog's confirm. Nothing else moves, so `secondary`, `danger`, `ghost` and `outline` keep their own treatments and the interactive states stay with `accent`.
+
+The label on that fill comes from `primaryForeground` when you set one. Leave it out and it is chosen for you by comparing contrast against the two inks the stylesheet ships, so a pale brand color gets dark text and a deep one gets light text. Setting nothing at all changes nothing: a screen renders the neutral default until a color is passed, and the `slate` and `warm` presets follow the same rule with their own colors.
 
 ## Per-instance: the `theme` prop
 
