@@ -95,7 +95,7 @@ Frayme adopts three open standards rather than inventing formats:
 
 - **[json-render](https://json-render.dev)** (Vercel): the UI spec format. A Frayme spec is a standard json-render spec; no proprietary DSL.
 - **[AG-UI](https://github.com/ag-ui-protocol)** (Linux Foundation): agent-to-UI event transport, via `@frayme/runtime/ag-ui`.
-- **MCP**: Frayme UIs served inside Claude and ChatGPT as MCP Apps.
+- **MCP Apps** (SEP-1865, Anthropic and OpenAI): the next surface. A Frayme screen is the UI resource an MCP App serves inside Claude and ChatGPT; the hosted MCP server that does this is on the roadmap, not in these packages yet.
 
 Your specs are portable JSON. If you leave Frayme, they still render.
 
