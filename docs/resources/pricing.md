@@ -4,13 +4,13 @@ Flat monthly plans with hard generation caps. No credits, no metering maze, no o
 
 ## Plans
 
-| | Free | Hobby | Starter | Pro | Scale |
-| --- | --- | --- | --- | --- | --- |
-| **Price / mo** | $0 | $9 | $29 | $99 | $299 |
-| **Generations / mo** | 500 | 3,000 | 12,000 | 60,000 | 200,000 |
-| **Streaming** | ✓ | ✓ | ✓ | ✓ | ✓ |
-| **Full 189-component catalog** | ✓ | ✓ | ✓ | ✓ | ✓ |
-| **Support** | Community | Community | Email | Priority | Priority |
+| | Free | Starter | Pro | Scale |
+| --- | --- | --- | --- | --- |
+| **Price / mo** | $0 | $29 | $99 | $499 |
+| **Generations / mo** | 100 | 10,000 | 50,000 | 500,000 |
+| **Streaming** | ✓ | ✓ | ✓ | ✓ |
+| **Full 189-component catalog** | ✓ | ✓ | ✓ | ✓ |
+| **Support** | Community | Email | Priority | Priority |
 
 Prices in USD. Every plan gets **every feature**: streaming, the full catalog, edit mode, journeys, custom components, the SDK, idempotent retries. The only lever between tiers is volume.
 

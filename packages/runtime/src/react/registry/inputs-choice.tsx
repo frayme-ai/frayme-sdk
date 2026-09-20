@@ -6,7 +6,7 @@ import { type ComponentRenderProps } from '../upstream.js';
 import { useIntrinsicEmit } from '../intrinsic.js';
 import { useLocalOrBound as useBoundProp } from './_state.js';
 import { cn } from '../cn.js';
-import { styleVars } from './_style.js';
+import { accentTextVar, styleVars } from './_style.js';
 import { Icon, hasIcon } from './icons.js';
 import { useAriaId } from './_aria.js';
 
@@ -300,7 +300,7 @@ export function MultiSelect({ element, emit, bindings }: ComponentRenderProps): 
             { var: '--fr-ms-menu-w', value: p.menuWidth, kind: 'dim', opts: { units: ['px', 'rem', '%'], max: 720 } },
             { var: '--fr-ms-muted', value: p.mutedColor, kind: 'color' },
             { var: '--fr-ms-accent', value: p.accent, kind: 'color' },
-            { var: '--fr-ms-accent-text', value: p.accentText, kind: 'color' },
+            accentTextVar('--fr-ms-accent-text', p.accent, p.accentText),
             // bg/borderColor cover the menu panel too (field + popover group).
             { var: '--fr-ms-bg', value: p.bg, kind: 'color' },
             { var: '--fr-ms-border', value: p.borderColor, kind: 'color' },
@@ -359,7 +359,7 @@ export function MultiSelect({ element, emit, bindings }: ComponentRenderProps): 
                       isSel
                         ? // quiet defaults: the checked box is neutral high-contrast
                           // (near-black), shadcn-style, not a brand slab; author `accent` still wins.
-                          'border-transparent [background:var(--fr-ms-accent,var(--color-foreground))] text-[color:var(--fr-ms-accent-text,var(--color-card))]'
+                          'border-transparent [background:var(--fr-ms-accent,var(--fr-accent))] text-[color:var(--fr-ms-accent-text,var(--fr-accent-ink,var(--color-card)))]'
                         : 'border-border',
                     )}
                   >
@@ -383,7 +383,7 @@ export function MultiSelect({ element, emit, bindings }: ComponentRenderProps): 
       {p.submitLabel != null && p.submitLabel !== '' && (
         <button
           type="button"
-          className="mt-2 cursor-pointer inline-flex items-center justify-center rounded-frayme bg-foreground px-3 py-1.5 text-sm font-medium text-card transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_70%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-2 cursor-pointer inline-flex items-center justify-center rounded-frayme bg-[color:var(--fr-btn-fill,var(--color-foreground))] px-3 py-1.5 text-sm font-medium text-[color:var(--fr-btn-ink,var(--color-card))] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_70%,transparent)] disabled:cursor-not-allowed disabled:opacity-60"
           disabled={disabled}
           onClick={submit}
         >

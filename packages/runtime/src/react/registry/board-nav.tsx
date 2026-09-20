@@ -234,7 +234,7 @@ function cardActionCls(variant: RowActionVariant | null | undefined, iconOnly: b
   const base = `inline-flex min-h-6 cursor-pointer items-center justify-center gap-1.5 rounded-frayme text-[0.75rem] font-medium outline-none focus-visible:ring-2 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-40 ${iconOnly ? 'p-1' : 'px-2 py-1'}`;
   switch (variant) {
     case 'primary':
-      return `${base} border border-transparent bg-foreground text-card hover:opacity-90`;
+      return `${base} border border-transparent bg-[color:var(--fr-btn-fill,var(--color-foreground))] text-[color:var(--fr-btn-ink,var(--color-card))] hover:opacity-90`;
     case 'danger':
       // "still red but not in the eyes" — hairline border + red ink, no resting
       // fill, because this is drawn once per CARD and a column of pink slabs
@@ -962,7 +962,7 @@ export function KanbanBoard({ element, children, emit, bindings }: ComponentRend
           <button
             type="button"
             onClick={save}
-            className="inline-flex items-center justify-center rounded-frayme bg-foreground px-4 py-2 text-sm font-medium text-card outline-none hover:bg-foreground/90 focus-visible:ring-2 focus-visible:ring-primary/50"
+            className="inline-flex items-center justify-center rounded-frayme bg-[color:var(--fr-btn-fill,var(--color-foreground))] px-4 py-2 text-sm font-medium text-[color:var(--fr-btn-ink,var(--color-card))] outline-none hover:brightness-95 focus-visible:ring-2 focus-visible:ring-primary/50"
           >
             {p.saveLabel ?? 'Save board'}
           </button>

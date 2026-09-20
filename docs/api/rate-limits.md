@@ -49,11 +49,10 @@ Each plan includes a fixed number of generations per month. Caps are **hard**. T
 
 | Plan | Price / mo | Generations / mo |
 | --- | --- | --- |
-| Free | $0 | 500 |
-| Hobby | $9 | 3,000 |
-| Starter | $29 | 12,000 |
-| Pro | $99 | 60,000 |
-| Scale | $299 | 200,000 |
+| Free | $0 | 100 |
+| Starter | $29 | 10,000 |
+| Pro | $99 | 50,000 |
+| Scale | $499 | 500,000 |
 
 All plans share the same features: the lever between tiers is volume. Full plan details are on the [pricing page](../resources/pricing.md).
 

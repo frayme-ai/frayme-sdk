@@ -18,7 +18,7 @@ curl https://api.frayme.ai/v1/me \
     "workspace": { "id": "8b1f…", "name": "Acme Inc", "slug": "acme-inc" },
     "plan": {
       "tierKey": "pro",
-      "monthlyGenerations": 60000,
+      "monthlyGenerations": 50000,
       "rateLimitPerMin": …,
       "generationsRemaining": 41258,
       "inlineComponentsLimit": 5

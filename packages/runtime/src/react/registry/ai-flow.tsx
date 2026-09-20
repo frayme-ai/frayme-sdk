@@ -428,7 +428,7 @@ const confirmBtn = cva(
   {
     variants: {
       tone: {
-        neutral: 'bg-foreground text-card',
+        neutral: 'bg-[color:var(--fr-btn-fill,var(--color-foreground))] text-[color:var(--fr-btn-ink,var(--color-card))]',
         success:
           '[background:color-mix(in_srgb,var(--color-success)_12%,transparent)] border-[color:var(--color-success)] text-[color:var(--color-success)]',
         warning:

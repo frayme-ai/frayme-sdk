@@ -93,15 +93,20 @@ export function FraymeConfirmModal({
               // SDK — DataTable row/bulk delete routes here) is now "still red but not in
               // the eyes": no resting fill, a hairline red border (30% mix), a red label +
               // glyph, the red wash only on hover. The affirmative (non-danger) confirm
-              // takes Button's neutral high-contrast primary (bg-foreground/text-card),
-              // not a brand slab — it is the one-primary-per-screen action.
+              // wears the SAME fill as Button's primary: --fr-btn-fill / --fr-btn-ink,
+              // which themeToStyle writes only when the host passes `primary`. With no
+              // primary it falls through to the neutral high-contrast default exactly as
+              // before. Without this link the page's main action took the brand colour
+              // and the confirm that gates it stayed near-black.
+              // The danger branch never reads --fr-btn-fill: a Delete confirm stays red
+              // whatever the brand is.
               danger
                 // Themed through --fr-confirm-danger / --fr-confirm-accent(-fg). The
                 // 30%/10% mixes are kept as RATIOS of whichever colour is supplied, so
                 // a themed danger keeps the quiet-defaults shape (hairline border,
                 // no resting fill, wash on hover) instead of becoming a solid slab.
                 ? 'inline-flex items-center gap-1.5 rounded-frayme bg-transparent px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 [border:1px_solid_color-mix(in_srgb,var(--fr-confirm-danger,var(--color-danger))_30%,transparent)] [color:var(--fr-confirm-danger,var(--color-danger))] hover:[background:color-mix(in_srgb,var(--fr-confirm-danger,var(--color-danger))_10%,transparent)]'
-                : 'inline-flex items-center gap-1.5 rounded-frayme border border-transparent px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 [background:var(--fr-confirm-accent,var(--fr-surface-fg,var(--color-foreground)))] [color:var(--fr-confirm-accent-fg,var(--fr-surface,var(--color-card)))]'
+                : 'inline-flex items-center gap-1.5 rounded-frayme border border-transparent px-3 py-1.5 text-sm font-medium transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 [background:var(--fr-confirm-accent,var(--fr-btn-fill,var(--fr-surface-fg,var(--color-foreground))))] [color:var(--fr-confirm-accent-fg,var(--fr-btn-ink,var(--fr-surface,var(--color-card))))]'
             }
             onClick={onConfirm}
           >

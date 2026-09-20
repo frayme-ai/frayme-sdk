@@ -57,7 +57,12 @@ describe('frayme_action schema: next-screen fields', () => {
     expect(shape.data.description).toMatch(/NEXT screen/);
     expect(shape.signals.description).toMatch(/NEXT screen/);
     expect(shape.actions.description).toMatch(/NEXT screen/);
-    expect(shape.actions.description).toMatch(/Re-declare every action the next screen needs/);
+    // Forward actions only: re-declaring the pressed control with required params
+    // makes the server put the form back.
+    expect(shape.actions.description).toMatch(/lead FORWARD from here/);
+    expect(shape.actions.description).toMatch(/Do NOT re-declare the control just pressed/);
+    // The next screen is fresh, so an unnamed value is simply lost.
+    expect(shape.data.description).toMatch(/COMPOSED FRESH/);
     // Same element schema as frayme_compose, so the limits cannot drift apart.
     expect(Object.keys(shape.actions.unwrap().element.shape)).toEqual(
       Object.keys(composeInputSchema.shape.actions.unwrap().element.shape),
@@ -71,9 +76,12 @@ describe('frayme_action schema: next-screen fields', () => {
   });
 
   it('the tool description says so in one sentence', () => {
-    expect(actionToolDefinition.description).toContain(
-      'For the next screen you may also pass `data` (the facts it shows), `actions` (its controls; re-declare every action it needs) and `signals` (steering), as on frayme_compose.',
-    );
+    expect(actionToolDefinition.description).toContain('The NEXT SCREEN IS THEN COMPOSED FRESH from what you send');
+    expect(actionToolDefinition.description).toContain('has to be named in `data`');
+    // The old promise, which the staging A/B falsified: a press does not preserve
+    // the state the user entered, because the screen is composed from scratch.
+    expect(actionToolDefinition.description).not.toContain('preserving the live UI state');
+    expect(actionToolDefinition.description).not.toContain('continue_journey');
   });
 
   it('the raw Anthropic definition advertises the three fields', () => {
@@ -86,7 +94,7 @@ describe('frayme_action schema: next-screen fields', () => {
 });
 
 describe('createActionTool: next-screen fields on the wire', () => {
-  it('forwards them as top-level request fields, beside action_context', async () => {
+  it('forwards them as the whole request, since the event itself is not sent', async () => {
     const { tool, body } = boundTool();
     await tool.execute({
       action: 'approveRefund',
@@ -100,10 +108,9 @@ describe('createActionTool: next-screen fields on the wire', () => {
       actions: [{ name: 'printReceipt', requiredItems: ['receipt'] }],
       signals: { density: 'compact' },
     });
+    // A PRESS IS A CREATE: the caller's prompt and values ARE the request.
     expect(body()).toEqual({
       prompt: 'Show the receipt.',
-      mode: 'continue_journey',
-      action_context: { action: 'approveRefund', event: 'commit', params: { refundId: 'R-7' }, generation_id: 'gen_prev' },
       data: { receipt: 'RC-1' },
       actions: [{ name: 'printReceipt', requiredItems: ['receipt'] }],
       signals: { density: 'compact' },
@@ -111,12 +118,12 @@ describe('createActionTool: next-screen fields on the wire', () => {
     });
   });
 
-  it('leaves the request exactly as before when they are absent', async () => {
+  it('sends only a prompt when the caller gives nothing else', async () => {
     const { tool, body } = boundTool();
     await tool.execute({ action: 'approveRefund', generation_id: 'gen_prev' });
     const sent = body();
-    expect(Object.keys(sent)).toEqual(['prompt', 'mode', 'action_context', 'stream']);
-    expect(sent.action_context).toEqual({ action: 'approveRefund', generation_id: 'gen_prev' });
+    expect(Object.keys(sent)).toEqual(['prompt', 'stream']);
+    expect(String(sent.prompt)).toContain('approveRefund');
   });
 
   it('passes an empty data object through, since {} means "no fixed content"', async () => {
@@ -126,12 +133,15 @@ describe('createActionTool: next-screen fields on the wire', () => {
   });
 });
 
-describe('createActionTool: a press over the action_context ceiling', () => {
-  it('is sent without its state rather than refused by the API', async () => {
+describe('createActionTool: a press on a huge table', () => {
+  it('sends none of it, so there is no ceiling to fit and nothing to refuse', async () => {
     const { tool, body } = boundTool();
     const rows = Array.from({ length: 400 }, (_, i) => ({ id: `R-${i}`, note: 'x'.repeat(40) }));
     await tool.execute({ action: 'reassign', params: { row: { id: 'R-1' } }, state: { rows } });
-    expect(body().action_context).toEqual({ action: 'reassign', params: { row: { id: 'R-1' } } });
+    const wire = JSON.stringify(body());
+    expect(wire).not.toContain('R-399');
+    expect(wire).not.toContain('R-1');
+    expect(wire.length).toBeLessThan(200);
   });
 });
 

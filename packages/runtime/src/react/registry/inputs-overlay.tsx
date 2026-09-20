@@ -288,7 +288,7 @@ export function FileUpload({ element, emit, bindings }: ComponentRenderProps): R
                   ) : (
                     <button
                       type="button"
-                      className="inline-flex shrink-0 items-center justify-center rounded-frayme p-0.5 leading-none opacity-70 transition hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_40%,transparent)] [color:var(--fr-upload-muted,var(--color-muted-foreground))]"
+                      className="inline-flex shrink-0 items-center justify-center rounded-frayme p-0.5 leading-none opacity-70 transition hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:[--tw-ring-color:color-mix(in_srgb,var(--fr-accent)_50%,transparent)] [color:var(--fr-upload-muted,var(--color-muted-foreground))]"
                       aria-label={`Remove ${f.name}`}
                       onClick={() => removeRow(f, i)}
                     >

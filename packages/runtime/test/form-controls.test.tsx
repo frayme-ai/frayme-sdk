@@ -20,6 +20,7 @@ import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { Spec } from '@json-render/core';
 import { FraymeRenderer } from '../src/react/FraymeRenderer.js';
+import { accentTextVar } from '../src/react/registry/_style.js';
 
 const one = (type: string, props: Record<string, unknown>, state: Record<string, unknown> = {}): Spec =>
   ({ root: 'el', elements: { el: { type, props } }, state }) as unknown as Spec;
@@ -412,5 +413,72 @@ describe('Calendar shows an overflow dot beyond 3 events', () => {
     const cell = [...container.querySelectorAll('[role="gridcell"]')].find((c) => c.getAttribute('aria-label')?.includes('3 events'))!;
     const dotRow = cell.querySelector('[aria-hidden="true"]')!;
     expect(dotRow.querySelectorAll('span').length).toBe(3);
+  });
+});
+
+/* NATIVE CHOICE CONTROLS chain accent-color to the global accent knob.
+ * forms.tsx documents the rule as `accent-color: var(--fr-<c>-accent, var(--fr-accent))`,
+ * so a per-component accent wins and otherwise the app-wide knob does. Checkbox and
+ * Radio instead fell back to --color-foreground directly, so a host that set `accent`
+ * got a coloured Switch and slider and a near-black tick. Nothing pinned the chain,
+ * which is how it survived. These assert BOTH directions: the knob is in the chain,
+ * and the token that bypassed it is gone.
+ */
+describe('choice controls read the accent knob', () => {
+  const chain = (c: string) => `[accent-color:var(--fr-${c}-accent,var(--fr-accent))]`;
+  const bypass = (c: string) => `[accent-color:var(--fr-${c}-accent,var(--color-foreground))]`;
+
+  it('Checkbox chains accent-color through --fr-accent', () => {
+    const { container } = draw('Checkbox', { label: 'Updates', name: 'upd' });
+    const box = container.querySelector('input[type="checkbox"]')!;
+    expect(has(box, chain('check'))).toBe(true);
+    expect(has(box, bypass('check'))).toBe(false);
+  });
+
+  it('Radio chains accent-color through --fr-accent', () => {
+    const { container } = draw('Radio', { name: 'plan', options: [{ label: 'Monthly', value: 'm' }, { label: 'Yearly', value: 'y' }] });
+    const opt = [...container.querySelectorAll('*')].find((el) => has(el, chain('radio')));
+    expect(opt).toBeTruthy();
+    expect([...container.querySelectorAll('*')].some((el) => has(el, bypass('radio')))).toBe(false);
+  });
+
+  it('a spec-supplied accent still wins over the knob on both', () => {
+    const cb = draw('Checkbox', { label: 'Updates', name: 'upd', accent: '#c026d3' });
+    const box = cb.container.querySelector('input[type="checkbox"]')!;
+    expect(styleOf(box)).toContain('--fr-check-accent: #c026d3');
+    expect(has(box, chain('check'))).toBe(true);
+  });
+});
+
+/* A COMPONENT'S OWN ACCENT OWNS ITS INK. accentTextVar decides the label ink for a
+ * component's accent fill. The rule that matters is the third case: once a spec sets
+ * its own accent, the ink is pinned, so it can never fall through to the theme's
+ * ink, which was computed for a different colour. */
+describe('accentTextVar: the ink always matches the fill it sits on', () => {
+  const v = '--fr-x-accent-text' as const;
+
+  it('an authored accentText wins', () => {
+    expect(accentTextVar(v, '#fde047', '#4a044e')).toEqual({ var: v, value: '#4a044e', kind: 'color' });
+  });
+
+  it('a readable spec accent gets an ink picked against it', () => {
+    expect(accentTextVar(v, '#fde047', undefined)).toMatchObject({ value: '#0b1220', kind: 'raw' });
+    expect(accentTextVar(v, '#1e3a8a', undefined)).toMatchObject({ value: '#ffffff', kind: 'raw' });
+  });
+
+  it('an UNREADABLE spec accent pins card, never the theme ink', () => {
+    // rebeccapurple passes safeColor but has no luminance we can read.
+    expect(accentTextVar(v, 'rebeccapurple', undefined)).toMatchObject({ value: 'var(--color-card)', kind: 'raw' });
+  });
+
+  it('no accent of its own writes nothing, so the theme ink applies', () => {
+    expect(accentTextVar(v, undefined, undefined).value).toBeNull();
+  });
+
+  it('Pagination: a pale spec accent prints a dark page number', () => {
+    const { container } = draw('Pagination', { page: 2, totalPages: 5, accent: '#fde047' });
+    const current = container.querySelector('[aria-current="page"]')!;
+    const root = current.closest('[style]') ?? current;
+    expect(styleOf(root)).toContain('--fr-page-accent-text: #0b1220');
   });
 });

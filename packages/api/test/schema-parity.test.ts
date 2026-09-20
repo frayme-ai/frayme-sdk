@@ -360,31 +360,30 @@ describe('frayme_action input ⊆ openapi.json FraymeActionInput / ComposeAction
     expect(schema('ComposeActionContext').required).toEqual(['action']);
   });
 
-  it('every action_context key the SDK actually forwards is declared on ComposeActionContext', async () => {
+  it('the SDK forwards NO action_context, and every key it does send is declared', async () => {
     const mock = buildMockFetch([{ status: 200, body: JSON.stringify(composeSuccess) }]);
     const tool = createActionTool(offlineClient(mock.fetch));
     await tool.execute(everyActionToolKey);
     const body = JSON.parse(mock.calls[0]!.body!) as Record<string, unknown>;
 
-    // The round-trip request itself is a documented ComposeRequest.
+    // The round-trip request is a documented ComposeRequest, and it is a CREATE.
     for (const key of Object.keys(body)) {
       expect(propertyKeys(schema('ComposeRequest')), `round-trip body key "${key}" undeclared`).toContain(key);
     }
-    expect(body.mode).toBe('continue_journey');
+    expect(body).not.toHaveProperty('mode');
+    expect(body).not.toHaveProperty('action_context');
+    expect(body).not.toHaveProperty('prior_spec');
     expect(body.prompt).toBe(everyActionToolKey.prompt);
 
-    const ctxKeys = Object.keys(body.action_context as Record<string, unknown>);
-    const declared = propertyKeys(schema('ComposeActionContext'));
-    for (const key of ctxKeys) {
-      expect(declared, `forwarded action_context key "${key}" undeclared on ComposeActionContext`).toContain(key);
-    }
-    // And nothing the tool accepts but does not forward leaks onto the wire.
-    for (const key of ['prompt', 'label', 'description']) expect(ctxKeys).not.toContain(key);
-    // The next screen's inputs ride at the top level, never inside action_context.
+    // The next screen's inputs are the whole request beside the prompt.
     for (const key of ['data', 'actions', 'signals']) {
-      expect(ctxKeys).not.toContain(key);
       expect(body[key]).toEqual(everyActionToolKey[key as 'data' | 'actions' | 'signals']);
     }
+    // The event the tool accepts stays in the browser. ComposeActionContext is still
+    // declared in openapi.json because the API still accepts the field; the SDK
+    // simply no longer sends it, so the two schema checks above still guard it.
+    const wire = JSON.stringify(body);
+    for (const key of ['element_id', 'label', 'description']) expect(wire).not.toContain(key);
   });
 });
 

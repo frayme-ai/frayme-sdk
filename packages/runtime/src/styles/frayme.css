@@ -1194,6 +1194,14 @@
   --frayme-fg: #18181b;
   --frayme-card-fg: #18181b;
   --frayme-primary-fg: #ffffff;
+  /* THE MAIN ACTION WEARS THE PRESET'S COLOUR. Choosing a preset is a host saying
+     "this is my look", and the same rule applies as when a theme passes `primary`:
+     the button family fills from it instead of the neutral default. Chained rather
+     than copied, so each preset's own --frayme-primary lands with the ink that was
+     checked against it (white on both, see the warm note below). A theme prop
+     passed at the renderer still wins, since that lands inline. */
+  --fr-btn-fill: var(--frayme-primary);
+  --fr-btn-ink: var(--frayme-primary-fg);
   --frayme-danger: #dc2626;
   --frayme-danger-fg: #ffffff;
   --frayme-success: #15803d;

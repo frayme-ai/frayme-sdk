@@ -74,7 +74,7 @@ const iconButton = cva(
         // Button parity: NEUTRAL high-contrast primary, not a
         // saturated brand slab. An IconButton lives in toolbars and table rows where
         // the brand fill repeated per row was the loudest thing on the screen.
-        primary: 'bg-foreground text-card',
+        primary: 'bg-[color:var(--fr-btn-fill,var(--color-foreground))] text-[color:var(--fr-btn-ink,var(--color-card))]',
         secondary: 'border-border bg-[color:var(--fr-surface-sunken,var(--color-muted))] text-foreground shadow-none',
         ghost: 'border-transparent bg-transparent text-foreground shadow-none hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))]',
         outline: 'border-[var(--fr-iconbtn-border,var(--color-border))] bg-transparent text-foreground shadow-none',

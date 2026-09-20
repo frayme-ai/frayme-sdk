@@ -12,7 +12,7 @@ import { type ComponentRenderProps } from '../upstream.js';
 import { useIntrinsicEmit } from '../intrinsic.js';
 import { useLocalOrBound as useBoundProp } from './_state.js';
 import { cn } from '../cn.js';
-import { styleVars, weightClass, trackingClass } from './_style.js';
+import { accentTextVar, styleVars, weightClass, trackingClass } from './_style.js';
 import { Icon, hasIcon } from './icons.js';
 import { useAriaId } from './_aria.js';
 
@@ -462,6 +462,7 @@ export function Stepper({ element, emit, bindings }: ComponentRenderProps): Reac
 
   const style = styleVars(
     { var: '--fr-stepper-accent', value: p.accent, kind: 'color' },
+    accentTextVar('--fr-stepper-accent-text', p.accent, undefined),
     { var: '--fr-stepper-line', value: p.connectorColor, kind: 'color' },
     { var: '--fr-stepper-muted', value: p.mutedColor, kind: 'color' },
   );
@@ -496,7 +497,7 @@ export function Stepper({ element, emit, bindings }: ComponentRenderProps): Reac
                 // text on its OWN surface. Swapping in currentColor would let a dark
                 // card's light ink land on the light disc it paints — a regression, not
                 // a fix. Only unpainted text follows the container.
-                '[background:var(--fr-stepper-accent,var(--color-foreground))] text-[var(--color-card)]'
+                '[background:var(--fr-stepper-accent,var(--fr-accent))] text-[color:var(--fr-stepper-accent-text,var(--fr-accent-ink,var(--color-card)))]'
               : isCur
                 ? 'border-2 [border-color:var(--fr-stepper-accent,var(--color-foreground))] bg-background [color:var(--fr-stepper-accent,var(--color-foreground))]'
                 // 'incomplete progress chrome' coherence group: the un-reached marker
@@ -553,7 +554,7 @@ export function Stepper({ element, emit, bindings }: ComponentRenderProps): Reac
                   <span
                     className={cn(
                       'absolute top-[var(--fr-step-line-top)] h-[calc(100%-var(--fr-step-line-top))] w-0.5',
-                      done ? '[background:var(--fr-stepper-accent,var(--color-foreground))]' : incompleteRail,
+                      done ? '[background:var(--fr-stepper-accent,var(--fr-accent))]' : incompleteRail,
                     )}
                     style={{ '--fr-step-line-top': size === 'sm' ? '1.5rem' : size === 'lg' ? '2.5rem' : '2rem' } as CSSProperties}
                     aria-hidden
@@ -614,7 +615,7 @@ export function Stepper({ element, emit, bindings }: ComponentRenderProps): Reac
               <span
                 className={cn(
                   'absolute h-0.5',
-                  done ? '[background:var(--fr-stepper-accent,var(--color-foreground))]' : incompleteRail,
+                  done ? '[background:var(--fr-stepper-accent,var(--fr-accent))]' : incompleteRail,
                 )}
                 style={{
                   '--fr-step-half': size === 'sm' ? '0.75rem' : size === 'lg' ? '1.25rem' : '1rem',
@@ -823,7 +824,7 @@ function TreeNodeView({
         // selection WASH keeps the token inside its color-mix on purpose — that is a
         // background, and its 14% of the container's own ink would wash out against
         // the surface it is mixed over, where 14% of the token still reads as a band.
-        className={cn('flex w-full cursor-pointer items-center gap-1.5 rounded-frayme pr-2 text-left transition-colors hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))]', rowClass, isSelected ? 'text-current [background:color-mix(in_srgb,var(--fr-tree-accent,var(--color-foreground))_14%,transparent)]' : 'text-current')}
+        className={cn('flex w-full cursor-pointer items-center gap-1.5 rounded-frayme pr-2 text-left transition-colors hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))]', rowClass, isSelected ? 'text-current [background:color-mix(in_srgb,var(--fr-tree-accent,var(--fr-accent))_14%,transparent)]' : 'text-current')}
         style={{ paddingLeft: `${0.5 + depth * 1.1}rem` }}
       >
         <span className="flex h-4 w-4 shrink-0 items-center justify-center text-[color:var(--fr-tree-line,var(--color-muted-foreground))]" aria-hidden>

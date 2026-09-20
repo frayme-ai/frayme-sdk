@@ -423,8 +423,11 @@ describe('MediaAnnotator — a fixed fill carries fixed ink', () => {
     // safeColor admits named colours and oklch()/lab(); a wrong luminance would be
     // worse than no opinion, so those keep the token pair (and its old numbers).
     const { container } = drawAnno({ accent: 'rebeccapurple', annotations: [pin()] });
-    expect(rootVars(container, LIGHT_VARS)['--fr-ma-ink']).toBeUndefined();
-    expect(inkExpr(activeChip(container))).toBe('var(--fr-ma-ink,var(--color-card))');
+    // Still no guessed luminance. The ink is now PINNED to the token pair rather
+    // than left unset, because the chain gained a theme level below it: unset, an
+    // unreadable spec accent would fall through to an ink made for another colour.
+    expect(rootVars(container, LIGHT_VARS)['--fr-ma-ink']).toBe('var(--color-card)');
+    expect(inkExpr(activeChip(container))).toBe('var(--fr-ma-ink,var(--fr-accent-ink,var(--color-card)))');
     expect(resolve(inkExpr(activeChip(container)), rootVars(container, LIGHT_VARS))).toEqual(
       resolve('var(--color-card)', LIGHT_VARS),
     );

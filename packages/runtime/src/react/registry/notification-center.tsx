@@ -6,7 +6,7 @@ import { useIntrinsicEmit } from '../intrinsic.js';
 import { useLocalOrBound as useBoundProp } from './_state.js';
 import { cn } from '../cn.js';
 import { useScrollEdges } from '../use-scroll-edges.js';
-import { styleVars } from './_style.js';
+import { accentTextVar, styleVars } from './_style.js';
 import { safeDimension, type DimOpts } from '@frayme/catalog/validate';
 
 /* Catalog component (notification-center): NotificationCenter — read/unread inbox.
@@ -110,6 +110,7 @@ export function NotificationCenter({ element, emit, bindings }: ComponentRenderP
 
   const vars = styleVars(
     { var: '--fr-ntf-accent', value: p.accent, kind: 'color' },
+    accentTextVar('--fr-ntf-accent-text', p.accent, undefined),
     { var: '--fr-ntf-muted', value: p.mutedColor, kind: 'color' },
   );
   // The list only becomes a scroller when the model NAMES maxHeight. Unset, it
@@ -232,7 +233,7 @@ export function NotificationCenter({ element, emit, bindings }: ComponentRenderP
                   // quiet defaults: the active category tab is neutral
                   // high-contrast (foreground/card) by default, not a brand slab; a
                   // supplied `accent` still fills brand (focus ring stays on accent).
-                  active ? 'bg-[color:var(--fr-ntf-accent,var(--color-foreground))] text-card' : cn('hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))]', mutedText),
+                  active ? 'bg-[color:var(--fr-ntf-accent,var(--fr-accent))] text-[color:var(--fr-ntf-accent-text,var(--fr-accent-ink,var(--color-card)))]' : cn('hover:bg-[color:var(--fr-surface-sunken,var(--color-muted))]', mutedText),
                 )}
               >
                 {t.label}

@@ -409,7 +409,7 @@ describe('media-annotator — the border-only Clear button inherits', () => {
     name: 'the ACTIVE tool button (its own accent slab)',
     type: 'MediaAnnotator',
     props: MA,
-    pick: byClass('button', 'bg-[color:var(--fr-ma-accent,var(--color-foreground))]'),
+    pick: byClass('button', 'bg-[color:var(--fr-ma-accent,var(--fr-accent))]'),
     expect: resolveColor('var(--color-card)', [0, 0, 0], VARS),
   });
 

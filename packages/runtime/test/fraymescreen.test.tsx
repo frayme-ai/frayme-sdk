@@ -532,7 +532,7 @@ describe('FraymeScreen: edit', () => {
 });
 
 describe('FraymeScreen: continue', () => {
-  it('a press reaches onAction with the handle, and continue sends the journey body', async () => {
+  it('a press reaches onAction with the handle, and continue sends a create carrying its values', async () => {
     const { fetch, calls } = mockFetch([sseReply(payload(buttonOps)), sseReply(payload(textOps('Refunded'), 'gen_2'))]);
     const onAction = vi.fn((event, handle: FraymeScreenHandle) => handle.continue(event));
     render(
@@ -553,26 +553,25 @@ describe('FraymeScreen: continue', () => {
     expect(typeof handle.edit).toBe('function');
 
     const body = calls[1].body;
+    // A PRESS IS A CREATE: named in the prompt, with its values in `data`.
     expect(body).toMatchObject({
-      prompt: 'The user triggered the "refund" action. Continue the journey.',
-      mode: 'continue_journey',
-      data: { orders: 1 },
+      prompt: 'The user pressed "Refund". Show the next step.',
       actions: [{ name: 'refund', params: ['orderId'] }],
-      prior_spec: { root: 'b1', generation_id: 'gen_1' },
       stream: true,
     });
-    const context = body.action_context as Record<string, unknown>;
-    expect(context).toMatchObject({ action: 'refund', event: 'commit', element_id: 'b1', generation_id: 'gen_1' });
-    expect((context.params as Record<string, unknown>).orderId).toBe('A1');
-    // The receipt fields stay off the wire.
-    expect(context).not.toHaveProperty('label');
-    expect(context).not.toHaveProperty('description');
-    for (const key of Object.keys(context)) {
-      expect(['action', 'event', 'params', 'state', 'element_id', 'generation_id']).toContain(key);
-    }
+    // The pressed action's params ride OVER the props' data, which described the
+    // screen just left.
+    expect(body.data).toEqual({ orders: 1, orderId: 'A1' });
+    expect(body).not.toHaveProperty('mode');
+    expect(body).not.toHaveProperty('prior_spec');
+    expect(body).not.toHaveProperty('action_context');
+    // Nothing of the screen, and no press meta, on the wire.
+    const wire = JSON.stringify(body);
+    expect(wire).not.toContain('element_id');
+    expect(wire).not.toContain('generation_id');
   });
 
-  it('a prompt and extra steer the next step; the mode and action_context stay', async () => {
+  it('a prompt and extra steer the next step, and naming data opts out of the derived values', async () => {
     const { fetch, calls } = mockFetch([sseReply(payload(textOps('one'))), sseReply(payload(textOps('two'), 'gen_2'))]);
     const { ref } = probe({ client: clientFor(fetch), prompt: 'Orders', data: { a: 1 } });
     await waitFor(() => expect(ref.current!.status).toBe('complete'));
@@ -591,16 +590,20 @@ describe('FraymeScreen: continue', () => {
         action_context: { action: 'other' },
       });
     });
-    expect(calls[1].body).toMatchObject({
-      prompt: 'Show the picked row',
-      data: { row: 7 },
-      mode: 'continue_journey',
-      action_context: { action: 'pick', params: { id: 7 }, state: { _ui: {} } },
-    });
-    expect(calls[1].body.action_context).toEqual({ action: 'pick', params: { id: 7 }, state: { _ui: {} } });
+    expect(calls[1].body).toMatchObject({ prompt: 'Show the picked row' });
+    // `data` was named, so the params are NOT merged in: the caller knew better.
+    expect(calls[1].body.data).toEqual({ row: 7 });
+    // mode and action_context are ignored in `extra`, and neither is sent anyway.
+    expect(calls[1].body).not.toHaveProperty('mode');
+    expect(calls[1].body).not.toHaveProperty('action_context');
+    // Nothing of the event reaches the wire, including a stray key on it.
+    const wire = JSON.stringify(calls[1].body);
+    expect(wire).not.toContain('not on the wire');
+    expect(wire).not.toContain('Picks a row');
+    expect(wire).not.toContain('_ui');
   });
 
-  it('a press over the action_context ceiling is sent without its state', async () => {
+  it('a press on a huge table sends its params and none of the table', async () => {
     const { fetch, calls } = mockFetch([sseReply(payload(textOps('one'))), sseReply(payload(textOps('two'), 'gen_2'))]);
     const { ref } = probe({ client: clientFor(fetch), prompt: 'Orders' });
     await waitFor(() => expect(ref.current!.status).toBe('complete'));
@@ -608,8 +611,11 @@ describe('FraymeScreen: continue', () => {
     await act(async () => {
       await ref.current!.continue({ action: 'reassign', params: { row: { id: 'R-1' } }, state: { rows } });
     });
-    expect(calls[1].body.action_context).toEqual({ action: 'reassign', params: { row: { id: 'R-1' } } });
-    expect(calls[1].body.prior_spec).toBeDefined();
+    expect(calls[1].body.data).toEqual({ row: { id: 'R-1' } });
+    expect(calls[1].body).not.toHaveProperty('prior_spec');
+    const wire = JSON.stringify(calls[1].body);
+    expect(wire).not.toContain('R-399');
+    expect(wire.length).toBeLessThan(500);
   });
 
   it('extra.prompt is used when no prompt argument is given', async () => {
@@ -914,8 +920,11 @@ describe('FraymeScreen: only a finished screen is carried forward', () => {
     await act(async () => {
       await ref.current!.continue({ action: 'go', params: {} });
     });
-    expect(calls[2].body).toMatchObject({ mode: 'continue_journey' });
-    expect(calls[2].body.prior_spec).toEqual(finished);
+    // No screen is attached at all now, so the half-built one cannot leak either.
+    expect(calls[2].body).not.toHaveProperty('mode');
+    expect(calls[2].body).not.toHaveProperty('prior_spec');
+    expect(JSON.stringify(calls[2].body)).not.toContain('elements');
+    expect(finished).toBeTruthy();
   });
 
   it('a failed edit after an aborted one shows the finished screen, never the partial', async () => {
@@ -1013,7 +1022,14 @@ describe('FraymeScreen: trying again', () => {
     await screen.findByText('Refunded');
     expect(calls).toHaveLength(3);
     expect(calls[2].body).toEqual(calls[1].body);
-    expect(calls[2].body).toMatchObject({ mode: 'continue_journey', prior_spec: { root: 'b1' } });
+    // The retried request is the same CREATE: the press named in the prompt, its
+    // values in data, and no screen attached on either attempt.
+    expect(calls[2].body).toMatchObject({
+      prompt: 'The user pressed "Refund". Show the next step.',
+      data: { orderId: 'A1' },
+    });
+    expect(calls[2].body).not.toHaveProperty('mode');
+    expect(calls[2].body).not.toHaveProperty('prior_spec');
     expect(screen.queryByRole('alert')).toBeNull();
   });
 

@@ -196,7 +196,7 @@ const helpRecipe = cva('text-[0.8125rem] leading-snug', {
    quiet defaults: the checked box/dot defaults to neutral high-contrast
    (foreground → near-black, shadcn-style), not a saturated brand fill; a supplied
    `accent` still overrides. */
-const checkboxBox = cva('shrink-0 [accent-color:var(--fr-check-accent,var(--color-foreground))]', {
+const checkboxBox = cva('shrink-0 [accent-color:var(--fr-check-accent,var(--fr-accent))]', {
   variants: {
     size: { sm: 'h-3.5 w-3.5', md: 'h-4 w-4', lg: 'h-5 w-5' },
     disabled: { true: 'cursor-not-allowed opacity-60', false: '' },
@@ -215,7 +215,7 @@ const radioGroupRecipe = cva('m-0 flex border-none p-0 [gap:var(--fr-radio-gap,v
   defaultVariants: { orientation: 'vertical' },
 });
 
-const radioOption = cva('flex items-center gap-2 [accent-color:var(--fr-radio-accent,var(--color-foreground))]', {
+const radioOption = cva('flex items-center gap-2 [accent-color:var(--fr-radio-accent,var(--fr-accent))]', {
   variants: {
     size: { sm: 'text-sm', md: 'text-[0.9375rem]', lg: 'text-lg' },
     disabled: { true: 'cursor-not-allowed opacity-60', false: '' },
@@ -292,7 +292,7 @@ const controlErrorCls = '[border-color:var(--color-danger)]';
 const labelColorCls = 'text-[color:var(--fr-field-label,var(--color-foreground))]';
 
 /** A field's shared behavioral + label/help/error scaffold. */
-function fieldChrome(p: {
+function useFieldChrome(p: {
   size?: string | null;
   disabled?: boolean | null;
   labelPlacement?: string | null;
@@ -300,6 +300,7 @@ function fieldChrome(p: {
   errorText?: string | null;
   label?: string | null;
 }) {
+  const fieldLabel = useContext(FieldLabelContext);
   return {
     size: (p.size as 'sm' | 'md' | 'lg' | null) ?? undefined,
     disabled: (p.disabled ?? false) as true | false,
@@ -309,16 +310,77 @@ function fieldChrome(p: {
     // deal-reg screenshot bug). Explicit labelPlacement always wins.
     placement:
       (p.labelPlacement as 'top' | 'hidden' | null) ??
-      ((p.label ?? '') === '' ? ('hidden' as const) : undefined),
+      ((p.label ?? '') === '' ? ('hidden' as const) : undefined) ??
+      // The FormField around this control already prints this exact caption.
+      // Keep it as the control's accessible name (sr-only) rather than print it
+      // a second time. An explicit labelPlacement still wins, as above.
+      (repeatsFieldLabel(fieldLabel, p.label) ? ('hidden' as const) : undefined),
   };
+}
+
+/** The control's label repeats the enclosing FormField's caption, once outer
+ * whitespace is ignored. Strings on both sides, so a malformed prop never matches. */
+function repeatsFieldLabel(fieldLabel: string | null, label: unknown): boolean {
+  return (
+    typeof fieldLabel === 'string' &&
+    fieldLabel.trim() !== '' &&
+    typeof label === 'string' &&
+    fieldLabel.trim() === label.trim()
+  );
+}
+
+/** FormField's help/error cascade: the ONE line the enclosing FormField prints
+ * under its group (its error when set, else its help), or null outside a
+ * FormField and inside one that prints nothing. The control inside reads it so
+ * it does not print the same sentence a second time. Generating models repeat a
+ * FormField's helpText on the control it wraps, and the reader saw the line
+ * twice. This covers the help/error line only. A repeated LABEL is hidden only
+ * when the spec itself sets labelPlacement hidden or an empty label (see
+ * fieldChrome); a control that repeats the FormField label without either still
+ * shows it twice. */
+export type FieldDescription = { kind: 'help' | 'error'; text: string } | null;
+export const FieldDescriptionContext = createContext<FieldDescription>(null);
+
+/** FormField's caption, passed to the control it wraps: the label the FormField
+ * already prints above the group, or null outside a FormField. Generating models
+ * repeat that label on the control inside, and when they forget
+ * labelPlacement hidden the caption prints twice. In the training data this is
+ * the COMMON case: 14 of 529 FormField to control pairs repeat the label visibly.
+ * The control reads it and keeps an identical label for screen readers only. */
+export const FieldLabelContext = createContext<string | null>(null);
+
+/** A control's line repeats the FormField's printed line: same kind, same text
+ * once outer whitespace is ignored (HTML collapses it anyway). Deliberately
+ * narrow. A help line never matches an error line, different wording always
+ * prints, and a non-string value (a malformed prop) never matches. */
+function repeatsFieldLine(printed: FieldDescription, kind: 'help' | 'error', text: unknown): boolean {
+  return (
+    printed != null &&
+    printed.kind === kind &&
+    typeof printed.text === 'string' &&
+    typeof text === 'string' &&
+    printed.text.trim() === text.trim()
+  );
 }
 
 /** The muted help / danger error line under a field (error wins when present). */
 function HelpLine({ helpText, errorText }: { helpText?: string | null; errorText?: string | null }): ReactNode {
   // role=alert on the error line — family parity with forms-extended's HelpLine /
   // FieldError, so a surfaced error is announced by screen readers.
-  if (errorText != null) return <span className={cn(helpRecipe({ kind: 'error' }))} role="alert">{errorText}</span>;
-  if (helpText != null) return <span className={cn(helpRecipe({ kind: 'help' }))}>{helpText}</span>;
+  const fieldLine = useContext(FieldDescriptionContext);
+  // Inside a FormField that already prints this exact line, print nothing. The
+  // line the control WOULD print is what is compared (error wins, as below), so a
+  // repeated error never falls back to showing the control's help instead. The
+  // control keeps aria-invalid and its danger border; only the text is not
+  // repeated. Outside a FormField fieldLine is null and this is a no-op.
+  if (errorText != null) {
+    if (repeatsFieldLine(fieldLine, 'error', errorText)) return null;
+    return <span className={cn(helpRecipe({ kind: 'error' }))} role="alert">{errorText}</span>;
+  }
+  if (helpText != null) {
+    if (repeatsFieldLine(fieldLine, 'help', helpText)) return null;
+    return <span className={cn(helpRecipe({ kind: 'help' }))}>{helpText}</span>;
+  }
   return null;
 }
 
@@ -393,7 +455,7 @@ export function Input({ element, emit, bindings }: ComponentRenderProps): ReactN
      behaviour, this is the appearance. Merged BEFORE fieldChrome so the control, its
      label row and its help text all read one state rather than the control greying
      while its label does not. */
-  const chrome = fieldChrome(frozen ? { ...p, disabled: true } : p);
+  const chrome = useFieldChrome(frozen ? { ...p, disabled: true } : p);
   // Leading icon size tracks the size enum (matches SearchInput's glyph scale).
   const iconSize = chrome.size === 'sm' ? 15 : chrome.size === 'lg' ? 19 : 17;
   const leadingIcon = p.icon != null && hasIcon(p.icon) ? p.icon : null;
@@ -548,7 +610,7 @@ export function Textarea({ element, emit, bindings }: ComponentRenderProps): Rea
      behaviour, this is the appearance. Merged BEFORE fieldChrome so the control, its
      label row and its help text all read one state rather than the control greying
      while its label does not. */
-  const chrome = fieldChrome(frozen ? { ...p, disabled: true } : p);
+  const chrome = useFieldChrome(frozen ? { ...p, disabled: true } : p);
   const style = styleVars(
     { var: '--fr-field-accent', value: p.accent, kind: 'color' },
     { var: '--fr-field-border', value: p.borderColor, kind: 'color' },
@@ -672,7 +734,7 @@ export function Select({ element, emit, bindings }: ComponentRenderProps): React
      behaviour, this is the appearance. Merged BEFORE fieldChrome so the control, its
      label row and its help text all read one state rather than the control greying
      while its label does not. */
-  const chrome = fieldChrome(frozen ? { ...p, disabled: true } : p);
+  const chrome = useFieldChrome(frozen ? { ...p, disabled: true } : p);
   const style = styleVars(
     { var: '--fr-field-accent', value: p.accent, kind: 'color' },
     { var: '--fr-field-border', value: p.borderColor, kind: 'color' },

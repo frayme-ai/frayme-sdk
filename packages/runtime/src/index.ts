@@ -27,6 +27,7 @@ export type {
 } from './core/handlers.js';
 export {
   themeToStyle,
+  onFillInk,
   isThemePair,
   resolveTheme,
   type ThemeInput,
