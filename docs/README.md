@@ -16,7 +16,31 @@ Agents are good at deciding *what* to show and terrible at hand-writing frontend
 
 Roughly 90% of interactions (typing, tabs, filters, toggles) resolve locally in the renderer at zero cost and zero latency. Only the actions the spec explicitly declares (a form submit, a "regenerate") round-trip to your agent.
 
-## Twenty lines to a live UI
+## Inside your agent: one spread, one component
+
+Most teams never call the API by hand. Spread `fraymeTools()` into the tools your agent already has, and draw each result in the thread with `FraymeResult`: the screen streams in as it composes, a press comes back to the agent as the next message, and the agent composes the next screen.
+
+```ts
+// app/api/chat/route.ts (Vercel AI SDK)
+import { fraymeTools } from '@frayme/api/ai-sdk';
+
+const tools = { ...yourTools, ...fraymeTools({ messages }) };
+return streamText({ model, tools, messages: await convertToModelMessages(messages, { tools }) })
+  .toUIMessageStreamResponse();
+```
+
+```tsx
+// app/page.tsx
+import { fraymePart, pressMessage } from '@frayme/runtime/ai-sdk';
+import { FraymeResult } from '@frayme/runtime/react';
+
+const frayme = fraymePart(part, message);
+if (frayme) return <FraymeResult {...frayme} onPress={(e) => sendMessage(pressMessage(e))} />;
+```
+
+The [Vercel AI SDK](frameworks/ai-sdk.md) page has the whole route and page; [AG-UI](frameworks/ag-ui.md), [LangChain.js](frameworks/langchain.md), [Mastra](frameworks/mastra.md) and the [OpenAI Agents SDK](frameworks/openai-agents.md) each have theirs. For a screen with no chat around it, [`FraymeScreen`](guides/chatless-screens.md) composes, edits and continues on its own.
+
+## Twenty lines to a live UI, without an agent
 
 ```ts
 // server: @frayme/api
