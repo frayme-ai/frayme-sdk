@@ -1,6 +1,6 @@
 # Suggestion
 
-A tappable suggested-prompt chip-button that emits `commit` when clicked. Render several in a row/wrap under a chat to offer quick follow-up prompts. Reach for this when you want to nudge the user toward likely next questions instead of leaving the composer blank — a one-tap shortcut that skips typing. On click it emits `commit` with `{label}` carrying the chip text, which a host typically feeds straight into the PromptInput / send flow; add an `icon` glyph to hint the prompt category.
+A tappable suggested-prompt chip-button that emits `commit` when clicked. Render several in a row/wrap under a chat to offer quick follow-up prompts. Reach for this when you want to nudge the user toward likely next questions instead of leaving the composer blank, a one-tap shortcut that skips typing. On click it emits `commit` with `{label}` carrying the chip text, which a host typically feeds straight into the PromptInput / send flow; add an `icon` glyph to hint the prompt category.
 
 ## Example
 
@@ -37,13 +37,13 @@ A tappable suggested-prompt chip-button that emits `commit` when clicked. Render
 
 ### commit
 
-The chip was clicked; params carry {label} with the suggested prompt text — typically fed straight into the composer/send flow.
+The chip was clicked; params carry {label} with the suggested prompt text, typically fed straight into the composer/send flow.
 
 | Key | Type | Description |
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

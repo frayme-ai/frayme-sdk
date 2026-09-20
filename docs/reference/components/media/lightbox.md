@@ -1,6 +1,6 @@
 # Lightbox
 
-A standalone full-screen media overlay (role=dialog). Prev/next arrows change the current image (internal state, seeded from `index`), close/Esc hides it (seeded from `open`) — all interactive without a binding. Bind `index`/`open` for external control. Emits `change` on navigation and `dismiss` on close.
+A standalone full-screen media overlay (role=dialog). Prev/next arrows change the current image (internal state, seeded from `index`), close/Esc hides it (seeded from `open`), all interactive without a binding. Bind `index`/`open` for external control. Emits `change` on navigation and `dismiss` on close.
 
 ## Example
 
@@ -36,7 +36,7 @@ A standalone full-screen media overlay (role=dialog). Prev/next arrows change th
 | `items` | `({ src: string, alt: string, caption: string })[]` | The images in the overlay (src + alt + optional caption). Prev/next steps through them. |
 | `index` | `number` | Which image to show first (0-based; default 0). Bind it to drive the current image externally. |
 | `open` | `boolean` | Whether the overlay is shown (default false). Bind it to open/close from elsewhere; the internal close button still works. |
-| `closeLabel` | `string` | Accessible label for the close (×) button (default "Close"). Set for localisation; feeds aria-label — escaped text. |
+| `closeLabel` | `string` | Accessible label for the close (×) button (default "Close"). Set for localisation; feeds aria-label, escaped text. |
 | `prevLabel` | `string` | Accessible label for the previous-image arrow (default "Previous"). Only shown with multiple images; escaped text. |
 | `nextLabel` | `string` | Accessible label for the next-image arrow (default "Next"). Only shown with multiple images; escaped text. |
 | `overlayColor` | `string` | Backdrop scrim color behind the image (default a fixed dark scrim, always dark in both themes). |
@@ -45,7 +45,7 @@ A standalone full-screen media overlay (role=dialog). Prev/next arrows change th
 
 ### change
 
-A prev/next arrow (or an Arrow-key press) moved to another image; params carry {index, src} — the new image's position and URL.
+A prev/next arrow (or an Arrow-key press) moved to another image; params carry {index, src}, the new image's position and URL.
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -54,7 +54,7 @@ A prev/next arrow (or an Arrow-key press) moved to another image; params carry {
 
 ### dismiss
 
-The overlay was closed (× button or Esc); params carry {index} — the index it was showing when closed.
+The overlay was closed (× button or Esc); params carry {index}, the index it was showing when closed.
 
 | Key | Type | Description |
 | --- | --- | --- |

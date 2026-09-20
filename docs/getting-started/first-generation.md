@@ -95,8 +95,8 @@ Reading the stream:
 - **`compose.started`**: composition began. `model` is an opaque identifier: log it, never branch on it.
 - **`op` × N**: one json-render operation each (RFC 6902 shaped: `op`, `path`, usually `value`). Ops are **live but provisional**. Render them as they arrive, but nothing is final yet.
 - **`: ping`** is a keepalive comment every 15 seconds so proxies don't idle the connection out. Ignore it.
-- **`compose.restarted`** (not shown, ×0-2): the attempt failed validation and Frayme is retrying on a stronger model in the same response. **Discard everything rendered so far**; the following `op` frames build a fresh spec.
-- **`compose.completed`**: the **only** finalizer. The spec passed validation against the 189-component catalog; this is also the billing moment. It carries `usage`, `interactions` (the "what can this UI do" summary, listing which elements fire which actions), and `components_used`.
+- **`compose.restarted`** (not shown, ×0-1): the attempt failed validation and Frayme is retrying on a stronger model in the same response (at most one restart per request today; treat every one the same way). **Discard everything rendered so far**; the following `op` frames build a fresh spec.
+- **`compose.completed`**: the **only** finalizer. The spec passed validation against the 189-component catalog, with the same `validateSpec` the renderer applies; this is also the billing moment. It carries `usage`, `interactions` (the "what can this UI do" summary, listing which elements fire which actions), and `components_used`.
 - **`error`**: an in-band terminal failure instead of `compose.completed`. Never billed. Codes match the [error taxonomy](../api/errors.md).
 
 ## The spec the ops built
@@ -123,7 +123,7 @@ Apply the seven ops in order over `{}` and you get the finished document, a stan
     },
     "teamSize": {
       "type": "Select",
-      "props": { "label": "Team size", "options": ["Just me", "2-10", "11-50", "50+"], "value": { "$bindState": "/team_size" } }
+      "props": { "label": "Team size", "name": "team_size", "options": ["Just me", "2-10", "11-50", "50+"], "value": { "$bindState": "/team_size" } }
     },
     "submitBtn": {
       "type": "Button",

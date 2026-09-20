@@ -28,7 +28,7 @@ Segmented one-time-code entry: a row of single-character boxes. Typing routes ch
 | `mask` | `boolean` | Show filled segments as dots (•) instead of the typed characters (for secret codes). |
 | `pattern` | `"numeric" \| "alphanumeric"` | Allowed characters: numeric (digits only, default) or alphanumeric. |
 | `size` | `"sm" \| "md" \| "lg"` | Segment box size in px (default md; sm=36×32, md=44×40, lg=56×48). |
-| `label` | `string` | Field label shown above the segments (default none — a bare code row). Keep short (1-3 words), e.g. "Verification code". |
+| `label` | `string` | Field label shown above the segments (default none, a bare code row). Keep short (1-3 words), e.g. "Verification code". |
 | `weight` | `"light" \| "normal" \| "medium" \| "semibold" \| "bold"` | Font weight of the field label (default medium); set to dial the emphasis up or down. No effect without `label`. |
 | `tracking` | `"tighter" \| "tight" \| "normal" \| "wide" \| "wider"` | Letter-spacing of the field label (default normal); reach for `wide`/`wider` on an uppercase caption. No effect without `label`. |
 | `groupSize` | `number` | Insert a separator after every N boxes for grouped presentation (e.g. 3 for a 6-digit 3+3 code; default off = one continuous row). Inert when ≤0 or ≥ length. |
@@ -39,7 +39,7 @@ Segmented one-time-code entry: a row of single-character boxes. Typing routes ch
 | `bg` | `string` | Background colour of each segment box (default the card token; bindable safeColor). Set on tinted surfaces; pair a dark `bg` with `color` to keep the typed characters legible. |
 | `color` | `string` | Entered-character text colour inside each segment, and the group separator glyph (default the foreground token). Set it when a dark custom `bg` needs a readable light character. |
 | `radiusValue` | `string \| number` | Exact corner rounding of each segment box (e.g. "12px" / "1rem"; default the frayme radius token, overriding the size-derived default). |
-| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit — no per-keystroke stream. |
+| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit, no per-keystroke stream. |
 
 ## Events
 
@@ -60,7 +60,7 @@ The code just became fully filled (fires once on the fill transition, not on lat
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

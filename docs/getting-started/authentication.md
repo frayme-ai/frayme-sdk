@@ -3,7 +3,7 @@
 Every Frayme API request authenticates with a bearer API key. Here's how keys work and how to keep them out of the browser.
 
 {% hint style="info" %}
-Keys are created and managed in your Frayme dashboard at [frayme.ai](https://frayme.ai).
+Keys are created and managed in your Frayme dashboard at [app.frayme.ai](https://app.frayme.ai/api-keys).
 {% endhint %}
 
 ## API keys

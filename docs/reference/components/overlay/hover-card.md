@@ -1,6 +1,6 @@
 # HoverCard
 
-A trigger (text label or wrapped children) that reveals a rich preview card — title + description + optional avatar image — on hover or keyboard focus. Choose this over Toggletip when the reveal has structured content (a person/entity preview) rather than a single line of help text; unlike Toggletip it opens passively on hover/focus, not click. Set `trigger` for a plain text anchor, or drop children into the slot to make an arbitrary element the hover target; the `description` clamps to 3 lines so keep the preview copy tight.
+A trigger (text label or wrapped children) that reveals a rich preview card, title + description + optional avatar image, on hover or keyboard focus. Choose this over Toggletip when the reveal has structured content (a person/entity preview) rather than a single line of help text; unlike Toggletip it opens passively on hover/focus, not click. Set `trigger` for a plain text anchor, or drop children into the slot to make an arbitrary element the hover target; the `description` clamps to 3 lines so keep the preview copy tight.
 
 ## Example
 
@@ -31,6 +31,6 @@ A trigger (text label or wrapped children) that reveals a rich preview card — 
 | `side` | `"top" \| "bottom" \| "left" \| "right"` | Which side of the trigger the bubble/card opens on (default top for Toggletip, bottom for HoverCard). |
 | `accent` | `string` | Accent color for the trigger underline (default currentColor, i.e. it matches the trigger text until set) + card border (default the border token). |
 | `color` | `string` | Primary text colour for the card title (default the foreground token). |
-| `mutedColor` | `string` | Secondary/muted text colour — the card description line (default the muted-foreground token). |
-| `shadow` | `"none" \| "sm" \| "md" \| "lg" \| "xl"` | Drop-shadow depth of the floating preview card — set to lift or flatten it (default lg). |
-| `motion` | `"none" \| "fast" \| "normal" \| "slow"` | Enter-transition speed for the revealed card (fast/normal/slow). Default: no animation — appears instantly. |
+| `mutedColor` | `string` | Secondary/muted text colour, the card description line (default the muted-foreground token). |
+| `shadow` | `"none" \| "sm" \| "md" \| "lg" \| "xl"` | Drop-shadow depth of the floating preview card, set to lift or flatten it (default lg). |
+| `motion` | `"none" \| "fast" \| "normal" \| "slow"` | Enter-transition speed for the revealed card (fast/normal/slow). Default: no animation, appears instantly. |

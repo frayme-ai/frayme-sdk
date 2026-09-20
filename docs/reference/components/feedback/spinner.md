@@ -41,5 +41,5 @@ Animated loading indicator (`variant`: ring · dots · bars) for a busy state wi
 | `thickness` | `"thin" \| "regular" \| "thick"` | Ring stroke width (default regular). Applies to variant:ring. |
 | `labelPosition` | `"right" \| "bottom" \| "none"` | Where the label sits: right (default) · bottom · none (aria-only). |
 | `color` | `string` | Exact colour of the moving active arc/glyph, naming a specific brand colour; wins over the `tone` token. Reach for it when the spinner sits on a branded surface. |
-| `trackColor` | `string` | Exact colour of the inactive (unfilled) ring behind the moving arc — variant:ring only (default the border token). Set it for contrast on a dark/tinted surface; dots/bars have no track. |
-| `mutedColor` | `string` | Secondary/muted text colour — the label beside/under the spinner (default the muted-foreground token). |
+| `trackColor` | `string` | Exact colour of the inactive (unfilled) ring behind the moving arc, variant:ring only (default the border token). Set it for contrast on a dark/tinted surface; dots/bars have no track. |
+| `mutedColor` | `string` | Secondary/muted text colour, the label beside/under the spinner (default the muted-foreground token). |

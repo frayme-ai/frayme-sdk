@@ -13,6 +13,6 @@
 | [PageHeader](page-header.md) | Page/section header: eyebrow + title + description on the left, with action controls (children) on the right.  |
 | [Resizable](resizable.md) | A single panel the user resizes by dragging an edge (or corner) handle. Put any content inside as the child. T |
 | [Section](section.md) | Page section band with vertical rhythm and an optional eyebrow/title header. Use to break a page into stacked, |
-| [Separator](separator.md) | Thin rule that visually divides adjacent content — horizontal by default, vertical for inline splits (`orienta |
+| [Separator](separator.md) | Thin rule that visually divides adjacent content, horizontal by default, vertical for inline splits (`orienta |
 | [SplitPane](split-pane.md) | Two resizable panes (give it EXACTLY two children) separated by a draggable divider. Drag the divider (or focu |
 | [Stack](stack.md) | Flexbox container that lays out its children in a column or row (`direction`, default vertical) with token gap |

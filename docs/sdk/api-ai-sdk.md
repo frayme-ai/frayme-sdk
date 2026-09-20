@@ -77,7 +77,7 @@ export async function POST(req: Request) {
 | `frayme_compose` description | The SDK's description, plus a note: specs never reach the model, and `edit_of` names a screen | The SDK's description, plus a note: earlier screens are not available, so the model describes each screen in full |
 | `mode: 'edit'` | Needs `edit_of` | Refused (`UNKNOWN_SCREEN`) |
 | `frayme_action` description and examples | Press-line shaped: the model forwards the short `frayme_action` line (no params, state or description) and adds the next screen's inputs | The SDK's own: the model forwards the whole event, params and state included |
-| `frayme_action` call | Checked against the press on the last user message, which then replaces the model's copy | Forwarded as the model wrote it, cut to the size ceilings only |
+| `frayme_action` call | Checked against the press on the last user message, which then replaces the model's copy | Taken as the model wrote it |
 
 ### Returned tools
 
@@ -127,22 +127,14 @@ The tool then checks the call:
 - A different `action` returns `PRESS_MISMATCH`, and so does a different `generation_id` when both the call and the press carry one.
 - Otherwise the page's event wins over the model's copy: every press field comes from the message. Only `prompt`, `data`, `actions` and `signals` are the model's own.
 
-**Without `messages`,** the call is forwarded as the model wrote it, fitted to size as below.
+**Without `messages`,** the call is taken as the model wrote it.
 
-**Request:** cut to the API's size ceilings, with or without `messages`. A press can be far larger than its screen (a table's row action carries every row), and a request over a ceiling fails before any model call, the same way every time. So `frayme_action` fits it first, as `fitContinuation` does (the function and the ceilings below are exported from `@frayme/api`):
-
-- **`action_context` over 16,000 characters of JSON** (`ACTION_CONTEXT_MAX_CHARS`): `state` is left out first, then `params` if it is still too large. The action name and the ids always stay.
-- **A pressed screen over 48,000 characters** (`PRIOR_SPEC_MAX_CHARS`) is left out, and the next screen is built from the press alone.
-
-Every output of that call then carries `trimmed`, listing what was left out in order (`'prior_spec'`, `'state'`, `'params'`), and the model reads it with a plain-language `trimmed_note`. The fields sent are:
+**Request:** a press composes the next screen, it does not edit the last one. Since 0.6.0 the tool reads the whole event and sends none of it: no `mode`, no `action_context` and no `prior_spec`. The pressed screen is not attached (as `prior_spec` it reads to the composer as "edit this", which hands the same screen back), and the params and state reach no prompt, so they stay in the browser. What reaches the composer is the prompt and `data`: the model names the press in `prompt` and puts the values the next screen must show in `data`, so a value the user typed that is not named there does not appear. Nothing is cut to fit, and `trimmed` is never set on this call. The fields sent are:
 
 | Field | Value |
 | --- | --- |
-| `prompt` | The model's `prompt`, else `The user pressed the "<action>" control. Continue the journey from that screen.` |
-| `mode` | `'continue_journey'` |
-| `action_context` | `{ action, event, params, state, element_id, generation_id }`, fitted as above. `label` and `description` stay on your side: the wire does not take them. |
-| `data`, `actions`, `signals` | The model's values, as top-level fields for the next screen. |
-| `prior_spec` | The pressed screen, found the same way as for `edit_of`, when it finished in this chat and fits. Without it, the server continues from the press alone. If the API rejects it, the compose retries once without it and marks its outputs `prior_spec_dropped: true`. |
+| `prompt` | The model's `prompt`, else `The user pressed the "<action>" control. Show the next step.` |
+| `data`, `actions`, `signals` | The model's values, as top-level fields for the next screen. `actions` should name only the controls that lead forward: re-declaring the pressed control with required params puts its form back on the next screen. |
 | `action_policy`, `context.theme` | As on `frayme_compose`. |
 
 ## Outputs

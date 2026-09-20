@@ -21,7 +21,7 @@ All errors extend `FraymeError`, which carries `status`, `code`, `message`, and 
 | `QuotaExceededError` | 429 | `QUOTA_EXCEEDED` |
 | `InternalServerError` | 500 | `INTERNAL_SERVER_ERROR` |
 | `CompositionFailedError` | 502 | `COMPOSITION_FAILED` |
-| `ModelUnavailableError` | 503 | `MODEL_UNAVAILABLE` |
+| `ModelUnavailableError` | 503 | `MODEL_UNAVAILABLE` · `SERVICE_UNAVAILABLE` (a transient auth or backend outage: retry) |
 
 The full code → status map is exported as `ERROR_CODE_TO_STATUS` if you need to assert parity in your own tests. Failed composes, whatever the code, are never billed.
 

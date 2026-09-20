@@ -1,6 +1,6 @@
 # MapEmbed
 
-The map widget: renders a real interactive map in a hardened, hostname-allowlisted, sandboxed iframe — a keyless OpenStreetMap embed when a `center` {lat,lng} is given, or your official Google Maps / Mapbox `embedUrl` (built with your own key, which Frayme never stores). Where a surface blocks frames or only a text `query` is known, it degrades to a static location card with a coordinate locator and an "Open in Google Maps" link. Provide `query` for an address label or `center` for a live map; set `selectable` to emit `commit` with the resolved location. Bind `selectedLocation` with { $bindState } so the agent (or a sibling control) can read the chosen location { query, center, zoom, source } from spec.state.
+The map widget: renders a real interactive map in a hardened, hostname-allowlisted, sandboxed iframe, a keyless OpenStreetMap embed when a `center` {lat,lng} is given, or your official Google Maps / Mapbox `embedUrl` (built with your own key, which Frayme never stores). Where a surface blocks frames or only a text `query` is known, it degrades to a static location card with a coordinate locator and an "Open in Google Maps" link. Provide `query` for an address label or `center` for a live map; set `selectable` to emit `commit` with the resolved location. Bind `selectedLocation` with { $bindState } so the agent (or a sibling control) can read the chosen location { query, center, zoom, source } from spec.state.
 
 ## Example
 
@@ -31,10 +31,10 @@ The map widget: renders a real interactive map in a hardened, hostname-allowlist
 | Prop | Type | Description |
 | --- | --- | --- |
 | `query` | `string` | A place name or address (e.g. "Eiffel Tower, Paris") shown as the card label and turned into the "Open in Google Maps" link; URL-encoded and length-capped before use. |
-| `center` | `{ lat: number, lng: number }` | An optional { lat, lng } coordinate (lat -90..90, lng -180..180) that renders a live keyless OpenStreetMap embed centered on the point (and the static locator fallback); an invalid point is ignored. This is the map's ONLY pin — there is no markers or route prop; for several stops, centre on the most important one, widen `zoom` to cover the rest, and name them in `title` or a caption. |
+| `center` | `{ lat: number, lng: number }` | An optional { lat, lng } coordinate (lat -90..90, lng -180..180) that renders a live keyless OpenStreetMap embed centered on the point (and the static locator fallback); an invalid point is ignored. This is the map's ONLY pin, there is no markers or route prop; for several stops, centre on the most important one, widen `zoom` to cover the rest, and name them in `title` or a caption. |
 | `zoom` | `number` | Map zoom level, clamped 1..21 (default 14); controls how tight the coordinate embed frames the point. Higher is closer in. |
 | `embedUrl` | `string` | Optional official embed URL you build with your OWN provider key (Google Maps Embed API / Mapbox / OpenStreetMap); https + a hostname allowlist are enforced. Wins over query/center. Frayme never stores the key. |
-| `interactive` | `boolean` | Embed the live, pannable map in a sandboxed iframe (default true). Set false ONLY when the host surface cannot show frames (a locked MCP surface) — never because the request wants a route or several pins: the map shows ONE pin at `center`, so centre it on the most important point and list the other stops in a caption. The server drops a `false` that has no such reason. |
+| `interactive` | `boolean` | Embed the live, pannable map in a sandboxed iframe (default true). Set false ONLY when the host surface cannot show frames (a locked MCP surface), never because the request wants a route or several pins: the map shows ONE pin at `center`, so centre it on the most important point and list the other stops in a caption. The server drops a `false` that has no such reason. |
 | `title` | `string` | Accessible title for the map region and the card heading, e.g. "Map of our London office" (default "Map"). Escaped text, length-capped. |
 | `placeName` | `string` | Human-readable place label shown on the static card and used in the link's accessible name; falls back to `query` then `title`. Escaped text, length-capped. |
 | `showCoords` | `boolean` | Show the formatted latitude/longitude line under the place label when a valid `center` is present (default true); has no effect in query-only mode. |
@@ -56,7 +56,7 @@ Fires when `selectable` is on and the user clicks "Use this location"; params ca
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

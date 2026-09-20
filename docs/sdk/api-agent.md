@@ -22,7 +22,7 @@ import {
 } from '@frayme/api/agent';
 ```
 
-Part of `@frayme/api` (version 0.5.0). It imports no agent framework. [`@frayme/api/ai-sdk`](api-ai-sdk.md) is built from these pieces; use them directly to give another framework the same behaviour. For a walkthrough of intents and sources, see [Intents and sources](../guides/intents-and-sources.md).
+Part of `@frayme/api` (version 0.6.0). It imports no agent framework. [`@frayme/api/ai-sdk`](api-ai-sdk.md) is built from these pieces; use them directly to give another framework the same behaviour. For a walkthrough of intents and sources, see [Intents and sources](../guides/intents-and-sources.md).
 
 ## Tool shape
 
@@ -377,7 +377,7 @@ declare function fitContinuation(input: FitContinuationInput): FitContinuationRe
 
 This entry exports `fitContinuation` and the `FraymeTrimmed` type. `FitContinuationInput`, `FitContinuationResult`, `jsonSize(value)` (the JSON length, or `Infinity` for a value that cannot be serialized) and the three constants come from `@frayme/api`.
 
-`fraymeTools` fits every `frayme_action` call this way and reports the cut on its outputs. `createActionTool` from `@frayme/api/tools` fits `action_context` too, without reporting it.
+Since 0.6.0 neither `frayme_action` in `fraymeTools` nor `createActionTool` from `@frayme/api/tools` sends `action_context` or `prior_spec`: a press composes a fresh screen from `prompt`, `data`, `actions` and `signals`, so there is nothing to fit. `fitContinuation` is for a request you build yourself from a press. `frayme_compose` still reports `trimmed: ['prior_spec']` when an `edit_of` screen is too large for a `continue_journey`.
 
 ## Presses
 
@@ -395,7 +395,7 @@ A user's press as it travels back to the agent: the `frayme_action` input from [
 declare function readPress(value: unknown): FraymePress | undefined;
 ```
 
-Reads a press from the event itself, from `{ frayme: event }`, or from `{ metadata: { frayme: event } }` (a chat message whose metadata carries the event). Returns `undefined` for anything else, including an event that fails the `frayme_action` schema (an `event` longer than 40 characters, for example). Never throws. `fraymeTools` reads presses more leniently: it drops a field that does not fit instead.
+Reads a press from the event itself, from `{ frayme: event }`, or from `{ metadata: { frayme: event } }` (a chat message whose metadata carries the event). Returns `undefined` for anything else, including an event that fails the `frayme_action` schema (an `event` longer than 40 characters, for example). Never throws. `fraymeTools` reads presses more leniently: it drops a field that does not fit instead. It also sends none of the event onward: since 0.6.0 the next screen is composed fresh from `prompt`, `data`, `actions` and `signals`, and a value the user typed reaches it only when named in `data`.
 
 Read the press from the user's latest message only. A press comes from the client, so it is the user's own data: the server still validates the action it names.
 
@@ -405,7 +405,7 @@ Read the press from the user's latest message only. A press comes from the clien
 declare function actionContextOf(press: FraymePress): ComposeActionContext;
 ```
 
-The part of a press the server accepts as `action_context`: `action`, `event`, `params`, `state`, `element_id` and `generation_id`. The card-only fields and the next screen's inputs are dropped, because the server keeps `action_context` strict. Send the next screen's inputs as top-level request fields.
+The part of a press the server accepts as `action_context`: `action`, `event`, `params`, `state`, `element_id` and `generation_id`. The card-only fields and the next screen's inputs are dropped, because the server keeps `action_context` strict. Send the next screen's inputs as top-level request fields. The SDK's own tools no longer send `action_context` (see the example below); it is here for a host that builds a `continue_journey` request itself.
 
 ### `findPriorSpec(messages, generationId)`
 
@@ -419,47 +419,35 @@ It matches any object of that shape, including one the model wrote in a tool inp
 
 ### Example: the next screen after a press
 
+A press composes the next screen, it does not edit the last one. This is what `frayme_action` in `fraymeTools` does since 0.6.0: the press is read and checked, and the request is a plain create. The prompt is the only place the press is described to the composer, `data` carries every value the next screen must show, and `actions` declares only the controls that lead forward.
+
 ```ts
 // lib/frayme-press.ts
 import Frayme, { type ComposeRequest } from '@frayme/api';
-import {
-  actionContextOf,
-  findPriorSpec,
-  fitContinuation,
-  readPress,
-  type FraymeComposeOutput,
-} from '@frayme/api/agent';
+import { readPress } from '@frayme/api/agent';
 
 const frayme = new Frayme();
 
-/**
- * The next screen after a press, or undefined when the message is not a press.
- * `screens` holds the finished outputs of your own Frayme tool calls in this chat.
- */
-export function composeAfterPress(latestUserMessage: unknown, screens: readonly FraymeComposeOutput[]) {
+/** The next screen after a press, or undefined when the message is not a press. */
+export function composeAfterPress(latestUserMessage: unknown) {
   const press = readPress(latestUserMessage); // the event, { frayme: event } or { metadata: { frayme: event } }
   if (!press) return undefined;
 
-  // The pressed screen, when it finished in this chat.
-  const prior = press.generation_id ? findPriorSpec(screens, press.generation_id) : undefined;
-  // A big table press, or a big screen, is cut to the API's ceilings instead of refused.
-  const fit = fitContinuation({ action_context: actionContextOf(press), prior_spec: prior });
-
+  // Nothing of the event itself is sent: the pressed screen is not attached, and a
+  // value the user typed reaches the composer only if the model named it in `data`.
   const request: Omit<ComposeRequest, 'stream'> = {
-    prompt: press.prompt ?? `The user pressed "${press.action}". Continue from that screen.`,
-    mode: 'continue_journey',
+    prompt: press.prompt ?? `The user pressed the "${press.action}" control. Show the next step.`,
     action_policy: 'declared_only',
   };
-  if (fit.action_context) request.action_context = fit.action_context;
-  if (fit.prior_spec) request.prior_spec = fit.prior_spec;
   if (press.data) request.data = press.data;
   if (press.actions) request.actions = press.actions;
   if (press.signals) request.signals = press.signals;
 
-  // Set `trimmed` on the outputs you show the model, so it knows what was left out.
-  return { stream: frayme.compose.stream(request), trimmed: fit.trimmed };
+  return frayme.compose.stream(request);
 }
 ```
+
+A host that wants the server to overlay the press's `state` onto the next step can still build a `continue_journey` request itself, with `actionContextOf(press)` as `action_context`, `findPriorSpec` for the pressed screen and `fitContinuation` to cut both to the size ceilings. Measured on a filled form, that shape produced no usable next screen where the create above did, which is why the SDK's tools moved.
 
 ## Next steps
 

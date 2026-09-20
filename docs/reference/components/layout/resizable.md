@@ -1,6 +1,6 @@
 # Resizable
 
-A single panel the user resizes by dragging an edge (or corner) handle. Put any content inside as the child. The size stays live without a binding — drag updates it via pointer events. Use to let the user widen a sidebar, panel, or preview box. Bind `size` with `{ $bindState }` so the agent (or a sibling control) can read the current panel dimensions ({ w, h } in pixels) from spec.state.
+A single panel the user resizes by dragging an edge (or corner) handle. Put any content inside as the child. The size stays live without a binding, drag updates it via pointer events. Use to let the user widen a sidebar, panel, or preview box. Bind `size` with `{ $bindState }` so the agent (or a sibling control) can read the current panel dimensions ({ w, h } in pixels) from spec.state.
 
 Accepts child elements via `children` (the `default` slot).
 
@@ -41,7 +41,7 @@ Accepts child elements via `children` (the `default` slot).
 
 ### move
 
-The resize handle was dragged (fires ONCE on pointer-release, not per move) or arrow-keyed; params carry {width, height, axis} — the final size in px.
+The resize handle was dragged (fires ONCE on pointer-release, not per move) or arrow-keyed; params carry {width, height, axis}, the final size in px.
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -50,7 +50,7 @@ The resize handle was dragged (fires ONCE on pointer-release, not per move) or a
 | `toColumn` | `string` | Optional. Target column key (kanban). |
 | `fromIndex` | `number` | Optional. Source position (kanban/reorder). |
 | `toIndex` | `number` | Optional. Target position (kanban/reorder). |
-| `splitPercent` | `number` | Optional. Final divider position (SplitPane, 0–100, on pointer-up). |
+| `splitPercent` | `number` | Optional. Final divider position (SplitPane, 0-100, on pointer-up). |
 | `width` | `number` | Optional. Final width in px (Resizable, on pointer-up). |
 | `height` | `number` | Optional. Final height in px (Resizable, on pointer-up). |
 | `axis` | `'x' \| 'y' \| 'both'` | Optional. Which axis the resize changed (Resizable). |

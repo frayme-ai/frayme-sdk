@@ -9,7 +9,7 @@ A page with one button. Click it, and a signup form streams in live: composed by
 **Prerequisites:** Node ≥ 20.19, a Next.js project (App Router, React 19), and a Frayme API key.
 
 {% hint style="info" %}
-Get an API key from your Frayme dashboard at [frayme.ai](https://frayme.ai). The code below is exactly what runs against the live API.
+Get an API key from your Frayme dashboard at [app.frayme.ai](https://app.frayme.ai/api-keys). The code below is exactly what runs against the live API.
 {% endhint %}
 
 ## 1. Install
@@ -131,4 +131,5 @@ Open `http://localhost:3000` and click the button.
 
 - [Your first generation](first-generation.md): what actually went over the wire just now
 - [Authentication](authentication.md): key types, the browser guard, and proxy hardening
+- The Sandbox in your dashboard ([app.frayme.ai/sandbox](https://app.frayme.ai/sandbox)): configure an agent over your own files (up to five) and export it as a runnable Next.js app
 - Pass real `data` and declared `actions` to ground the UI in your domain. See the API reference for the full compose request

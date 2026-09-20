@@ -6,7 +6,7 @@ The compose proxy for your own server route: `createFraymeHandler` turns a keyle
 import { createFraymeHandler, type FraymeHandlerOptions } from '@frayme/api/server';
 ```
 
-Part of `@frayme/api` (version 0.5.0). It imports no web framework and runs wherever `Request`, `Response` and `ReadableStream` exist. For a walkthrough, see [Server handler](../guides/server-handler.md).
+Part of `@frayme/api` (version 0.6.0). It imports no web framework and runs wherever `Request`, `Response` and `ReadableStream` exist. For a walkthrough, see [Server handler](../guides/server-handler.md).
 
 ## `createFraymeHandler`
 

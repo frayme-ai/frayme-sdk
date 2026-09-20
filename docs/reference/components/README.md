@@ -1,6 +1,6 @@
 # Component reference
 
-The 189 components in the Frayme catalog (`frayme-0.18.0`), grouped by function.
+The 189 components in the Frayme catalog (`frayme-0.19.0`), grouped by function.
 
 Every component is a `type` you can use in a spec's `elements` map. Props are validated against the schemas in [`@frayme/catalog`](https://www.npmjs.com/package/@frayme/catalog) before anything renders. See also: [Events](../events.md) · [Icons](../icons.md) · [Vocabulary](../vocabulary.md) · [Validation](../validation.md).
 

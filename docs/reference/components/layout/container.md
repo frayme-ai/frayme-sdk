@@ -31,6 +31,6 @@ Accepts child elements via `children` (the `default` slot).
 | `centered` | `boolean` | Center the wrapper horizontally with auto margins (default true). Set false to left-align it. |
 | `align` | `"start" \| "center" \| "end"` | Text alignment of the wrapped content (default start). `center` for a centered marketing column. |
 | `bg` | `string` | Background fill color of the wrapper (e.g. a tinted reading column). Omit for transparent. |
-| `color` | `string` | On-surface text colour for the wrapped column — cascades to all child text (default the foreground token). Pair with `bg` so a tinted/dark column keeps readable content. |
+| `color` | `string` | On-surface text colour for the wrapped column, cascades to all child text (default the foreground token). Pair with `bg` so a tinted/dark column keeps readable content. |
 | `width` | `string \| number` | Explicit width override (escape hatch beyond the `maxWidth` enum), e.g. "960px". Prefer `maxWidth` for the common cases. |
 | `font` | `"sans" \| "serif" \| "mono" \| "rounded" \| "display"` | Typeface for the wrapped column and everything inside it (cascades): sans · serif · mono · rounded · display. Omit to inherit the theme font. |

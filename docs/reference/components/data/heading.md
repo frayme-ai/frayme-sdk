@@ -1,6 +1,6 @@
 # Heading
 
-Section heading rendered as a real h1-h4 tag. `level` sets the semantic tag (a11y/SEO); `size` sets the visual scale independently, defaulting from level (h1→xl … h4→sm) — so an h2 can render display-large. `clamp` caps it to N lines. Use Heading for titles that structure the page; Text is for body/caption copy, and a Card `title` covers the heading that belongs to that card.
+Section heading rendered as a real h1-h4 tag. `level` sets the semantic tag (a11y/SEO); `size` sets the visual scale independently, defaulting from level (h1→xl … h4→sm), so an h2 can render display-large. `clamp` caps it to N lines. Use Heading for titles that structure the page; Text is for body/caption copy, and a Card `title` covers the heading that belongs to that card.
 
 ## Example
 
@@ -23,7 +23,7 @@ Section heading rendered as a real h1-h4 tag. `level` sets the semantic tag (a11
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `text` | `string` | The heading copy. Keep it short and scannable (2-8 words); plain text only — no markdown or HTML. |
+| `text` | `string` | The heading copy. Keep it short and scannable (2-8 words); plain text only, no markdown or HTML. |
 | `level` | `"h1" \| "h2" \| "h3" \| "h4"` | Semantic tag (a11y/SEO). Decoupled from visual `size`. |
 | `size` | `"xs" \| "sm" \| "md" \| "lg" \| "xl" \| "2xl"` | Visual size, DECOUPLED from `level` (e.g. an h2 rendered display-large). Omit to follow level. |
 | `fontSize` | `string \| number` | Exact font size (e.g. "32px" / "2rem"). Overrides the `size` enum (which is the default, derived from `level` when unset). |

@@ -1,6 +1,6 @@
 # BlockDocumentEditor
 
-A block document editor over a rich fixed set of block types (heading, paragraph, bulleted/numbered lists, quote, code, divider, spacer, table, key-value fields, image). Author drafts a document; the user edits inline — including editable tables, key-value fields, and uploaded images — then presses Save, which hands the WHOLE document (title, structured blocks, and a markdown rendering) back to the agent and switches to a clean view mode with Edit and Print buttons. Edits also stream a debounced `change`. No contentEditable, all text escaped, images validated; SSR-safe. Bind `value`, `title` with `{ $bindState }` so the agent (or a sibling control) can read the whole live document ({ title, blocks, markdown, blockCount }) and the document title from spec.state without waiting for Save.
+A block document editor over a rich fixed set of block types (heading, paragraph, bulleted/numbered lists, quote, code, divider, spacer, table, key-value fields, image). Author drafts a document; the user edits inline, including editable tables, key-value fields, and uploaded images, then presses Save, which hands the WHOLE document (title, structured blocks, and a markdown rendering) back to the agent and switches to a clean view mode with Edit and Print buttons. Edits also stream a debounced `change`. No contentEditable, all text escaped, images validated; SSR-safe. Bind `value`, `title` with `{ $bindState }` so the agent (or a sibling control) can read the whole live document ({ title, blocks, markdown, blockCount }) and the document title from spec.state without waiting for Save.
 
 ## Example
 
@@ -91,16 +91,16 @@ A block document editor over a rich fixed set of block types (heading, paragraph
 | `showPrint` | `boolean` | Show the Print button (in view mode, or the toolbar) that prints ONLY the document, not the surrounding page (default true). |
 | `allowImageUpload` | `boolean` | Let the user upload an image file into an image block; it is read to a size-capped data-URI client-side (default true). |
 | `allowedBlocks` | `("heading" \| "paragraph" \| "bulleted" \| "numbered" \| "quote" \| "code" \| "divider" \| "spacer" \| "table" \| "fields" \| "image")[]` | Restrict which block types can be added from the toolbar (default all eleven). |
-| `saveLabel` | `string` | Label for the Save button (default "Save"). Escaped text — set for localization. |
-| `printLabel` | `string` | Label for the Print button (default "Print"). Escaped text — set for localization. |
-| `placeholder` | `string` | Message shown when the document is empty (default "Empty document — add a block to start"). Escaped text. |
+| `saveLabel` | `string` | Label for the Save button (default "Save"). Escaped text, set for localization. |
+| `printLabel` | `string` | Label for the Print button (default "Print"). Escaped text, set for localization. |
+| `placeholder` | `string` | Message shown when the document is empty (default "Empty document, add a block to start"). Escaped text. |
 | `maxBlocks` | `number` | Maximum number of blocks (default 128, hard-capped at 256). The add buttons disable at the cap. |
 | `accent` | `string` | Accent color of the active-block ring, primary buttons and heading rules (default the primary token). |
-| `mutedColor` | `string` | Secondary color — the toolbar chrome, block handles, counts and hints (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary color, the toolbar chrome, block handles, counts and hints (default the muted-foreground token). |
 | `gridColor` | `string` | Border color of the editor frame, table grid and block dividers (default the border token). |
 | `font` | `"sans" \| "serif" \| "mono" \| "rounded" \| "display"` | Document typeface from the closed menu (default inherits the theme; serif suits formal documents). |
 | `density` | `"compact" \| "normal" \| "comfortable"` | Vertical spacing between blocks: compact · normal (default) · comfortable. |
-| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit — no per-keystroke stream. |
+| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit, no per-keystroke stream. |
 | `value` | `Record&lt;string, any>` | Bindable mirror of the WHOLE edited document { title, blocks, markdown, blockCount }; kept live in spec.state (bind with { $bindState }) so an external Button can read the full body without waiting for Save. |
 
 ## Events
@@ -113,7 +113,7 @@ Save was pressed; params carry the WHOLE document { title, blocks, markdown, blo
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

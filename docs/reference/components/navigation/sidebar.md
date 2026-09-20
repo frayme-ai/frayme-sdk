@@ -34,4 +34,4 @@ Accepts child elements via `children` (the `default` slot).
 | `bg` | `string` | Rail background fill. Names a specific surface color (e.g. a dark nav rail); default is the card token. |
 | `borderColor` | `string` | Right-edge / floating-card border color (default border token). |
 | `accent` | `string` | Accent color for the title + propagated to the active SidebarItem highlight; default the primary token. |
-| `mutedColor` | `string` | Secondary/muted text colour — the uppercase title kicker when no accent is set (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the uppercase title kicker when no accent is set (default the muted-foreground token). |

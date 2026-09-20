@@ -24,7 +24,7 @@ Time-of-day field built on a native time input (SSR-safe, accessible) with a lea
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `value` | `string` | Selected time as "HH:MM" (24h). Use { $bindState } for two-way binding. The clock face (12h AM/PM vs 24h) follows the user’s locale — it is not spec-controllable. |
+| `value` | `string` | Selected time as "HH:MM" (24h). Use { $bindState } for two-way binding. The clock face (12h AM/PM vs 24h) follows the user’s locale, it is not spec-controllable. |
 | `minuteStep` | `number` | Minute granularity of the picker (default 1; e.g. 15 for quarter-hours). |
 | `accent` | `string` | Focus-ring color (default the primary token) and clock-icon tint (default the muted-foreground token). |
 | `bg` | `string` | Field background fill (default the card token; bindable). Set a tinted value to lift the field off a matching card, or leave default to blend into the surface. |
@@ -35,13 +35,13 @@ Time-of-day field built on a native time input (SSR-safe, accessible) with a lea
 | `weight` | `"light" \| "normal" \| "medium" \| "semibold" \| "bold"` | Font weight of the field label (default medium); set to dial the emphasis up or down. |
 | `tracking` | `"tighter" \| "tight" \| "normal" \| "wide" \| "wider"` | Letter-spacing of the field label (default normal); reach for `wide`/`wider` on an uppercase caption. |
 | `disabled` | `boolean` | Grey out the field (60% opacity, not-allowed cursor) and block editing the native time input (default false). |
-| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit — no per-keystroke stream. |
+| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit, no per-keystroke stream. |
 
 ## Events
 
 ### change
 
-The native time input was edited; params carry { value } (the new "HH:MM" 24h string). Only fires when `emitOnChange` !== false — otherwise the value lives in bindable state for an external Button to read.
+The native time input was edited; params carry { value } (the new "HH:MM" 24h string). Only fires when `emitOnChange` !== false, otherwise the value lives in bindable state for an external Button to read.
 
 | Key | Type | Description |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # FloorPlan
 
-A select-only floor plan / seat map: author regions (rect or poly, normalized coords) with status + price, and the component renders a fixed-aspect plan with a running total. An optional `stage` landmark (a labeled bar or cinema-style curved screen on any edge) orients the plan — a stage, screen, pitch, or main-event area. Regions toggle on click (no drag, no pointer capture); sold/held/disabled are non-selectable and excluded from the total. Selectable regions are keyboard checkboxes; the total bar is a live status region. The live selection mirrors to (bindable) spec.state on every toggle, so an agent can read the current picks at any time. Stateless geometry, SSR-safe. Emits `select` (toggle, carries the full selection + total), `commit` (Confirm), `dismiss` (Clear).
+A select-only floor plan / seat map: author regions (rect or poly, normalized coords) with status + price, and the component renders a fixed-aspect plan with a running total. An optional `stage` landmark (a labeled bar or cinema-style curved screen on any edge) orients the plan, a stage, screen, pitch, or main-event area. Regions toggle on click (no drag, no pointer capture); sold/held/disabled are non-selectable and excluded from the total. Selectable regions are keyboard checkboxes; the total bar is a live status region. The live selection mirrors to (bindable) spec.state on every toggle, so an agent can read the current picks at any time. Stateless geometry, SSR-safe. Emits `select` (toggle, carries the full selection + total), `commit` (Confirm), `dismiss` (Clear).
 
 ## Example
 
@@ -129,7 +129,7 @@ A select-only floor plan / seat map: author regions (rect or poly, normalized co
 | `multiSelect` | `boolean` | Allow selecting multiple regions (default true). When false, picking one replaces the selection. |
 | `showTotal` | `boolean` | Show the running total + Confirm/Clear bar (default true). |
 | `currency` | `string` | Currency symbol prefixed to the total (default "$", capped to 3 chars). |
-| `stage` | `{ label: string, edge: "top" \| "bottom" \| "left" \| "right" \| "center", shape: "bar" \| "curve" \| "block", size: number, color: string }` | Optional non-interactive landmark orienting the plan — a stage, screen, pitch, ring, or "main event" area — as { label, edge: top\|bottom\|left\|right\|center (default top), shape: bar\|curve\|block (default bar), size?, color? }. shape:"curve" = a cinema-style screen arc (edges only), "bar" = a thin rounded band along the edge, "block" = a solid rounded rectangle (a center stage / dance floor / ring / a block hugging an edge). edge:"center" places it in the middle. `size` is a 0..1 fraction of the plan controlling the band thickness / block extent (default ~0.14 for bar, ~0.34 for a center block). Regions keep the full 0..1 space. |
+| `stage` | `{ label: string, edge: "top" \| "bottom" \| "left" \| "right" \| "center", shape: "bar" \| "curve" \| "block", size: number, color: string }` | Optional non-interactive landmark orienting the plan, a stage, screen, pitch, ring, or "main event" area, as { label, edge: top\|bottom\|left\|right\|center (default top), shape: bar\|curve\|block (default bar), size?, color? }. shape:"curve" = a cinema-style screen arc (edges only), "bar" = a thin rounded band along the edge, "block" = a solid rounded rectangle (a center stage / dance floor / ring / a block hugging an edge). edge:"center" places it in the middle. `size` is a 0..1 fraction of the plan controlling the band thickness / block extent (default ~0.14 for bar, ~0.34 for a center block). Regions keep the full 0..1 space. |
 | `aspect` | `number` | Plan width/height ratio (default 1.6, clamped 0.5..3). |
 | `accent` | `string` | Selection fill + outline color (default the primary token). |
 | `regionColor` | `string` | Default fill for available regions (default a light primary tint). |
@@ -159,7 +159,7 @@ Confirm was pressed; params carry { selection, count, total, totalLabel }.
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

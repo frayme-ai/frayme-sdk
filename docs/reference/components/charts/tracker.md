@@ -44,6 +44,6 @@ A row of equal-width status blocks (Tremor-style tracker). Each block is colored
 | `rounded` | `boolean` | Round each block’s corners at 3px (default true); false renders sharp square blocks. |
 | `showLabels` | `boolean` | Render each block’s `label` beneath it (default false). |
 | `gap` | `"none" \| "sm" \| "md" \| "lg" \| "xl"` | Spacing between blocks: none (0) · sm (2px, default) · md (4px) · lg (6px) · xl (8px). |
-| `mutedColor` | `string` | Secondary/muted text colour — the per-block labels beneath the blocks and the empty-state caption (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the per-block labels beneath the blocks and the empty-state caption (default the muted-foreground token). |
 | `emptyText` | `string` | Override the empty-state message shown when there are no blocks (default "No data"). |
 | `ariaLabel` | `string` | Override the screen-reader summary of the tracker (default "Status tracker, N segments"). |

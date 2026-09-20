@@ -114,9 +114,9 @@ export const fraymeAction = tool(
 );
 ```
 
-When `onDynamicAction` fires on the client, forward the event to your agent verbatim: `{ action, event, params, state, element_id, label, description, generation_id }`. The agent calls `frayme_action` with those fields and receives a new validated spec that preserves what the user already entered. Only a press fires it: a Button, a Confirmation, a Form submit, a DataTable or a row/bulk action. Other gestures batch under `state._ui` behind the next press unless the action is declared `live: true`.
+When `onDynamicAction` fires on the client, forward the event to your agent verbatim: `{ action, event, params, state, element_id, label, description, generation_id }`. The agent calls `frayme_action` with those fields and receives a new validated spec. Only a press fires it: a Button, a Confirmation, a Form submit, a DataTable or a row/bulk action. Other gestures batch under `state._ui` behind the next press unless the action is declared `live: true`.
 
-Besides the optional `prompt`, `action.inputSchema` (`actionInputSchema`) takes `data`, `actions` and `signals` for the next screen, exactly as on `frayme_compose`: the facts it shows, the controls it needs and the steering. Re-declare every action the next screen needs; an action left out comes back unwired.
+Besides the optional `prompt`, `action.inputSchema` (`actionInputSchema`) takes `data`, `actions` and `signals` for the next screen, exactly as on `frayme_compose`: the facts it shows, the controls it needs and the steering. Since 0.6.0 the next screen is composed fresh from those fields and nothing of the event is sent, so a value the user entered appears on it only when the agent names it in `data`, and what was pressed goes in `prompt`. Declare the actions that lead forward; an action left out comes back unwired, and re-declaring the control just pressed with required params puts its form back.
 
 {% hint style="info" %}
 For live streaming into a LangGraph front-end, the [AG-UI adapter](ag-ui.md) carries specs as `frayme:spec` custom events. LangGraph is on the AG-UI integrations matrix.

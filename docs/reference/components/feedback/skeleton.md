@@ -1,6 +1,6 @@
 # Skeleton
 
-Gray placeholder box that mimics the shape of content still loading — a line, card rect, circular avatar, or pill button. Use it wherever a Spinner would be too generic: it reserves the actual layout space so content does not jump in when it arrives. Purely decorative: no children, no events, `aria-hidden`.
+Gray placeholder box that mimics the shape of content still loading, a line, card rect, circular avatar, or pill button. Use it wherever a Spinner would be too generic: it reserves the actual layout space so content does not jump in when it arrives. Purely decorative: no children, no events, `aria-hidden`.
 
 ## Example
 
@@ -29,8 +29,8 @@ Gray placeholder box that mimics the shape of content still loading — a line, 
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `width` | `string \| number` | Box width, up to 2048px (validated; default 100% — fills its container). Use with `shape:circle` to size an avatar placeholder (pair with matching `height`). |
-| `height` | `string \| number` | Box height, up to 2048px (validated; default 1rem — a single text-line height). |
+| `width` | `string \| number` | Box width, up to 2048px (validated; default 100%, fills its container). Use with `shape:circle` to size an avatar placeholder (pair with matching `height`). |
+| `height` | `string \| number` | Box height, up to 2048px (validated; default 1rem, a single text-line height). |
 | `shape` | `"line" \| "rect" \| "circle" \| "pill"` | Placeholder shape: line (text bar) · rect (card, default) · circle (avatar) · pill (button). |
 | `radius` | `"none" \| "sm" \| "md" \| "lg" \| "full"` | Corner rounding for line/rect shapes (default md). |
 | `radiusValue` | `string \| number` | Exact corner radius for line/rect shapes (e.g. "6px"). Overrides the `radius` enum, which is the default; circle/pill stay round. |

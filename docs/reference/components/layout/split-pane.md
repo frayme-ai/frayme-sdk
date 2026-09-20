@@ -25,8 +25,8 @@ Accepts child elements via `children` (the `default` slot).
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `orientation` | `"horizontal" \| "vertical"` | Split axis: horizontal (default — two panes side-by-side, vertical divider) · vertical (stacked panes, horizontal divider). |
-| `splitPercent` | `number` | Starting size of the FIRST pane as a percentage (10–90, default 50). Drag the divider to change it; a plain percentage, not a CSS dimension. |
+| `orientation` | `"horizontal" \| "vertical"` | Split axis: horizontal (default, two panes side-by-side, vertical divider) · vertical (stacked panes, horizontal divider). |
+| `splitPercent` | `number` | Starting size of the FIRST pane as a percentage (10-90, default 50). Drag the divider to change it; a plain percentage, not a CSS dimension. |
 | `minSize` | `number` | Minimum size of EITHER pane as a percentage (the drag clamps between this and 100−this; default 10). A plain percentage, not a CSS dimension. |
 | `height` | `string \| number` | Height of the whole split container (e.g. "24rem" or "400px"; default 24rem). Drives `--fr-splitpane-h`. |
 | `bordered` | `boolean` | Wrap the container in a rounded bordered card (default true). |
@@ -39,7 +39,7 @@ Accepts child elements via `children` (the `default` slot).
 
 ### move
 
-The divider was dragged (fires ONCE on pointer-release, not per move) or arrow-keyed; params carry {splitPercent} — the first pane’s final size, 10–90.
+The divider was dragged (fires ONCE on pointer-release, not per move) or arrow-keyed; params carry {splitPercent}, the first pane’s final size, 10-90.
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ The divider was dragged (fires ONCE on pointer-release, not per move) or arrow-k
 | `toColumn` | `string` | Optional. Target column key (kanban). |
 | `fromIndex` | `number` | Optional. Source position (kanban/reorder). |
 | `toIndex` | `number` | Optional. Target position (kanban/reorder). |
-| `splitPercent` | `number` | Optional. Final divider position (SplitPane, 0–100, on pointer-up). |
+| `splitPercent` | `number` | Optional. Final divider position (SplitPane, 0-100, on pointer-up). |
 | `width` | `number` | Optional. Final width in px (Resizable, on pointer-up). |
 | `height` | `number` | Optional. Final height in px (Resizable, on pointer-up). |
 | `axis` | `'x' \| 'y' \| 'both'` | Optional. Which axis the resize changed (Resizable). |

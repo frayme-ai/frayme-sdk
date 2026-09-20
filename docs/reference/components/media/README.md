@@ -15,5 +15,5 @@
 | [MediaGrid](media-grid.md) | A responsive grid of media tiles for galleries, logos, or link cards. Display-only (no lightbox). A tile with  |
 | [MediaScrubber](media-scrubber.md) | A visual media scrubber: a waveform / bar / line track with a draggable playhead, played + buffered fills, cha |
 | [Thumbnail](thumbnail.md) | A small fixed-size preview image (object-cover) for lists and cards. An invalid/absent `src` falls back to a m |
-| [VideoPlayer](video-player.md) | A native HTML5 video player (browser controls only — no custom UI, no capture). Aspect-locked frame; an invali |
+| [VideoPlayer](video-player.md) | A native HTML5 video player (browser controls only, no custom UI, no capture). Aspect-locked frame; an invali |
 | [YouTube](you-tube.md) | A lightweight YouTube card: the video thumbnail with a play-button overlay that LINKS OUT to youtube.com in a  |

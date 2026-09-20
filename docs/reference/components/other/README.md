@@ -7,9 +7,9 @@
 | [BlockDocumentEditor](block-document-editor.md) | A block document editor over a rich fixed set of block types (heading, paragraph, bulleted/numbered lists, quo |
 | [BodyMap](body-map.md) | An anatomical body-region selector on a baked stylized figure (~17 named regions, front or back). Author which |
 | [FileEmbed](file-embed.md) | A document viewer: renders a PDF in the browser's inert native viewer, an Office file (docx/xlsx/pptx) via the |
-| [Icon](icon.md) | A standalone icon glyph, placeable anywhere (in a Stack, beside a Text label, in a Card header) — not tied to  |
+| [Icon](icon.md) | A standalone icon glyph, placeable anywhere (in a Stack, beside a Text label, in a Card header), not tied to  |
 | [LogConsole](log-console.md) | A virtualized log console: thousands of lines with fixed-row virtualization, per-line severity color from a cl |
-| [MapEmbed](map-embed.md) | The map widget: renders a real interactive map in a hardened, hostname-allowlisted, sandboxed iframe — a keyle |
+| [MapEmbed](map-embed.md) | The map widget: renders a real interactive map in a hardened, hostname-allowlisted, sandboxed iframe, a keyle |
 | [MapView](map-view.md) | A static geographic locator: author markers by lng/lat (points only) and the equirectangular engine projects e |
 | [NodeGraph](node-graph.md) | A directed graph / flowchart / live pipeline: author nodes + edges (structure only) and the engine computes a  |
 | [NotificationCenter](notification-center.md) | A read/unread notification inbox fed by a static snapshot: category tabs with unread counts, per-item action b |

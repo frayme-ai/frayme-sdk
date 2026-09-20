@@ -112,9 +112,9 @@ export const fraymeAction = createTool({
 });
 ```
 
-Forward the `onDynamicAction` event to your agent verbatim (`{ action, event, params, state, element_id, label, description, generation_id }`); the agent calls `frayme_action` with it and gets back a new validated spec that preserves the state the user already entered. Only a press reaches you: a Button, a Confirmation, a Form submit, a DataTable or a row/bulk action. Every other gesture batches under `state._ui` behind the next press unless the action is declared `live: true`.
+Forward the `onDynamicAction` event to your agent verbatim (`{ action, event, params, state, element_id, label, description, generation_id }`); the agent calls `frayme_action` with it and gets back a new validated spec. Only a press reaches you: a Button, a Confirmation, a Form submit, a DataTable or a row/bulk action. Every other gesture batches under `state._ui` behind the next press unless the action is declared `live: true`.
 
-Besides the optional `prompt`, the action tool's input (`actionInputSchema`) takes `data`, `actions` and `signals` for the next screen, exactly as on `frayme_compose`: the facts it shows, the controls it needs and the steering. Re-declare every action the next screen needs; an action left out comes back unwired.
+Besides the optional `prompt`, the action tool's input (`actionInputSchema`) takes `data`, `actions` and `signals` for the next screen, exactly as on `frayme_compose`: the facts it shows, the controls it needs and the steering. Since 0.6.0 the next screen is composed fresh from those fields and nothing of the event is sent, so a value the user entered appears on it only when the agent names it in `data`, and what was pressed goes in `prompt`. Declare the actions that lead forward; an action left out comes back unwired, and re-declaring the control just pressed with required params puts its form back.
 
 {% hint style="info" %}
 Streaming to the browser: Mastra is on the AG-UI integrations matrix. To stream specs live instead of delivering the final result, use the [AG-UI adapter](ag-ui.md): the spec travels as `frayme:spec` custom events, and presses come back to your agent as `frayme:action` payloads in forwarded props.

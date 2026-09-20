@@ -42,13 +42,13 @@ Cmd-k fuzzy action launcher rendered as an INLINE command surface (no portal, SS
 | `emptyText` | `string` | Message when nothing matches the query (default "No results"). |
 | `accent` | `string` | Active/highlighted item color (the highlighted match; default primary token). |
 | `bg` | `string` | Fill color of the command surface (default the card token). Set it to match a themed shell; the outer edge/dividers read `borderColor`, not this. |
-| `borderColor` | `string` | Surface chrome border color — the outer border, the search-header divider, and the shortcut kbd-chip border (default border token). |
-| `mutedColor` | `string` | Secondary/muted text colour — the group headings, the empty "No results" state, the shortcut hints, the search icon + placeholder, and the per-item leading icons (default the muted-foreground token). |
+| `borderColor` | `string` | Surface chrome border color, the outer border, the search-header divider, and the shortcut kbd-chip border (default border token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the group headings, the empty "No results" state, the shortcut hints, the search icon + placeholder, and the per-item leading icons (default the muted-foreground token). |
 | `menuWidth` | `string \| number` | Explicit width of the command surface (e.g. "32rem"; default 100% of its container). Set a fixed value to cap the palette at a comfortable reading width instead of stretching full-bleed. |
 | `maxHeight` | `string \| number` | Scroll cap on the results list (e.g. "20rem"; the list scrolls beyond it). |
-| `shadow` | `"none" \| "sm" \| "md" \| "lg" \| "xl"` | Elevation of the floating command surface — none · sm · md · lg · xl (default sm). Reach for a larger value to make the palette read as lifted above the page. |
-| `motion` | `"none" \| "fast" \| "normal" \| "slow"` | Enter-transition speed for the command surface (fast/normal/slow). Default: no animation — the palette appears instantly. |
-| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit — no per-keystroke stream. |
+| `shadow` | `"none" \| "sm" \| "md" \| "lg" \| "xl"` | Elevation of the floating command surface, none · sm · md · lg · xl (default sm). Reach for a larger value to make the palette read as lifted above the page. |
+| `motion` | `"none" \| "fast" \| "normal" \| "slow"` | Enter-transition speed for the command surface (fast/normal/slow). Default: no animation, the palette appears instantly. |
+| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit, no per-keystroke stream. |
 
 ## Events
 

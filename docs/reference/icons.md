@@ -57,6 +57,6 @@ IconName.safeParse('sparkles').success; // true
 
 `circle` · `square` · `triangle` · `hexagon` · `diamond` · `dot` · `palette` · `brush` · `droplet` · `feather` · `anchor` · `award` · `target` · `crosshair` · `layers` · `box` · `grid-2x2` · `grip-vertical` · `grip-horizontal` · `wrench` · `hammer` · `bug` · `rocket` · `flame` · `bolt` · `lightbulb` · `thermometer` · `wind` · `snowflake` · `umbrella` · `droplets` · `thermometer-sun` · `thermometer-snowflake` · `sunrise` · `sunset` · `tornado` · `rainbow` · `haze` · `trophy` · `medal` · `crown` · `ticket` · `qr-code` · `scan` · `fingerprint`
 
-## Brand marks (filled — simple-icons geometry, CC0)
+## Brand marks (filled, simple-icons geometry, CC0)
 
 `github` · `twitter` · `facebook` · `instagram` · `linkedin` · `youtube`

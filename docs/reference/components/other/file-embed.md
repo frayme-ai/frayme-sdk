@@ -1,6 +1,6 @@
 # FileEmbed
 
-A document viewer: renders a PDF in the browser's inert native viewer, an Office file (docx/xlsx/pptx) via the Microsoft Office Online viewer (a fixed, sandboxed host), or an image inline — inferring the kind from the file extension. Where a surface blocks frames or the kind is unknown, it degrades to a labeled card with an "Open / Download" link. Display-only, provider-neutral, no key stored; the file URL is https-gated via safeUrl. Office files must be at a public URL the viewer can fetch.
+A document viewer: renders a PDF in the browser's inert native viewer, an Office file (docx/xlsx/pptx) via the Microsoft Office Online viewer (a fixed, sandboxed host), or an image inline, inferring the kind from the file extension. Where a surface blocks frames or the kind is unknown, it degrades to a labeled card with an "Open / Download" link. Display-only, provider-neutral, no key stored; the file URL is https-gated via safeUrl. Office files must be at a public URL the viewer can fetch.
 
 ## Example
 

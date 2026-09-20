@@ -47,8 +47,8 @@ A floating action button anchored to a corner of its own frame, with an optional
 | `accentText` | `string` | Main-button glyph color, paired with `accent` (default the primary-foreground token). |
 | `borderStyle` | `"solid" \| "dashed" \| "dotted"` | Line style of the surrounding frame: solid · dashed (default) · dotted. |
 | `size` | `"md" \| "lg"` | Main-button diameter + glyph size: md (3rem button, default) · lg (3.5rem button, larger glyph). |
-| `sizeValue` | `string \| number` | Exact main-button diameter — width + height (e.g. 56px / 3.5rem). Overrides the `size` enum, which is the default. Ignored (width becomes auto) when `extended`. |
-| `extended` | `boolean` | Render Material’s extended FAB — a pill showing the `label` text beside the icon instead of a bare circle (default false). Requires a `label`; reuses the accent/accentText/shadow channels unchanged. |
+| `sizeValue` | `string \| number` | Exact main-button diameter, width + height (e.g. 56px / 3.5rem). Overrides the `size` enum, which is the default. Ignored (width becomes auto) when `extended`. |
+| `extended` | `boolean` | Render Material’s extended FAB, a pill showing the `label` text beside the icon instead of a bare circle (default false). Requires a `label`; reuses the accent/accentText/shadow channels unchanged. |
 | `shadow` | `"none" \| "sm" \| "md" \| "lg" \| "xl"` | Drop-shadow depth of the main button: none · sm · md · lg · xl (default the baked floating shadow). |
 
 ## Events
@@ -61,7 +61,7 @@ A speed-dial action chip was clicked (fires per-action, not on opening the dial)
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

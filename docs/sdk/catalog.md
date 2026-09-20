@@ -6,7 +6,7 @@ The component vocabulary a Frayme spec may use (189 components as Zod schemas), 
 npm i @frayme/catalog
 ```
 
-ESM, MIT, Node ≥ 20.19. Version 0.4.0. The catalog is fully open: the same schemas that gate every generated spec server-side are on npm for you to validate against locally.
+ESM, MIT, Node ≥ 20.19. Version 0.4.1. The catalog is fully open: the same schemas that gate every generated spec server-side are on npm for you to validate against locally.
 
 ## The catalog instance
 
@@ -16,7 +16,7 @@ import { fraymeCatalog, CATALOG_COMPONENT_COUNT, CATALOG_VERSION } from '@frayme
 const result = fraymeCatalog.validate(spec); // { success, data?, error? }
 
 CATALOG_COMPONENT_COUNT; // 189: derived from the catalog, never hardcoded
-CATALOG_VERSION;         // 'frayme-0.18.0'
+CATALOG_VERSION;         // 'frayme-0.19.0'
 ```
 
 `fraymeCatalog.validate(spec)` is the same gate the API runs before a generation is finalized and billed. `componentEvents(type)` returns the canonical verbs a component type can emit.
@@ -36,7 +36,7 @@ if (!r.valid) console.error(r.failureCategory, r.errors);
 | Function | Description |
 | --- | --- |
 | `compileOps(opsJsonl)` | Parse JSONL lines and replay them through the stream compiler → `{ spec }` or a categorized `{ failure }`. |
-| `validateSpec(spec, opts?)` | Validate a compiled spec: catalog type check + referential integrity (dangling root, missing children). Returns the original spec on success, preserving event wiring. |
+| `validateSpec(spec, opts?)` | Validate a compiled spec: catalog type check + referential integrity (dangling root, missing children), then the built-in prop gate (on by default): literal prop values against their enums, children under a leaf component, chart data the renderer cannot draw, and state paths that resolve. A `$state` read, an `openPath` or a `repeat.statePath` must be seeded in `/state` or written by something in the spec (a `$bindState`, a `setState` in a handler, or `spec.actions`), or it is reported as a dangling state path. Returns the original spec on success, preserving event wiring. |
 | `validateOps(opsJsonl, opts?)` | Convenience: `validateSpec(compileOps(opsJsonl))`. |
 | `validateManifestProps(spec, manifests)` | BYOC: validate the props of every custom-typed element against its manifest's compiled schema. |
 
@@ -45,14 +45,16 @@ if (!r.valid) console.error(r.failureCategory, r.errors);
 `ValidateOptions`:
 
 - `resolution: true` additionally runs the render-resolution gate (binding syntax, visibility directives, action kinds, value-channel safety). Off by default; authoring and CI pipelines turn it on.
+- `props: false` turns the built-in prop gate off (it is on by default). `computed: false` turns the `$computed` gate off, and `computedFunctions` names extra `$computed` functions your host registers.
+- `mode: 'lenient'` runs the serve-side normaliser first (unknown props dropped, enum aliases resolved, scalars coerced) and judges the normalised spec; every change comes back in `normalizations` and `warnings`.
 - `catalog`: validate against a [union catalog](#byoc-authoring) instead of the built-in singleton.
 
 Failed results carry a `FailureCategory` so you can track which kinds of mistakes occur:
 
 ```
 empty_input · malformed_jsonl · compiler_error · empty_spec · catalog_validation_failed ·
-unknown_element_key · invalid_binding · invalid_directive · invalid_action_kind ·
-resource_limit · unsafe_value
+invalid_prop_value · unknown_element_key · invalid_binding · invalid_directive ·
+invalid_action_kind · resource_limit · unsafe_value
 ```
 
 The entrypoint also exports the value-channel guards used across the SDK (`safeColor`, `safeDimension`, `safeLatLng`, …) and re-exports the json-render primitives (`createSpecStreamCompiler`, `diffToPatches`, `formatSpecIssues`, `Spec`) so your code never imports `@json-render/core` directly.
@@ -125,7 +127,7 @@ Helpers: `canonicalize(name)` maps legacy event names to their verb (`press` →
 
 Two versions travel with the package, deliberately decoupled:
 
-- **npm version** (`0.4.0`): the JavaScript API surface. Semver over exports and types.
-- **`CATALOG_VERSION`** (`'frayme-0.18.0'`): the component vocabulary. Bumped whenever component schemas, prop shapes, or descriptions change, even when the code surface is untouched.
+- **npm version** (`0.4.1`): the JavaScript API surface. Semver over exports and types.
+- **`CATALOG_VERSION`** (`'frayme-0.19.0'`): the component vocabulary. Bumped whenever component schemas, prop shapes, or descriptions change, even when the code surface is untouched.
 
 Pin against `CATALOG_VERSION` when you cache prompts, store specs long-term, or assert vocabulary compatibility; the live API reports its own as `catalog_version` on [`GET /v1/health`](../api/me-and-health.md). `JSON_RENDER_PIN` (`'0.19.x'`) records the upstream `@json-render/core` line this catalog targets. `CATALOG_COMPONENT_COUNT` is computed from the catalog at import time, so a count you display can never go stale.

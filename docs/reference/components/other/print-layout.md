@@ -12,7 +12,7 @@ A print-ready paginated document: author-supplied sections (heading, paragraph, 
       "type": "PrintLayout",
       "props": {
         "title": "Q3 Revenue Report",
-        "subtitle": "Acme Corp · Jul – Sep 2026",
+        "subtitle": "Acme Corp · Jul, Sep 2026",
         "sections": [
           {
             "kind": "heading",
@@ -75,7 +75,7 @@ A print-ready paginated document: author-supplied sections (heading, paragraph, 
           },
           {
             "kind": "paragraph",
-            "text": "Prepared by Finance. Confidential — do not distribute."
+            "text": "Prepared by Finance. Confidential, do not distribute."
           }
         ]
       }
@@ -102,7 +102,7 @@ A print-ready paginated document: author-supplied sections (heading, paragraph, 
 | `footerText` | `string` | Optional running-footer caption (e.g. "Confidential"). Escaped text. |
 | `accent` | `string` | Accent color of the title band, heading underlines and header/footer rules (default the primary token). |
 | `buttonColor` | `string` | Fill color of the Print button (default follows the accent/primary token). Set independently of the document accent. |
-| `mutedColor` | `string` | Secondary text color — subtitle, footer, table header, field labels (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary text color, subtitle, footer, table header, field labels (default the muted-foreground token). |
 | `gridColor` | `string` | Table + divider + header/footer rule color (default the border token). |
 | `font` | `"sans" \| "serif" \| "mono" \| "rounded" \| "display"` | Document typeface from the closed menu (default inherits the theme; serif suits formal reports). |
 
@@ -116,7 +116,7 @@ The Print button was activated (prints only this layout); params carry { reason:
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

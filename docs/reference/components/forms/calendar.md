@@ -29,20 +29,20 @@ Standalone month calendar: a header (month name + prev/next chevrons), weekday l
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `month` | `string` | Displayed month as 'YYYY-MM' (default a sensible constant month); prev/next chevrons page it. Use { $bindState } for two-way binding — the shown month is a bindable value written back to spec.state on paging so an external control can read it. |
+| `month` | `string` | Displayed month as 'YYYY-MM' (default a sensible constant month); prev/next chevrons page it. Use { $bindState } for two-way binding, the shown month is a bindable value written back to spec.state on paging so an external control can read it. |
 | `value` | `string` | Selected day as ISO 'YYYY-MM-DD'. Use { $bindState } for two-way binding. |
-| `today` | `string` | The date to mark as 'today' as ISO 'YYYY-MM-DD' (default none — nothing marked). Rendered as an inset accent ring on the matching cell; the selected-day fill wins when a day is both today AND selected. Supply it explicitly — the calendar never reads the wall clock (deterministic render). |
+| `today` | `string` | The date to mark as 'today' as ISO 'YYYY-MM-DD' (default none, nothing marked). Rendered as an inset accent ring on the matching cell; the selected-day fill wins when a day is both today AND selected. Supply it explicitly, the calendar never reads the wall clock (deterministic render). |
 | `events` | `({ date: string, label: string, tone: "neutral" \| "success" \| "warning" \| "critical" \| "info", color: string })[]` | Events to dot onto day cells (up to 3 tone-colored dots per day, plus a 4th muted "+more" dot when a day has more than 3; each event may set an exact dot `color`). |
 | `view` | `"month"` | Calendar view granularity (default `month`, the only value supported for now); a forward-compat enum kept for future week/day views. Leave unset. |
 | `selectable` | `boolean` | Whether days are clickable buttons that set value (default true). |
-| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit — no per-keystroke stream. |
+| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit, no per-keystroke stream. |
 | `weekStartsOn` | `"sunday" \| "monday"` | First column weekday of the grid (default monday); also reorders the default `weekdayLabels` fallback to match. |
 | `accent` | `string` | Selected-day fill color, focus rings (day cells + month chevrons), and the day-cell/chevron hover wash when set (default primary token). |
 | `accentText` | `string` | Text color of the selected day, paired with `accent` (default the primary-foreground token). Set when a light/custom accent needs dark text. |
 | `borderColor` | `string` | Resting panel border color (default border token). |
 | `bg` | `string` | Calendar panel background color (default card token). |
-| `mutedColor` | `string` | Secondary/muted text colour — the weekday header labels AND the resting prev/next month chevrons (default the muted-foreground token). |
-| `color` | `string` | Base text colour — the regular day numbers, the month title, and the chevron hover colour (default the foreground token). The selected day keeps `accentText`. |
+| `mutedColor` | `string` | Secondary/muted text colour, the weekday header labels AND the resting prev/next month chevrons (default the muted-foreground token). |
+| `color` | `string` | Base text colour, the regular day numbers, the month title, and the chevron hover colour (default the foreground token). The selected day keeps `accentText`. |
 | `radiusValue` | `string \| number` | Exact corner rounding of the panel AND the day cells (e.g. "0.5rem", "12px"; default the frayme radius token). |
 | `monthNames` | `string[]` | i18n: the 12 full month names in calendar order (Jan→Dec), used in the header title. Escaped text; ignored unless exactly 12 entries (default English). |
 | `weekdayLabels` | `string[]` | i18n: the 7 weekday header labels in the SAME order as `weekStartsOn` (Monday-first by default, Sunday-first when weekStartsOn="sunday"). Escaped text; ignored unless exactly 7 entries (default English). |

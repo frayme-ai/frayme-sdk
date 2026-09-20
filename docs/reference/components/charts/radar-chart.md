@@ -45,7 +45,7 @@ Radar / spider chart comparing series across shared axes. `axes` are the spoke l
 | `palette` | `"brand" \| "cool" \| "warm" \| "categorical" \| "mono"` | Named series-color set (token-based): brand (primary + sky/teal/amber/rose, default) · cool (blues/teals) · warm (oranges/reds) · categorical (distinct hues) · mono (one-color tints). A per-item `color` overrides its slot. |
 | `height` | `string \| number` | Plot height (e.g. "240px" or "16rem"; default ~220px). Bounded 80-800. |
 | `showLegend` | `boolean` | Show a legend of series names below the chart (default true when >1 series). |
-| `mutedColor` | `string` | Secondary/muted text colour — the legend series names and the empty-state caption (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the legend series names and the empty-state caption (default the muted-foreground token). |
 | `gridColor` | `string` | Stroke colour of the concentric grid rings and the radial spokes (default the border token). |
 | `axisColor` | `string` | Text colour of the spoke (axis) labels drawn around the outside of the chart (default the muted-foreground token). |
 | `strokeWidth` | `string \| number` | Exact outline thickness of each series polygon in viewBox units (e.g. "2px"). Overrides the default series stroke (1.25); the grid rings/spokes stay fixed. |

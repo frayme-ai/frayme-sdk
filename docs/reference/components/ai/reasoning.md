@@ -25,7 +25,7 @@ A collapsible, muted "thinking" trace for an agent's private reasoning. Header s
 | --- | --- | --- |
 | `content` | `string` | The model's thinking / chain-of-thought text, shown in the collapsed body (rendered as plain escaped text, never markup). |
 | `duration` | `string` | Human-readable time spent thinking, shown in the header (e.g. "4s", "1m 12s"). Renders "Thought for {duration}" when set, otherwise just "Thought process". |
-| `headerLabel` | `string` | Localised header text overriding the built-in English. Use the literal `{duration}` placeholder to position the duration (substituted with `duration`, or empty when none) — e.g. "Réfléchi pendant {duration}". Unset → the default "Thought for {duration}" / "Thought process". Escaped text. |
-| `defaultOpen` | `boolean` | Start expanded (default collapsed — reasoning is hidden behind a disclosure to keep the transcript tidy). |
+| `headerLabel` | `string` | Localised header text overriding the built-in English. Use the literal `{duration}` placeholder to position the duration (substituted with `duration`, or empty when none), e.g. "Réfléchi pendant {duration}". Unset → the default "Thought for {duration}" / "Thought process". Escaped text. |
+| `defaultOpen` | `boolean` | Start expanded (default collapsed, reasoning is hidden behind a disclosure to keep the transcript tidy). |
 | `open` | `boolean` | Whether the reasoning trace is expanded; mirrored back into spec.state when the user toggles it. Bind with { $bindState } so an external element can read whether the trace is open. Use defaultOpen for the one-time initial state. |
-| `mutedColor` | `string` | Secondary/muted text colour — the header label, the sparkles header icon, the expand chevron, and the reasoning body trace (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the header label, the sparkles header icon, the expand chevron, and the reasoning body trace (default the muted-foreground token). |

@@ -107,7 +107,7 @@ function pressOf(input: RunAgentInput) {
 }
 ```
 
-Hand the press to your agent so it calls the `frayme_action` tool (`createActionTool` from `@frayme/api/tools`) with the event verbatim, plus `prompt`, `data`, `actions` and `signals` for the next screen. Frayme recomposes the next step in context, preserving the state the user already entered, and your agent emits the new spec as `frayme:spec` events again, so the loop continues.
+Hand the press to your agent so it calls the `frayme_action` tool (`createActionTool` from `@frayme/api/tools`) with the event verbatim, plus `prompt`, `data`, `actions` and `signals` for the next screen. Since 0.6.0 the tool composes that screen fresh from those four fields and sends nothing of the event itself, so the values the user entered reach the next screen only when the agent names them in `data`. Your agent emits the new spec as `frayme:spec` events again, so the loop continues.
 
 {% hint style="info" %}
 The adapter treats AG-UI events as plain structural JSON: it never imports `@ag-ui/core` schemas, so no schema-library version constraints leak into your app.

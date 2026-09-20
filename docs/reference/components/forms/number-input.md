@@ -38,8 +38,8 @@ Numeric field with −/+ step buttons that clamp to [min,max]. Reach for it over
 | `borderColor` | `string` | Resting border colour of the field box (default the border token; bindable safeColor). Set to emphasise the field or pair with a custom `bg`. |
 | `bg` | `string` | Field background colour (default the card token; bindable safeColor). Set on tinted surfaces; pair a dark `bg` with `color` for a readable value. |
 | `color` | `string` | Entered-value text colour of the number readout (default inherits the ambient foreground). Set it when a dark custom `bg` needs a readable light value. |
-| `mutedColor` | `string` | Secondary/muted text colour — the inline prefix/suffix unit annotations, the −/+ step-button glyphs, and the empty-state placeholder (default the muted-foreground token). |
-| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit — no per-keystroke stream. |
+| `mutedColor` | `string` | Secondary/muted text colour, the inline prefix/suffix unit annotations, the −/+ step-button glyphs, and the empty-state placeholder (default the muted-foreground token). |
+| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit, no per-keystroke stream. |
 
 ## Events
 

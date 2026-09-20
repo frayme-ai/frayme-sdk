@@ -1,6 +1,6 @@
 # Table
 
-Static data table: `columns` are the header labels and `rows` a 2D array of cell strings, e.g. [["Alice","admin"],["Bob","user"]]. Reach for it to present read-only tabular data — a stats grid, a comparison, a small records list — where each row's cell count matches the column count. Cells are plain strings with no per-cell rendering; for sortable columns, row selection, pagination, or editable cells use DataTable instead. `striped`/`hover`/`density` tune scannability, `columnAlign` right-aligns numeric columns, and `stickyHeader` pins the header on scroll.
+Static data table: `columns` are the header labels and `rows` a 2D array of cell strings, e.g. [["Alice","admin"],["Bob","user"]]. Reach for it to present read-only tabular data, a stats grid, a comparison, a small records list, where each row's cell count matches the column count. Cells are plain strings with no per-cell rendering; for sortable columns, row selection, pagination, or editable cells use DataTable instead. `striped`/`hover`/`density` tune scannability, `columnAlign` right-aligns numeric columns, and `stickyHeader` pins the header on scroll.
 
 ## Example
 
@@ -36,7 +36,7 @@ Static data table: `columns` are the header labels and `rows` a 2D array of cell
 | Prop | Type | Description |
 | --- | --- | --- |
 | `columns` | `string[]` | Header labels, one string per column, e.g. ["Name","Role","Status"]. The count should match each row’s cell count. |
-| `rows` | `string[][]` | Cell data as a 2D array of strings — one inner array per row, cells in column order, e.g. [["Alice","Admin"],["Bob","User"]]. Strings only; for sorting/selection/pagination reach for DataTable instead. |
+| `rows` | `string[][]` | Cell data as a 2D array of strings, one inner array per row, cells in column order, e.g. [["Alice","Admin"],["Bob","User"]]. Strings only; for sorting/selection/pagination reach for DataTable instead. |
 | `caption` | `string` | Accessible table caption rendered as a muted line below the table (colored by `mutedColor`). Use it to state what the data shows ("Q3 signups by region"). |
 | `size` | `"sm" \| "md" \| "lg"` | Cell padding + font size (table density). `sm` for compact data tables. |
 | `density` | `"comfortable" \| "compact"` | Row height: comfortable (default) · compact (tighter vertical padding). Orthogonal to `size`. |
@@ -48,4 +48,4 @@ Static data table: `columns` are the header labels and `rows` a 2D array of cell
 | `stickyHeader` | `boolean` | Pin the header row when the table scrolls (position: sticky). |
 | `headerTextColor` | `string` | Header text color (default the muted-foreground token). |
 | `accent` | `string` | Border/divider color for cells (default border token). |
-| `mutedColor` | `string` | Secondary/muted text colour — the caption below the table (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the caption below the table (default the muted-foreground token). |

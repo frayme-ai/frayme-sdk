@@ -3,8 +3,8 @@
   "info": {
     "title": "Frayme API",
     "version": "1.0.0",
-    "summary": "UI for Agents — give your AI a real interface.",
-    "description": "Your agent calls one API; Frayme streams back live, interactive UI — validated before it renders, built on open standards (json-render, AG-UI, MCP).\n\nFrayme runs its own model, purpose-built for composing interfaces. Every spec is validated before it renders, and weak generations are automatically retried on a stronger model. The `model` field in responses is an opaque identifier — treat it as a string and do not branch on its value.\n\n**Base URL:** `https://api.frayme.ai` · **Auth:** `Authorization: Bearer fr_live_…`.\n\n**Billing:** you are billed only for validated successes. Failed generations, in-band `error` events, and idempotent replays are never billed.\n\n**SDK:** `npm i @frayme/api @frayme/runtime` — `@frayme/api` 0.5.0 wraps this exact contract with typed errors, streaming helpers, and automatic idempotency keys on retries.",
+    "summary": "UI for Agents: give your AI a real interface.",
+    "description": "Your agent calls one API; Frayme streams back live, interactive UI, validated before it renders and built on open standards (json-render, AG-UI, MCP).\n\nFrayme runs its own model, purpose-built for composing interfaces. Every spec is validated before it renders, and weak generations are automatically retried on a stronger model. The `model` field in responses is an opaque identifier: treat it as a string and do not branch on its value.\n\n**Base URL:** `https://api.frayme.ai` · **Auth:** `Authorization: Bearer fr_live_…`.\n\n**Billing:** you are billed only for validated successes. Failed generations, in-band `error` events, and idempotent replays are never billed.\n\n**SDK:** `npm i @frayme/api @frayme/runtime`. `@frayme/api` 0.6.0 wraps this exact contract with typed errors, streaming helpers, and automatic idempotency keys on retries.",
     "contact": {
       "name": "Frayme",
       "url": "https://frayme.ai"
@@ -47,7 +47,7 @@
         ],
         "operationId": "getHealth",
         "summary": "Liveness probe",
-        "description": "Unauthenticated liveness probe for the Frayme API. Returns the service name and the active catalog version. Static by design — it does not exercise the model path.",
+        "description": "Unauthenticated liveness probe for the Frayme API. Returns the service name and the active catalog version. Static by design: it does not exercise the model path.",
         "security": [],
         "responses": {
           "200": {
@@ -62,7 +62,7 @@
                   "data": {
                     "status": "ok",
                     "service": "frayme-inference-api",
-                    "catalog_version": "frayme-0.18.0"
+                    "catalog_version": "frayme-0.19.0"
                   }
                 }
               }
@@ -81,7 +81,7 @@
         ],
         "operationId": "getMe",
         "summary": "Verify an API key",
-        "description": "The \"whoami\" endpoint: verifies the presented API key and echoes its workspace and plan snapshot.\n\n{% hint style=\"info\" %}\nUnlike `/v1/compose` (snake_case), this endpoint speaks **camelCase** on the wire — `tierKey`, `generationsRemaining`, and so on.\n{% endhint %}\n\nThe endpoint is burst-limited per key at your plan's requests-per-minute rate, like compose.",
+        "description": "The \"whoami\" endpoint: verifies the presented API key and echoes its workspace and plan snapshot.\n\n{% hint style=\"info\" %}\nUnlike `/v1/compose` (snake_case), this endpoint speaks **camelCase** on the wire: `tierKey`, `generationsRemaining`, and so on.\n{% endhint %}\n\nThe endpoint is burst-limited per key at your plan's requests-per-minute rate, like compose.",
         "responses": {
           "200": {
             "description": "The key is valid.",
@@ -101,9 +101,9 @@
                     "plan": {
                       "tierKey": "free",
                       "monthlyGenerations": 100,
-                      "rateLimitPerMin": 30,
+                      "rateLimitPerMin": 5,
                       "generationsRemaining": 96,
-                      "inlineComponentsLimit": 0
+                      "inlineComponentsLimit": 20
                     }
                   }
                 }
@@ -129,7 +129,7 @@
         ],
         "operationId": "compose",
         "summary": "Compose a UI from a prompt",
-        "description": "Turns a natural-language prompt into a validated [json-render](https://json-render.dev) UI spec. This is the product's core endpoint. Requires an API key with the `compose` scope (the default scope on new keys).\n\nBy default (`stream: true`) the response is a Server-Sent Events stream (`text/event-stream`) that forwards spec operations live as they are generated. Set `stream: false` for a buffered JSON envelope carrying the fully compiled spec.\n\n### SSE event sequence\n\nOpenAPI cannot model individual SSE frames, so the stream contract is stated here. Every frame is `event: <name>` + `data: <json>`, and the JSON always repeats the event name in a `type` field. A comment keepalive `: ping` is written every 15 seconds (SSE clients ignore comment lines).\n\n1. `compose.started` — first frame. Data: `{type, generation_id, model}`. `model` is an opaque identifier.\n2. `op` × N — one frame per json-render operation: `{type: \"op\", op, path, value?, from?}`. Ops are **provisional**: they pass incremental checks as they stream, but only `compose.completed` finalizes them.\n3. `compose.restarted` × 0–2 — the attempt failed validation and the generation is retried on a stronger model. Data: `{type, generation_id, model, reason: {code}}` where `model` is the identifier the next attempt uses. On this event the client **MUST discard all previously received ops and any rendered state** and rebuild from the following `op` frames.\n4. Exactly one terminal frame:\n   - `compose.completed` — the **only** success finalizer. Data: `{type, generation_id, model, operation_count, usage: {input_tokens, output_tokens}, validated: true, interactions, components_used}`. Idempotent replays instead carry `replayed: true` and omit `interactions` / `components_used`.\n   - `error` — in-band terminal error: `{type: \"error\", error: {code, message}}` (the HTTP status is already 200 by then). Never billed.\n\n### Modes\n\n- `create` (default) — build a fresh UI from the prompt.\n- `edit` — pair with `prior_spec`; the server streams a minimal patch that morphs the prior spec in place.\n- `continue_journey` — pair with `action_context`; the next step of a flow, composed in context of what the user just did.\n\n### Billing\n\nExactly one generation is deducted per validated success, committed **before** `compose.completed` is emitted — a `compose.completed` frame is never a lie. Failures (any `error` frame or non-2xx response) and idempotent replays are free.\n\n### Idempotency\n\nSend an `Idempotency-Key` header (≤ 255 chars) to make retries safe. The key binds to the SHA-256 of the exact raw request body. A replay of a completed request is **free** and returns the original `generation_id` with `replayed: true` (as an instant burst-stream when `stream: true`, or the buffered envelope when `stream: false`). Reusing a key while the original request is still in flight returns `409 IDEMPOTENCY_KEY_IN_USE`; reusing it with a different body returns `422 VALIDATION_ERROR`. Keys are retained for 24 hours. The `@frayme/api` SDK generates idempotency keys for its automatic retries, so retried requests can never double-bill.\n\n### Timeouts\n\nGenerations typically complete in seconds, but allow a client-side timeout of up to 300 seconds — the server's own ceiling for a single compose.\n\nUnknown request fields are rejected with `400 BAD_REQUEST` (the schema is strict).",
+        "description": "Turns a natural-language prompt into a validated [json-render](https://json-render.dev) UI spec. This is the product's core endpoint. Requires an API key with the `compose` scope (the default scope on new keys).\n\nBy default (`stream: true`) the response is a Server-Sent Events stream (`text/event-stream`) that forwards spec operations live as they are generated. Set `stream: false` for a buffered JSON envelope carrying the fully compiled spec.\n\n### SSE event sequence\n\nOpenAPI cannot model individual SSE frames, so the stream contract is stated here. Every frame is `event: <name>` + `data: <json>`, and the JSON always repeats the event name in a `type` field. A comment keepalive `: ping` is written every 15 seconds (SSE clients ignore comment lines).\n\n1. `compose.started`: first frame. Data: `{type, generation_id, model}`. `model` is an opaque identifier.\n2. `op` × N: one frame per json-render operation: `{type: \"op\", op, path, value?, from?}`. Ops are **provisional**: they pass incremental checks as they stream, but only `compose.completed` finalizes them.\n3. `compose.restarted` × 0-1: the attempt failed validation and the generation is retried on a stronger model (at most one restart per request today; treat every one the same way). Data: `{type, generation_id, model, reason: {code}}` where `model` is the identifier the next attempt uses. On this event the client **MUST discard all previously received ops and any rendered state** and rebuild from the following `op` frames.\n4. Exactly one terminal frame:\n   - `compose.completed`: the **only** success finalizer. Data: `{type, generation_id, model, operation_count, usage: {input_tokens, output_tokens}, validated: true, interactions, components_used}`. Idempotent replays instead carry `replayed: true` and omit `interactions` / `components_used`.\n   - `error`: in-band terminal error: `{type: \"error\", error: {code, message}}` (the HTTP status is already 200 by then). Never billed.\n\n### Modes\n\n- `create` (default): build a fresh UI from the prompt.\n- `edit`: pair with `prior_spec`; the server streams a minimal patch that morphs the prior spec in place.\n- `continue_journey`: pair with `action_context`; the next step of a flow, composed in context of what the user just did.\n\n### Billing\n\nExactly one generation is deducted per validated success, committed **before** `compose.completed` is emitted, so a `compose.completed` frame is never a lie. Failures (any `error` frame or non-2xx response) and idempotent replays are free.\n\n### Idempotency\n\nSend an `Idempotency-Key` header (≤ 255 chars) to make retries safe. The key binds to the SHA-256 of the exact raw request body. A replay of a completed request is **free** and returns the original `generation_id` with `replayed: true` (as an instant burst-stream when `stream: true`, or the buffered envelope when `stream: false`). Reusing a key while the original request is still in flight returns `409 IDEMPOTENCY_KEY_IN_USE`; reusing it with a different body returns `422 VALIDATION_ERROR`. Keys are retained for 24 hours. The `@frayme/api` SDK generates idempotency keys for its automatic retries, so retried requests can never double-bill.\n\n### Timeouts\n\nGenerations typically complete in seconds, but allow a client-side timeout of up to 300 seconds, the server's own ceiling for a single compose.\n\nUnknown request fields are rejected with `400 BAD_REQUEST` (the schema is strict).",
         "parameters": [
           {
             "$ref": "#/components/parameters/IdempotencyKey"
@@ -196,7 +196,7 @@
                 "buffered_with_actions": {
                   "summary": "Non-streaming compose with data and a declared action",
                   "value": {
-                    "prompt": "Refund approval card for the order below — approving is final, so ask before it fires.",
+                    "prompt": "Refund approval card for the order below: approving is final, so ask before it fires.",
                     "stream": false,
                     "signals": {
                       "data_shape": [
@@ -240,7 +240,7 @@
         },
         "responses": {
           "200": {
-            "description": "Success. The content type depends on `stream`: `text/event-stream` when `stream` is `true` (the default), `application/json` when `stream` is `false`. See the operation description for the exact SSE event sequence — streamed errors after the 200 arrive as an in-band `error` event.",
+            "description": "Success. The content type depends on `stream`: `text/event-stream` when `stream` is `true` (the default), `application/json` when `stream` is `false`. See the operation description for the exact SSE event sequence: streamed errors after the 200 arrive as an in-band `error` event.",
             "content": {
               "application/json": {
                 "schema": {
@@ -286,7 +286,7 @@
               "text/event-stream": {
                 "schema": {
                   "type": "string",
-                  "description": "SSE stream. Frames: compose.started → op ×N → (compose.restarted ×0–2, each requiring the client to discard rendered state) → compose.completed | error. Keepalive comment `: ping` every 15 s. See the operation description for each frame's data shape."
+                  "description": "SSE stream. Frames: compose.started → op ×N → (compose.restarted ×0-1, each requiring the client to discard rendered state) → compose.completed | error. Keepalive comment `: ping` every 15 s. See the operation description for each frame's data shape."
                 },
                 "example": "event: compose.started\ndata: {\"type\":\"compose.started\",\"generation_id\":\"gen_2c9a66e1-5dd8-4e0b-9c3d-1a2b3c4d5e6f\",\"model\":\"frayme-compose\"}\n\nevent: op\ndata: {\"type\":\"op\",\"op\":\"add\",\"path\":\"/state\",\"value\":{}}\n\nevent: op\ndata: {\"type\":\"op\",\"op\":\"add\",\"path\":\"/root\",\"value\":\"card\"}\n\nevent: op\ndata: {\"type\":\"op\",\"op\":\"add\",\"path\":\"/elements/card\",\"value\":{\"type\":\"Card\",\"children\":[\"btn\"]}}\n\nevent: op\ndata: {\"type\":\"op\",\"op\":\"add\",\"path\":\"/elements/btn\",\"value\":{\"type\":\"Button\",\"props\":{\"label\":\"Click\"}}}\n\n: ping\n\nevent: compose.completed\ndata: {\"type\":\"compose.completed\",\"generation_id\":\"gen_2c9a66e1-5dd8-4e0b-9c3d-1a2b3c4d5e6f\",\"model\":\"frayme-compose\",\"operation_count\":4,\"usage\":{\"input_tokens\":812,\"output_tokens\":236},\"validated\":true,\"interactions\":[],\"components_used\":[\"Button\",\"Card\"]}\n\n"
               }
@@ -349,7 +349,7 @@
     "schemas": {
       "ErrorCode": {
         "type": "string",
-        "description": "Machine-readable error code. **Branch on `error.code`, not on the HTTP status** — several statuses carry more than one code.",
+        "description": "Machine-readable error code. **Branch on `error.code`, not on the HTTP status**: several statuses carry more than one code.",
         "enum": [
           "BAD_REQUEST",
           "INVALID_MANIFEST",
@@ -371,7 +371,7 @@
       },
       "ErrorEnvelope": {
         "type": "object",
-        "description": "Every non-2xx response uses this envelope. During an SSE stream, errors after the 200 arrive as an in-band `error` event carrying the same `{code, message}` pair.\n\nFull error taxonomy:\n\n| Status | `error.code` | Meaning |\n|---|---|---|\n| 400 | `BAD_REQUEST` | Malformed JSON, schema violation, unknown field, a size cap exceeded, or an invalid `prior_spec` |\n| 400 | `INVALID_MANIFEST` | A `custom_components` manifest failed validation, or two manifests share a name |\n| 400 | `CUSTOM_SLICE_TOO_LARGE` | `custom_components` exceed the 12,000-character combined per-request budget |\n| 401 | `AUTHENTICATION_REQUIRED` | Missing, malformed, or revoked API key |\n| 402 | `PAYMENT_REQUIRED` | Subscription payment past due — update the payment method to resume |\n| 403 | `FORBIDDEN` | The key lacks the required scope |\n| 403 | `FEATURE_LIMIT` | A plan limit was hit (e.g. inline custom components per request) |\n| 404 | `NOT_FOUND` | Unknown route or resource |\n| 409 | `IDEMPOTENCY_KEY_IN_USE` | Same `Idempotency-Key`, original request still in flight |\n| 422 | `VALIDATION_ERROR` | Same `Idempotency-Key` with a different request body |\n| 429 | `RATE_LIMITED` | Per-key burst limit exceeded — honor the `Retry-After` header |\n| 429 | `QUOTA_EXCEEDED` | Monthly generation quota exhausted (no `Retry-After`) — upgrade or wait for the next cycle |\n| 500 | `INTERNAL_SERVER_ERROR` | Unexpected server error |\n| 502 | `COMPOSITION_FAILED` | Output failed validation after automatic retries — never billed |\n| 503 | `MODEL_UNAVAILABLE` | Model backend temporarily unavailable |\n| 503 | `SERVICE_UNAVAILABLE` | Temporary service outage |",
+        "description": "Every non-2xx response uses this envelope. During an SSE stream, errors after the 200 arrive as an in-band `error` event carrying the same `{code, message}` pair.\n\nFull error taxonomy:\n\n| Status | `error.code` | Meaning |\n|---|---|---|\n| 400 | `BAD_REQUEST` | Malformed JSON, schema violation, unknown field, a size cap exceeded, or an invalid `prior_spec` |\n| 400 | `INVALID_MANIFEST` | A `custom_components` manifest failed validation, or two manifests share a name |\n| 400 | `CUSTOM_SLICE_TOO_LARGE` | `custom_components` exceed the 12,000-character combined per-request budget |\n| 401 | `AUTHENTICATION_REQUIRED` | Missing, malformed, or revoked API key |\n| 402 | `PAYMENT_REQUIRED` | Subscription payment past due: update the payment method to resume |\n| 403 | `FORBIDDEN` | The key lacks the required scope |\n| 403 | `FEATURE_LIMIT` | Reserved for plan limits; not raised today (inline custom components are a 20-per-request cap on every plan, exceeded is a 400 `BAD_REQUEST`) |\n| 404 | `NOT_FOUND` | Unknown route or resource |\n| 409 | `IDEMPOTENCY_KEY_IN_USE` | Same `Idempotency-Key`, original request still in flight |\n| 422 | `VALIDATION_ERROR` | Same `Idempotency-Key` with a different request body |\n| 429 | `RATE_LIMITED` | Per-key burst limit exceeded: honor the `Retry-After` header |\n| 429 | `QUOTA_EXCEEDED` | Monthly generation quota exhausted (no `Retry-After`): upgrade or wait for the next cycle |\n| 500 | `INTERNAL_SERVER_ERROR` | Unexpected server error |\n| 502 | `COMPOSITION_FAILED` | Output failed validation after automatic retries, never billed |\n| 503 | `MODEL_UNAVAILABLE` | Model backend temporarily unavailable |\n| 503 | `SERVICE_UNAVAILABLE` | Temporary service outage |",
         "required": [
           "success",
           "error"
@@ -400,7 +400,7 @@
       },
       "Spec": {
         "type": "object",
-        "description": "A json-render UI spec: `root`, `elements` (each `{type, props?, children?, on?}`), `state`, and optional `actions`. Uses standard json-render keys — see https://json-render.dev. Rendered with `FraymeRenderer` from `@frayme/runtime/react`.",
+        "description": "A json-render UI spec: `root`, `elements` (each `{type, props?, children?, on?}`), `state`, and optional `actions`. Uses standard json-render keys, see https://json-render.dev. Rendered with `FraymeRenderer` from `@frayme/runtime/react`.",
         "additionalProperties": true
       },
       "ComposeContext": {
@@ -411,7 +411,7 @@
           "theme": {
             "type": "string",
             "maxLength": 40,
-            "description": "THE theme dial — `light` or `dark` (≤ 40 characters). Omit to let the host decide. There is deliberately no `signals.theme`."
+            "description": "THE theme dial: `light` or `dark` (≤ 40 characters). Omit to let the host decide. There is deliberately no `signals.theme`."
           },
           "framework_hint": {
             "type": "string",
@@ -423,7 +423,7 @@
       "ComposeSignals": {
         "type": "object",
         "additionalProperties": false,
-        "description": "The primary steering dial — the vocabulary the model reads directly, so these values genuinely move the output. Send only the ones you are confident about; a partial object (or none at all) is a first-class call, and a wrong signal steers worse than a missing one. Most valuable where the prompt alone is ambiguous: \"a table of orders\" describes both a compact scanning grid and a rich card list, and `density` is what separates them. Theme is not a signal — use `context.theme`.",
+        "description": "The primary steering dial: the vocabulary the model reads directly, so these values genuinely move the output. Send only the ones you are confident about; a partial object (or none at all) is a first-class call, and a wrong signal steers worse than a missing one. Most valuable where the prompt alone is ambiguous: \"a table of orders\" describes both a compact scanning grid and a rich card list, and `density` is what separates them. Theme is not a signal: use `context.theme`.",
         "properties": {
           "data_shape": {
             "type": "array",
@@ -441,7 +441,7 @@
               "standard",
               "rich"
             ],
-            "description": "How much per screen. `compact` — terse scanning · `standard` · `rich` — generous detail and supporting copy."
+            "description": "How much per screen. `compact`: terse scanning · `standard` · `rich`: generous detail and supporting copy."
           },
           "patterns": {
             "type": "array",
@@ -458,7 +458,7 @@
               "neutral",
               "branded"
             ],
-            "description": "`neutral` — product-default styling · `branded` — lean into the colour and voice the prompt describes."
+            "description": "`neutral`: product-default styling · `branded`: lean into the colour and voice the prompt describes."
           }
         }
       },
@@ -468,7 +468,7 @@
         "required": [
           "name"
         ],
-        "description": "A declared action — Frayme guarantees the wiring: param keys bind to live UI state, and the host receives the resolved values when the action fires.",
+        "description": "A declared action: Frayme guarantees the wiring: param keys bind to live UI state, and the host receives the resolved values when the action fires.",
         "properties": {
           "name": {
             "type": "string",
@@ -479,7 +479,7 @@
           "params": {
             "type": "object",
             "additionalProperties": true,
-            "description": "The action's params — a JSON Schema object (`{\"type\":\"object\",\"properties\":{…},\"required\":[…]}`) or a flat `{ paramName: { description, enum? } }` map. Keys bind to live UI state and come back resolved when the action fires. List the mandatory keys in `required` (or `requiredItems`): they are marked on the form and genuinely block the submit until filled."
+            "description": "The action's params: a JSON Schema object (`{\"type\":\"object\",\"properties\":{…},\"required\":[…]}`) or a flat `{ paramName: { description, enum? } }` map. Keys bind to live UI state and come back resolved when the action fires. List the mandatory keys in `required` (or `requiredItems`): they are marked on the form and genuinely block the submit until filled."
           },
           "role": {
             "type": "string",
@@ -489,10 +489,10 @@
           "live": {
             "type": "boolean",
             "default": false,
-            "description": "Default false: only a press fires the action (the carrier rule — a Button, a Confirmation verdict, a Form submit, a DataTable, or a row/bulk action on a table or board; any other gesture stays local under `state._ui.<elementId>.<verb>` and rides in the next press's `state`). true = ambient wiring — the action fires on every move/change with no button press (drags, sliders, board moves)."
+            "description": "Default false: only a press fires the action (the carrier rule: a Button, a Confirmation verdict, a Form submit, a DataTable, or a row/bulk action on a table or board; any other gesture stays local under `state._ui.<elementId>.<verb>` and rides in the next press's `state`). true = ambient wiring: the action fires on every move/change with no button press (drags, sliders, board moves)."
           },
           "confirm": {
-            "description": "Gate the control behind a confirmation dialog. `true` for a plain confirm; an object (≤ 800 characters serialized) for detail — `{\"tone\":\"danger\",\"body\":\"This cannot be undone.\",\"confirmLabel\":\"Delete\",\"denyLabel\":\"Keep\"}`. Unknown keys are ignored, not rejected.",
+            "description": "Gate the control behind a confirmation dialog. `true` for a plain confirm; an object (≤ 800 characters serialized) for detail: `{\"tone\":\"danger\",\"body\":\"This cannot be undone.\",\"confirmLabel\":\"Delete\",\"denyLabel\":\"Keep\"}`. Unknown keys are ignored, not rejected.",
             "oneOf": [
               {
                 "type": "boolean"
@@ -510,16 +510,16 @@
               "type": "string",
               "maxLength": 60
             },
-            "description": "The params that are mandatory, lifted to action level — the same claim as `params.required` for hosts sending the flat param map."
+            "description": "The params that are mandatory, lifted to action level: the same claim as `params.required` for hosts sending the flat param map."
           },
           "required": {
             "type": "boolean",
-            "description": "If true, a control bound to this action is guaranteed present — injected if the generation omitted it."
+            "description": "If true, a control bound to this action is guaranteed present: injected if the generation omitted it."
           },
           "description": {
             "type": "string",
             "maxLength": 160,
-            "description": "What this action means / what the user did — for your own handling."
+            "description": "What this action means / what the user did, for your own handling."
           },
           "kind": {
             "description": "How the server closes this action into `spec.actions`: `recompose` re-generates with the fixed `prompt`; `agent` (default) routes the event back to the host agent; `host` posts a message on `channel`; `false` denies the action (inert).",
@@ -541,12 +541,12 @@
           "prompt": {
             "type": "string",
             "maxLength": 4000,
-            "description": "`recompose` only — the fixed prompt the server recomposes with when the action fires."
+            "description": "`recompose` only: the fixed prompt the server recomposes with when the action fires."
           },
           "channel": {
             "type": "string",
             "maxLength": 120,
-            "description": "`host` only — the postMessage channel name."
+            "description": "`host` only: the postMessage channel name."
           }
         }
       },
@@ -556,7 +556,7 @@
         "required": [
           "action"
         ],
-        "description": "What the user just did on a Frayme-rendered UI — pair with `mode: \"continue_journey\"` so the next compose responds in context. Serialized size ≤ 16,000 characters. Hosts on `@frayme/api/tools` never build this by hand: `frayme_action` takes the runtime's event (see `FraymeActionInput`) and the SDK maps it here.",
+        "description": "What the user just did on a Frayme-rendered UI: pair with `mode: \"continue_journey\"` so the next compose responds in context. Serialized size ≤ 16,000 characters. Hosts on `@frayme/api/tools` never build this by hand: `frayme_action` takes the runtime's event (see `FraymeActionInput`) and the SDK maps it here.",
         "properties": {
           "action": {
             "type": "string",
@@ -577,12 +577,12 @@
           "state": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Full live-state snapshot — what the user entered; preserved across the recompose."
+            "description": "Full live-state snapshot: what the user entered; preserved across the recompose."
           },
           "element_id": {
             "type": "string",
             "maxLength": 120,
-            "description": "The spec id of the control that fired — the button, or the table/board whose row/bulk action was pressed (absent only for programmatic dispatches)."
+            "description": "The spec id of the control that fired: the button, or the table/board whose row/bulk action was pressed (absent only for programmatic dispatches)."
           },
           "generation_id": {
             "type": "string",
@@ -613,25 +613,25 @@
           "params": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Resolved params — the live UI-state values at fire time."
+            "description": "Resolved params: the live UI-state values at fire time."
           },
           "state": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Full live state snapshot — what the user entered; preserved across the recompose. `state._ui.<elementId>.<verb>` holds the latest gesture per verb, never cleared by a press."
+            "description": "Full live state snapshot: what the user entered; preserved across the recompose. `state._ui.<elementId>.<verb>` holds the latest gesture per verb, never cleared by a press."
           },
           "element_id": {
             "type": "string",
             "maxLength": 120,
-            "description": "The spec id of the control that fired — the button, or the table/board whose row/bulk action was pressed (absent only for programmatic dispatches)."
+            "description": "The spec id of the control that fired: the button, or the table/board whose row/bulk action was pressed (absent only for programmatic dispatches)."
           },
           "label": {
             "type": "string",
-            "description": "The label of the control the user pressed, verbatim (absent for a Form submit, whose `element_id` is the Form) — for your own thread card; not sent to the server."
+            "description": "The label of the control the user pressed, verbatim (absent for a Form submit, whose `element_id` is the Form), for your own thread card; not sent to the server."
           },
           "description": {
             "type": "string",
-            "description": "What the action does, in your own words (from your declared action) — for your own thread card; not sent to the server."
+            "description": "What the action does, in your own words (from your declared action), for your own thread card; not sent to the server."
           },
           "generation_id": {
             "type": "string",
@@ -665,7 +665,7 @@
       "CustomComponentManifest": {
         "type": "object",
         "additionalProperties": true,
-        "description": "A BYOC custom-component manifest — the same object you author for `defineFraymeComponent` from `@frayme/catalog` (name, props, events, description). Validated server-side with the identical deep lint the client runs; duplicate names are rejected (`400 INVALID_MANIFEST`). Render the matching React components in your app via `createCustomComponents` from `@frayme/runtime`."
+        "description": "A BYOC custom-component manifest: the same object you author for `defineFraymeComponent` from `@frayme/catalog` (name, props, events, description). Validated server-side with the identical deep lint the client runs; duplicate names are rejected (`400 INVALID_MANIFEST`). Render the matching React components in your app via `createCustomComponents` from `@frayme/runtime`."
       },
       "ComposeRequest": {
         "type": "object",
@@ -673,18 +673,18 @@
         "required": [
           "prompt"
         ],
-        "description": "Request body for `POST /v1/compose`. Field names are snake_case on the wire. The schema is strict — unknown fields are rejected with `400 BAD_REQUEST`.",
+        "description": "Request body for `POST /v1/compose`. Field names are snake_case on the wire. The schema is strict: unknown fields are rejected with `400 BAD_REQUEST`.",
         "properties": {
           "prompt": {
             "type": "string",
             "minLength": 1,
             "maxLength": 4000,
-            "description": "What to build, in natural language. 1–4000 characters."
+            "description": "What to build, in natural language. 1-4000 characters."
           },
           "stream": {
             "type": "boolean",
             "default": true,
-            "description": "`true` (default) — respond as a live Server-Sent Events stream. `false` — respond with a buffered JSON envelope."
+            "description": "`true` (default): respond as a live Server-Sent Events stream. `false`: respond with a buffered JSON envelope."
           },
           "context": {
             "$ref": "#/components/schemas/ComposeContext"
@@ -693,7 +693,7 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 200,
-            "description": "Cap on generated operations (1–200)."
+            "description": "Cap on generated operations (1-200)."
           },
           "signals": {
             "$ref": "#/components/schemas/ComposeSignals"
@@ -706,12 +706,12 @@
               "continue_journey"
             ],
             "default": "create",
-            "description": "`create` (default) — fresh UI. `edit` — modify `prior_spec` in place (the server streams a minimal patch). `continue_journey` — next step of a flow (pair with `action_context`)."
+            "description": "`create` (default): fresh UI. `edit`: modify `prior_spec` in place (the server streams a minimal patch). `continue_journey`: next step of a flow (pair with `action_context`)."
           },
           "data": {
             "type": "object",
             "additionalProperties": true,
-            "description": "Factual content AND exact copy the UI must show verbatim — names, prices, items, counts, headings, disclaimers, button labels. These values render as written and are never invented or altered; anything not in `prompt` or `data` is the model's own invention, so pass `{}` for a UI with no fixed content. Display facts only — no synthetic ids or control flags. Serialized size ≤ 48,000 characters."
+            "description": "Factual content AND exact copy the UI must show verbatim: names, prices, items, counts, headings, disclaimers, button labels. These values render as written and are never invented or altered; anything not in `prompt` or `data` is the model's own invention, so pass `{}` for a UI with no fixed content. Display facts only, no synthetic ids or control flags. Serialized size ≤ 48,000 characters."
           },
           "actions": {
             "type": "array",
@@ -719,7 +719,7 @@
             "items": {
               "$ref": "#/components/schemas/ComposeAction"
             },
-            "description": "Declared action contract (≤ 20 entries) — Frayme guarantees each `required` action is wired to a control."
+            "description": "Declared action contract (≤ 20 entries): Frayme guarantees each `required` action is wired to a control."
           },
           "action_policy": {
             "type": "string",
@@ -728,7 +728,7 @@
               "declared_only"
             ],
             "default": "open",
-            "description": "How model-authored actions beyond the declared contract are handled. `open` (default) — they stay live; the runtime forwards unmapped actions to the host agent. `declared_only` — the server strips every non-builtin action the contract didn't declare (bindings, `spec.actions` entries, and controls whose only job was a stripped action), so the UI can never grow controls the host didn't ask for."
+            "description": "How model-authored actions beyond the declared contract are handled. `open` (default): they stay live; the runtime forwards unmapped actions to the host agent. `declared_only`: the server strips every non-builtin action the contract didn't declare (bindings, `spec.actions` entries, and controls whose only job was a stripped action), so the UI can never grow controls the host didn't ask for."
           },
           "prior_spec": {
             "$ref": "#/components/schemas/Spec",
@@ -748,7 +748,7 @@
             "items": {
               "$ref": "#/components/schemas/CustomComponentManifest"
             },
-            "description": "BYOC — inline custom-component manifests for this request. Absolute cap 20 per request; your plan's inline component limit (`GET /v1/me` → `plan.inlineComponentsLimit`) may be lower (`403 FEATURE_LIMIT`). The combined compiled size is budgeted at 12,000 characters per request (`400 CUSTOM_SLICE_TOO_LARGE`)."
+            "description": "BYOC: inline custom-component manifests for this request. Available on every plan, unmetered, capped at 20 per request (`GET /v1/me` → `plan.inlineComponentsLimit`). The combined compiled size is budgeted at 12,000 characters per request (`400 CUSTOM_SLICE_TOO_LARGE`)."
           }
         }
       },
@@ -771,7 +771,7 @@
       },
       "ComposeInteraction": {
         "type": "object",
-        "description": "One wired interaction in the returned UI — the \"what can this UI do\" summary a host agent reads to know which actions it will receive.",
+        "description": "One wired interaction in the returned UI: the \"what can this UI do\" summary a host agent reads to know which actions it will receive.",
         "required": [
           "element",
           "event",
@@ -829,7 +829,7 @@
           },
           "model": {
             "type": "string",
-            "description": "Opaque identifier of the model build that produced this generation. Values are not stable across releases — do not branch on them."
+            "description": "Opaque identifier of the model build that produced this generation. Values are not stable across releases: do not branch on them."
           },
           "operation_count": {
             "type": "integer",
@@ -837,7 +837,7 @@
           },
           "validated": {
             "const": true,
-            "description": "Always true on success — every returned spec passed full validation before delivery."
+            "description": "Always true on success: every returned spec passed full validation before delivery."
           },
           "usage": {
             "$ref": "#/components/schemas/Usage"
@@ -894,7 +894,7 @@
           },
           "catalog_version": {
             "type": "string",
-            "description": "Version of the active component catalog, e.g. `frayme-0.18.0`."
+            "description": "Version of the active component catalog, e.g. `frayme-0.19.0`."
           }
         }
       },
@@ -915,7 +915,7 @@
       },
       "Me": {
         "type": "object",
-        "description": "Key introspection payload. Note the camelCase field names — this endpoint differs from compose's snake_case.",
+        "description": "Key introspection payload. Note the camelCase field names: this endpoint differs from compose's snake_case.",
         "required": [
           "workspace",
           "plan"
@@ -972,7 +972,7 @@
               },
               "inlineComponentsLimit": {
                 "type": "integer",
-                "description": "Maximum inline custom components (BYOC) allowed per compose request on this plan. 0 means BYOC is not available on the plan."
+                "description": "Maximum inline custom components (BYOC) allowed per compose request. 20 on every plan: a wire limit, not a plan gate."
               }
             }
           }
@@ -1005,7 +1005,7 @@
             "example": {
               "success": false,
               "error": {
-                "message": "Invalid request: prompt — prompt is required",
+                "message": "Invalid request: prompt, prompt is required",
                 "code": "BAD_REQUEST"
               }
             }
@@ -1039,7 +1039,7 @@
             "example": {
               "success": false,
               "error": {
-                "message": "Subscription payment is past due — update your payment method to resume generations",
+                "message": "Subscription payment is past due: update your payment method to resume generations",
                 "code": "PAYMENT_REQUIRED"
               }
             }
@@ -1047,7 +1047,7 @@
         }
       },
       "Forbidden": {
-        "description": "`FORBIDDEN` — the key lacks the required scope — or `FEATURE_LIMIT` — a plan limit was hit (e.g. more inline custom components than the plan allows per request).",
+        "description": "`FORBIDDEN`: the key lacks the required scope, or `FEATURE_LIMIT`: reserved for plan limits and not raised today (inline custom components are a 20-per-request cap on every plan; more than 20 is a 400 `BAD_REQUEST`).",
         "content": {
           "application/json": {
             "schema": {
@@ -1115,7 +1115,7 @@
         }
       },
       "RateLimited": {
-        "description": "Two distinct 429s — branch on `error.code`. `RATE_LIMITED`: the per-key burst limit (your plan's requests-per-minute) was exceeded; honor the `Retry-After` header and back off exponentially. `QUOTA_EXCEEDED`: the monthly generation quota is exhausted (no `Retry-After`); upgrade the plan or wait for the next cycle.",
+        "description": "Two distinct 429s: branch on `error.code`. `RATE_LIMITED`: the per-key burst limit (your plan's requests-per-minute) was exceeded; honor the `Retry-After` header and back off exponentially. `QUOTA_EXCEEDED`: the monthly generation quota is exhausted (no `Retry-After`); upgrade the plan or wait for the next cycle.",
         "headers": {
           "Retry-After": {
             "description": "Seconds to wait before retrying. Present only for `RATE_LIMITED`.",
@@ -1132,7 +1132,7 @@
             "example": {
               "success": false,
               "error": {
-                "message": "Rate limit exceeded — slow down and retry with exponential backoff",
+                "message": "Rate limit exceeded: slow down and retry with exponential backoff",
                 "code": "RATE_LIMITED"
               }
             }
@@ -1157,7 +1157,7 @@
         }
       },
       "CompositionFailed": {
-        "description": "The output failed validation even after automatic retries on a stronger model (`COMPOSITION_FAILED`). Never billed — retry, ideally with a clearer prompt.",
+        "description": "The output failed validation even after automatic retries on a stronger model (`COMPOSITION_FAILED`). Never billed: retry, ideally with a clearer prompt.",
         "content": {
           "application/json": {
             "schema": {
@@ -1174,7 +1174,7 @@
         }
       },
       "ServiceUnavailable": {
-        "description": "`MODEL_UNAVAILABLE` — the model backend is temporarily unavailable — or `SERVICE_UNAVAILABLE` — a temporary service outage. Retry with backoff. Never billed.",
+        "description": "`MODEL_UNAVAILABLE`: the model backend is temporarily unavailable, or `SERVICE_UNAVAILABLE`: a temporary service outage. Retry with backoff. Never billed.",
         "content": {
           "application/json": {
             "schema": {

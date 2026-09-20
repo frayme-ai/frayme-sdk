@@ -62,11 +62,11 @@ An application-style horizontal menu bar (File / Edit / View). Each top-level la
 | `menus` | `({ label: string, items: object[] })[]` | The top-level menus rendered left to right on the bar; each is { label, items[] } and opens a dropdown of its `items` on click (e.g. File · Edit · View). Omit for an empty bar. |
 | `activeItem` | `string` | Write target for WHICH menu item the user selected: bind with { $bindState } and the renderer writes the selected item label (or its index) here before emitting `select`, so the host can attribute the selection. Emit-only when unbound. |
 | `accent` | `string` | Color for the currently-OPEN top-level menu label (default the foreground token); closed labels and selected items are not tinted. |
-| `borderColor` | `string` | Border colour for the whole menu chrome — the bar frame, the dropdown panel border, item separators, and shortcut-chip edges (default the border token). |
-| `mutedColor` | `string` | Secondary/muted text colour — the item leading icons, keyboard shortcuts, and the empty "No items" line (default the muted-foreground token). |
+| `borderColor` | `string` | Border colour for the whole menu chrome, the bar frame, the dropdown panel border, item separators, and shortcut-chip edges (default the border token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the item leading icons, keyboard shortcuts, and the empty "No items" line (default the muted-foreground token). |
 | `size` | `"xs" \| "sm" \| "md" \| "lg" \| "xl"` | Overall scale of the bar: sm · md (default) · lg. Sets the top-level label and dropdown-item text size + padding. |
 | `dense` | `boolean` | Tighter vertical padding on the bar and dropdown items for a compact toolbar look (default false). |
-| `emptyText` | `string` | Override the message shown in a menu with no items (default "No items"). Escaped text — set for i18n. |
+| `emptyText` | `string` | Override the message shown in a menu with no items (default "No items"). Escaped text, set for i18n. |
 
 ## Events
 

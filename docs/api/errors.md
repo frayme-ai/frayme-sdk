@@ -10,7 +10,7 @@ Non-streaming errors return the standard envelope with the appropriate HTTP stat
 {
   "success": false,
   "error": {
-    "message": "Monthly generation quota exhausted — upgrade your plan or wait for the next cycle",
+    "message": "Monthly generation quota exhausted: upgrade your plan or wait for the next cycle",
     "code": "QUOTA_EXCEEDED"
   }
 }
@@ -35,7 +35,7 @@ Either way, a failed compose is **never billed**.
 | 401 | `AUTHENTICATION_REQUIRED` | Missing, malformed, invalid, revoked, or expired API key. | Send `Authorization: Bearer fr_…` with an active key. |
 | 402 | `PAYMENT_REQUIRED` | Subscription payment is past due. | Update the payment method in the dashboard; generations resume on recovery. |
 | 403 | `FORBIDDEN` | The key lacks a required scope. | Mint a key with the `compose` scope. |
-| 403 | `FEATURE_LIMIT` | More inline custom components than your plan allows. | Check `plan.inlineComponentsLimit` via [`/v1/me`](me-and-health.md), or upgrade. |
+| 403 | `FEATURE_LIMIT` | Reserved for plan limits. Not raised today: inline custom components are capped at 20 per request on every plan, and more than 20 is a 400 `BAD_REQUEST`. | Nothing to handle yet; `plan.inlineComponentsLimit` via [`/v1/me`](me-and-health.md) reports the cap. |
 | 404 | `NOT_FOUND` | No such resource/route. | Check the path. |
 | 409 | `IDEMPOTENCY_KEY_IN_USE` | A request with this `Idempotency-Key` is still in flight. | Wait for the original to finish, then retry. You'll get a free replay. |
 | 422 | `VALIDATION_ERROR` | This `Idempotency-Key` was already used with a **different** request body. | Use a fresh key for a new request; see [idempotency](idempotency.md). |

@@ -149,10 +149,10 @@ A sport-agnostic tournament card with a group-stage standings view AND a knockou
 | --- | --- | --- |
 | `title` | `string` | Tournament title shown in the card header (e.g. "World Cup 2026"). Escaped text; omit for no header. |
 | `view` | `"groups" \| "bracket"` | Which view to show initially: groups (standings tables) or bracket (knockout). Defaults to groups when only groups exist, else bracket. Bindable: the active view is mirrored back here into spec.state when the Groups/Knockout toggle is clicked, so an external control can read (and drive) which view is showing. |
-| `selected` | `any` | Bindable: the last-clicked match or team is mirrored here into spec.state on every click, so an external control can read the current selection. Match clicks carry { kind:"match", id, round, index, a, b, winner }; team-row clicks carry { kind:"team", team, group, position, points } — the full resolved payload, not just an id. |
+| `selected` | `any` | Bindable: the last-clicked match or team is mirrored here into spec.state on every click, so an external control can read the current selection. Match clicks carry { kind:"match", id, round, index, a, b, winner }; team-row clicks carry { kind:"team", team, group, position, points }, the full resolved payload, not just an id. |
 | `groups` | `({ name: string, teams: object[] })[]` | Group-stage standings: each group { name, teams:[{ name, played?, won?, drawn?, lost?, gf?, ga?, points?, stats?, qualified?("top"\|"playoff") }] }. Teams sort by the primary column; qualification zones are color-coded. |
 | `sport` | `"football" \| "basketball" \| "us" \| "cricket" \| "generic"` | Standings-column preset when `columns` is not given: football (P W D L GD Pts), basketball / us (W L PCT GB), cricket (P W L NRR Pts), or generic (W L Pts). Default football. |
-| `columns` | `({ key: string, label: string, align: "left" \| "center" \| "right", primary: boolean })[]` | Explicit standings columns { key, label, align?, primary? } — overrides the sport preset to make the table work for ANY sport (each key resolves a derived value or a team `stats` entry). |
+| `columns` | `({ key: string, label: string, align: "left" \| "center" \| "right", primary: boolean })[]` | Explicit standings columns { key, label, align?, primary? }, overrides the sport preset to make the table work for ANY sport (each key resolves a derived value or a team `stats` entry). |
 | `rounds` | `object[][]` | Knockout rounds, outer→inner (rounds[0] first, last is the final). Each match is { id?, a?, b?, winner?("a"\|"b"), scoreA?, scoreB? }. Rounds capped at 6, matches/round at 63. |
 | `roundLabels` | `string[]` | Optional knockout column labels, one per round. Omit to auto-label (Final / Semifinals / Quarterfinals / Round N). |
 | `showScores` | `boolean` | Show per-competitor scores in the bracket match cards (default true). |
@@ -180,7 +180,7 @@ A knockout match or a group team row was clicked; match params carry { kind:"mat
 
 ### change
 
-The Groups/Knockout view tab was switched (shown only when both views exist); params carry {view} — the resolved active view, "groups" or "bracket".
+The Groups/Knockout view tab was switched (shown only when both views exist); params carry {view}, the resolved active view, "groups" or "bracket".
 
 | Key | Type | Description |
 | --- | --- | --- |

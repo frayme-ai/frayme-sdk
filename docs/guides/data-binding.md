@@ -41,8 +41,8 @@ Two expressions connect elements to the spec's `state` object (see [The spec](..
   "state": { "email": "", "plan": "pro" },
   "elements": {
     "emailInput": {
-      "type": "TextInput",
-      "props": { "label": "Email", "value": { "$bindState": "/email" } }
+      "type": "Input",
+      "props": { "label": "Email", "name": "email", "value": { "$bindState": "/email" } }
     },
     "submit": {
       "type": "Button",
@@ -77,7 +77,7 @@ List-shaped UI is usually a template element repeated over a state array:
     "invoiceRow": {
       "type": "ListItem",
       "repeat": { "statePath": "/invoices" },
-      "props": { "title": { "$bindItem": "number" }, "meta": { "$bindItem": "amount" } }
+      "props": { "title": { "$bindItem": "number" }, "trailingText": { "$bindItem": "amount" } }
     }
   }
 }
@@ -111,7 +111,7 @@ Spread the spec's own state first; replacing it wholesale would unseat every oth
 | Copy the UI must show exactly (names, prices, items) | `data` |
 | Intent, layout, tone ("a compact dark dashboard") | `prompt` |
 | Per-user values into an already-generated spec | `initialState` |
-| What the user just did | `action_context` (see [Edits and journeys](edits-and-journeys.md)) |
+| What the user just did | The `prompt` names the press and `data` carries the values the next screen must show; that is what the SDK's press helpers send since 0.6.0. The raw API also takes `action_context` (see [Edits and journeys](edits-and-journeys.md)). |
 
 ## Next steps
 

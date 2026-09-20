@@ -6,9 +6,40 @@ Release notes for the Frayme SDK packages, each versioned independently, followi
 
 | Package | Version |
 | --- | --- |
-| `@frayme/api` | 0.5.0 |
-| `@frayme/runtime` | 0.5.0 |
-| `@frayme/catalog` | 0.4.0 |
+| `@frayme/api` | 0.6.0 |
+| `@frayme/runtime` | 0.6.0 |
+| `@frayme/catalog` | 0.4.1 |
+
+## 0.6.0 (`@frayme/api`, `@frayme/runtime`) and 0.4.1 (`@frayme/catalog`)
+
+A press composes the next screen fresh instead of editing the last one, and a passed `primary` colors every main action. Set nothing and nothing changes: every runtime default is byte-identical to 0.5.0.
+
+### `@frayme/api`
+
+- **A press is a create, not an edit.** `frayme_action` and `createActionTool` no longer attach `mode: 'continue_journey'`, `prior_spec` or `action_context`. A press is sent as a plain create: the prompt names what was pressed, `data` carries the values the next screen must show, and `actions` declares the controls that lead forward. Measured on one filled 16-field form with a 12-value press: the old shape produced a usable next screen in 0 of 2 runs, the new one in 2 of 2 with all 12 values shown, and on a large table the press body went from over 5 KB to under 200 bytes.
+  - `prior_spec` reached the composer as an instruction to edit the existing screen in place, which answered a press by handing the same screen back. `action_context` reached no prompt at all.
+  - `prior_spec` is unchanged for `mode: 'edit'`, the one request that legitimately carries a screen. `frayme_compose` with `edit_of` still attaches the earlier screen.
+  - Two rules the tool descriptions and examples now teach: press meta goes in the prompt, never in `data` (a `data` key the composer does not use is drawn on the screen), and declare forward actions only, never the control just pressed (re-declaring it with required params puts the form the next screen was meant to replace back).
+- `VERSION` is `0.6.0`.
+
+### `@frayme/runtime`
+
+- **A passed `primary` colors every main action.** The button family fills from `var(--fr-btn-fill, var(--color-foreground))`, so the neutral high-contrast default stands until a host passes `primary` through the `theme` prop. Then `Button variant:"primary"`, a `Link` rendered as a button, a pressed `ButtonGroup` segment, `IconButton`, a hero CTA, a dialog's confirm, a Kanban card action, the chat send control and a choice-list submit take it. `secondary`, `danger`, `ghost` and `outline` are untouched, and the interactive states stay with `accent`.
+  - The label ink comes from `primaryForeground` when one is passed, and is otherwise picked by comparing WCAG contrast against the two inks the stylesheet ships, exported as `onFillInk`. The `slate` and `warm` presets follow the same rule with their own colors.
+  - The confirm modal's main button wears the same fill as the button that opened it, and a press on a danger control gets a danger guard.
+- **An accent fill can carry a label.** New `accentForeground` token (`--frayme-accent-fg`) pairs with `accent`; left out, the ink is picked by contrast against the accent. A component's own `accent` owns its ink, which also fixes a pale spec accent with no `accentText`. Seven focus rings that mixed the accent at 40% now use 50% (3.38:1), as twenty others already did.
+- **A chatless press composes the next screen too.** `FraymeScreen`'s and `useFraymeScreen`'s `continue(event, prompt?, extra?)` no longer sends `mode`, `prior_spec` or `action_context`. It sends a create: a prompt naming the pressed control, and the pressed action's params as `data`, over the props' own `data`. Pass your own `prompt`, or `data` in `extra`, and it is used as given. The event's raw `state` is never sent. `edit(prompt)` is unchanged and still sends the last complete screen as `prior_spec`.
+- A control inside a `FormField` that repeats the field's caption keeps it as its accessible name only, so the label is not printed twice.
+- Fixed: `Checkbox` and `Radio` set `accent-color` without reading the global `--fr-accent` knob that `Switch` and `Slider` already honored, so a host that set `accent` got a near-black tick.
+- `@frayme/runtime` now depends on `@frayme/api` `^0.6.0`.
+
+### `@frayme/catalog` 0.4.1
+
+- Prop descriptions corrected where they named a default the renderer does not have: `accent` and `accentText` on the action family and on `Link`, `accent` on the field family, and `Button.variant` `primary`, now described as a solid neutral high-contrast fill. No schema, enum or validation behaviour changes.
+
+### Upgrade notes
+
+- If you already pass `prompt`, `data` and `actions` on a press, nothing changes. If you forwarded only the event and relied on the server continuing from the screen, name the values in `data`, or the next screen will not show them.
 
 ## 0.5.0 (`@frayme/api`, `@frayme/runtime`)
 

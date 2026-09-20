@@ -104,8 +104,8 @@ With [`fraymeTools`](../sdk/api-ai-sdk.md), the model never sees a spec, so it c
 - **An unknown id is refused** with code `UNKNOWN_SCREEN` when no finished screen with that id is in `messages`. The user sees nothing, and the model can correct the id and call again in the same turn. `mode: 'edit'` without `edit_of` gets the same code.
 - **A rejected edit is an error.** When the server rejects the attached screen for an edit, the tool returns an error output instead of quietly building a new screen, so the model never reports an edit that did not happen.
 - **A screen too large to send cannot be edited.** A screen over 48,000 characters of JSON (the `prior_spec` ceiling) is refused for an edit with code `SCREEN_TOO_LARGE`, and the model is told to leave `edit_of` out and describe the whole new screen, which it can do in the same turn. With `mode: 'continue_journey'`, such a screen is left out instead, the step is built without it, and the model is told (`trimmed`).
-- **A press needs no id from the model.** `frayme_action` attaches the pressed screen itself when that screen finished in this chat. If the server rejects that screen, the step continues once without it, and the model is told (`prior_screen_dropped`). A `continue_journey` call with `edit_of` behaves the same way.
-- **A press is cut to fit.** `frayme_action` fits the press and the pressed screen to the API's ceilings with [`fitContinuation`](../sdk/api-agent.md#fitting-a-follow-up-to-the-size-ceilings): a press whose `action_context` is over 16,000 characters loses its `state`, then its `params`, and a screen over 48,000 characters is left out. Every output of that call lists the cut in `trimmed`, so the model knows.
+- **A press attaches no screen.** Since 0.6.0 `frayme_action` composes the next screen fresh: it sends the model's `prompt`, `data`, `actions` and `signals`, with no `mode`, no `prior_spec` and no `action_context`. The pressed screen as `prior_spec` read to the composer as "edit this" and handed the same screen back, and `action_context` reached no prompt. So the press is described in `prompt`, and a value the user entered appears on the next screen only when the model names it in `data`. Nothing is cut to fit on a press.
+- **A `continue_journey` with `edit_of`** attaches that screen. If the server rejects it, the step continues once without it, and the model is told (`prior_screen_dropped`).
 - **Without `messages` there is no `edit_of`.** The compose tool does not offer the field, `mode: 'edit'` is refused with `UNKNOWN_SCREEN`, and every screen is described and built in full.
 
 ## Without a chat: `FraymeScreen`
@@ -113,7 +113,7 @@ With [`fraymeTools`](../sdk/api-ai-sdk.md), the model never sees a spec, so it c
 `<FraymeScreen>` and `useFraymeScreen` from `@frayme/runtime/react` send both modes for you, through the screen's handle:
 
 - **`screen.edit(prompt)`** sends `mode: 'edit'` with the last complete screen as `prior_spec`.
-- **`screen.continue(event, prompt?)`** sends `mode: 'continue_journey'` with the press as `action_context` and the last complete screen as `prior_spec`.
+- **`screen.continue(event, prompt?)`** sends a plain create: the prompt names the control that was pressed, and the pressed action's params ride in `data` over the props' own. Since 0.6.0 it sends no `mode`, no `prior_spec` and no `action_context`, and the event's `state` is never sent.
 
 ```tsx
 // app/orders/orders-screen.tsx
@@ -132,16 +132,16 @@ export function OrdersScreen({ orders }: { orders: Order[] }) {
           params: { type: 'object', properties: { orderId: { type: 'string' } }, required: ['orderId'] },
         },
       ]}
-      // A press moves the flow on: continue_journey, from the screen the user pressed.
+      // A press moves the flow on: a fresh screen that names the press and carries its params.
       onAction={(event, screen) => screen.continue(event, 'The refund confirmation for this order')}
     />
   );
 }
 ```
 
-Only a finished screen is ever sent as `prior_spec`, and each step resends the props' `data`, `actions`, `signals` and `context`.
+Only a finished screen is ever sent as `prior_spec`, and only by `edit`; each step resends the props' `data`, `actions`, `signals` and `context`.
 
-`continue` cuts the press and the screen to the API's ceilings the same way `frayme_action` does, so a big table press still moves the flow on. `edit` sends the screen as it is: a screen too large to edit gets the API's error in the screen's notice.
+`continue` sends nothing that needs cutting, so a big table press still moves the flow on. `edit` sends the screen as it is: a screen too large to edit gets the API's error in the screen's notice.
 
 The screen needs a client, usually from `<FraymeProvider endpoint>` with a [server handler](server-handler.md) behind it. See [Chatless screens](chatless-screens.md) for the whole flow.
 

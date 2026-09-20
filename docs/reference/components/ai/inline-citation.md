@@ -1,6 +1,6 @@
 # InlineCitation
 
-A small superscript "[n]" citation chip that links to a source in a new tab, with the excerpt as its hover tooltip. Place inline next to a claim in generated text. Reach for this when a single sentence needs a numbered footnote-style reference, as opposed to the Sources panel that lists the full reference set. It sits mid-flow inside a Message / MessageContent body and, unlike Sources, renders just the number — hover reveals the `excerpt` as a native title tooltip.
+A small superscript "[n]" citation chip that links to a source in a new tab, with the excerpt as its hover tooltip. Place inline next to a claim in generated text. Reach for this when a single sentence needs a numbered footnote-style reference, as opposed to the Sources panel that lists the full reference set. It sits mid-flow inside a Message / MessageContent body and, unlike Sources, renders just the number, hover reveals the `excerpt` as a native title tooltip.
 
 ## Example
 

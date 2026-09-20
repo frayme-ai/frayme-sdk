@@ -1,6 +1,6 @@
 # Label
 
-Form/inline label. Renders a &lt;label> (with `htmlFor` when set to wire it to a control) plus an optional required `*` marker. Reach for this standalone Label when a control sits apart from a FormField group and still needs a caption — set `htmlFor` to the control's id so clicking the label focuses it. Style it with `size`/`weight`/`tracking` or an exact `fontSize`/`color` to match the surrounding form density.
+Form/inline label. Renders a &lt;label> (with `htmlFor` when set to wire it to a control) plus an optional required `*` marker. Reach for this standalone Label when a control sits apart from a FormField group and still needs a caption, set `htmlFor` to the control's id so clicking the label focuses it. Style it with `size`/`weight`/`tracking` or an exact `fontSize`/`color` to match the surrounding form density.
 
 ## Example
 
@@ -24,7 +24,7 @@ Form/inline label. Renders a &lt;label> (with `htmlFor` when set to wire it to a
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `text` | `string` | The label text. Keep to 1-4 words, e.g. "Full name" — not a sentence. |
+| `text` | `string` | The label text. Keep to 1-4 words, e.g. "Full name", not a sentence. |
 | `htmlFor` | `string` | The id of the control this label captions (renders htmlFor). Omit for a plain inline label. |
 | `required` | `boolean` | Show a required `*` marker after the label text (default false). Set true when the captioned control must be filled in, mirroring the control's own required state. |
 | `size` | `"sm" \| "md" \| "lg"` | Font size (default md; sm=13px, md=14px, lg=16px). |

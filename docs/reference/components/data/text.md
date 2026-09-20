@@ -1,6 +1,6 @@
 # Text
 
-Paragraph or inline body copy holding a single plain-text string. Reach for it for prose, captions, help lines, and code snippets — anything that is not a structural title (use Heading for those). `variant` (body · caption · muted · lead · code) is the main lever, bundling size+tone+style, and the individual size/weight/tone/clamp props override it; `truncate` clips to one line and `clamp` caps at N lines with an ellipsis.
+Paragraph or inline body copy holding a single plain-text string. Reach for it for prose, captions, help lines, and code snippets, anything that is not a structural title (use Heading for those). `variant` (body · caption · muted · lead · code) is the main lever, bundling size+tone+style, and the individual size/weight/tone/clamp props override it; `truncate` clips to one line and `clamp` caps at N lines with an ellipsis.
 
 ## Example
 
@@ -22,7 +22,7 @@ Paragraph or inline body copy holding a single plain-text string. Reach for it f
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `text` | `string` | The text content (plain string — no markdown/HTML). One Text per paragraph; compose several in a Stack for multi-paragraph copy. |
+| `text` | `string` | The text content (plain string, no markdown/HTML). One Text per paragraph; compose several in a Stack for multi-paragraph copy. |
 | `variant` | `"body" \| "caption" \| "muted" \| "lead" \| "code"` | Preset bundle (size+tone+style). The primary lever; the props below override it. |
 | `size` | `"xs" \| "sm" \| "md" \| "lg" \| "xl"` | Font size step, overriding whatever the `variant` preset sets: xs · sm · md · lg · xl. Drop to `sm`/`xs` for captions/fine print; use `fontSize` for an exact length. |
 | `fontSize` | `string \| number` | Exact font size (e.g. "32px" / "2rem"). Overrides the `size` enum and `variant` preset, which are the default. |
@@ -31,7 +31,7 @@ Paragraph or inline body copy holding a single plain-text string. Reach for it f
 | `leading` | `"tight" \| "snug" \| "normal" \| "relaxed" \| "loose"` | Line-height: tight · snug · normal · relaxed · loose (default follows the size step). |
 | `align` | `"left" \| "center" \| "right" \| "justify"` | Horizontal text alignment: left (default) · center · right · justify. |
 | `tone` | `"default" \| "muted" \| "success" \| "warning" \| "critical" \| "info"` | Semantic text color via token. Use for warning/success copy. |
-| `italic` | `boolean` | Render the text in italics (default false). Style-only — combines with any variant/weight. |
+| `italic` | `boolean` | Render the text in italics (default false). Style-only, combines with any variant/weight. |
 | `truncate` | `boolean` | Clip to ONE line with a trailing ellipsis on overflow (default false). For multi-line clipping use `clamp`. |
 | `mono` | `boolean` | Monospace font (separate from variant:code which also boxes it). |
 | `color` | `string` | Exact text color, e.g. "#6d28d9" (wins over `tone` and the variant preset; default: inherits the surrounding foreground). |

@@ -44,7 +44,7 @@ Full proportional pie chart (no center hole). Each datum is { label, value, colo
 | `height` | `string \| number` | Plot height (e.g. "240px" or "16rem"; default ~220px). Bounded 80-800. |
 | `showLegend` | `boolean` | Show a legend mapping color→label beside the pie (default true). |
 | `showValues` | `boolean` | Print each slice’s percent of the total in the legend (default false). |
-| `mutedColor` | `string` | Secondary/muted text colour — the legend labels and the empty-state caption (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the legend labels and the empty-state caption (default the muted-foreground token). |
 | `separatorColor` | `string` | Stroke colour of the thin gap between slices (default the card/background token). |
 | `emptyText` | `string` | Override the empty-state message shown when there is no renderable data (default "No data"). |
 | `ariaLabel` | `string` | Override the chart’s accessible summary (the role="img" aria-label). Default is an auto-computed description of the data. |

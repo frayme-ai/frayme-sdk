@@ -51,7 +51,7 @@ A static geographic locator: author markers by lng/lat (points only) and the equ
 | `bounds` | `{ west: number, east: number, south: number, north: number }` | Optional viewport { west, east, south, north } in degrees. Omit to auto-fit the markers with a small pad. |
 | `showGraticule` | `boolean` | Draw the latitude/longitude reference grid (default true). |
 | `showLabels` | `boolean` | Show marker labels + graticule degree labels (default true). |
-| `selectedId` | `string` | Marker id drawn as selected (accent ring, label pinned); also bindable — a marker click writes the current selection here so an external Button can read the chosen id from state. |
+| `selectedId` | `string` | Marker id drawn as selected (accent ring, label pinned); also bindable, a marker click writes the current selection here so an external Button can read the chosen id from state. |
 | `confirmLabel` | `string` | Optional label for an internal confirm button (e.g. "Confirm selection") that emits `commit` with the currently-selected marker's full detail on demand; omit to hide it (external Button via bound `selectedId` still works). |
 | `height` | `number` | Max map height in px (default 380, clamped 200..720). |
 | `accent` | `string` | Selection ring + default marker color (default the primary token). |
@@ -82,7 +82,7 @@ Fires when `confirmLabel` is set and the user clicks the confirm button; params 
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

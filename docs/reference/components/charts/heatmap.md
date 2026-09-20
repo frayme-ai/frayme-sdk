@@ -51,8 +51,8 @@ A 2D heatmap: a grid of cells where each cell is tinted by its numeric magnitude
 | `showLegend` | `boolean` | Show a low→high intensity scale key ("Less ▫▫▪▪ More", GitHub/Tremor style) under the grid, tinted by the resolved scale colour (default false). |
 | `xLabels` | `string[]` | Column header labels (content), one per column. Omit for an unlabeled grid. |
 | `yLabels` | `string[]` | Row labels (content), one per row, shown on the left. Omit for an unlabeled grid. |
-| `mutedColor` | `string` | Secondary/muted text colour — the x/y axis header labels around the grid and the empty-state caption (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the x/y axis header labels around the grid and the empty-state caption (default the muted-foreground token). |
 | `scaleColor` | `string` | Exact high-end colour of the intensity scale; cells blend from the muted token (low) to this colour (high). Overrides `colorScale`. |
-| `valueColor` | `string` | In-cell value text colour when `showValues` is on — every printed cell number (default the foreground token). Set a light colour when high-intensity cells run dark. |
+| `valueColor` | `string` | In-cell value text colour when `showValues` is on, every printed cell number (default the foreground token). Set a light colour when high-intensity cells run dark. |
 | `emptyText` | `string` | Override the empty-state message shown when there is no data (default "No data"). |
 | `ariaLabel` | `string` | Override the screen-reader label for the grid (default the computed "Heatmap, N rows by M columns" summary). |

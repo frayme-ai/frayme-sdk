@@ -1,6 +1,6 @@
 # NotificationCenter
 
-A read/unread notification inbox fed by a static snapshot: category tabs with unread counts, per-item action buttons, mark-read / mark-all-read / dismiss, and an "unread only" filter. The host recomposes the items (no socket). Owns the read/dismiss overlay locally and emits a fully-populated intent on every interaction. Escaped text, SSR-safe. Bind `readIds`, `dismissedIds`, `activeTab`, `unreadOnly` with `{ $bindState }` so the agent (or a sibling control) can read the live overlay from spec.state — `readIds` holds the ids marked read, `dismissedIds` the ids dismissed, `activeTab` the selected category tab key, `unreadOnly` the filter toggle.
+A read/unread notification inbox fed by a static snapshot: category tabs with unread counts, per-item action buttons, mark-read / mark-all-read / dismiss, and an "unread only" filter. The host recomposes the items (no socket). Owns the read/dismiss overlay locally and emits a fully-populated intent on every interaction. Escaped text, SSR-safe. Bind `readIds`, `dismissedIds`, `activeTab`, `unreadOnly` with `{ $bindState }` so the agent (or a sibling control) can read the live overlay from spec.state, `readIds` holds the ids marked read, `dismissedIds` the ids dismissed, `activeTab` the selected category tab key, `unreadOnly` the filter toggle.
 
 ## Example
 
@@ -15,7 +15,7 @@ A read/unread notification inbox fed by a static snapshot: category tabs with un
           {
             "id": "n1",
             "title": "Ada commented on your PR",
-            "body": "\"This is much cleaner — ship it.\"",
+            "body": "\"This is much cleaner, ship it.\"",
             "category": "mentions",
             "timestampLabel": "2m ago",
             "unread": true,
@@ -86,9 +86,9 @@ A read/unread notification inbox fed by a static snapshot: category tabs with un
 | `activeTab` | `string` | Bindable ($bindState) mirror of the currently selected category tab key (or "all"); the component writes it on each tab switch so the current tab is readable from spec.state. |
 | `unreadOnly` | `boolean` | Bindable ($bindState) mirror of the "unread only" filter toggle; the component writes it whenever the filter changes so its state is readable from spec.state. |
 | `emptyLabel` | `string` | Message when there are no notifications (default "You're all caught up"). Escaped text. |
-| `maxHeight` | `string \| number` | Caps the item list at this height and makes it a scroller, `px`/`rem`, clamped `120..800px` (an unparseable value falls back to `28rem`). OMIT it — the default — and the list does NOT scroll: every row renders in full. Name it (e.g. `28rem`) only when the inbox must fit a fixed-height panel. |
+| `maxHeight` | `string \| number` | Caps the item list at this height and makes it a scroller, `px`/`rem`, clamped `120..800px` (an unparseable value falls back to `28rem`). OMIT it, the default, and the list does NOT scroll: every row renders in full. Name it (e.g. `28rem`) only when the inbox must fit a fixed-height panel. |
 | `accent` | `string` | Accent color of the active tab + unread affordances (default the primary token). |
-| `mutedColor` | `string` | Secondary color — timestamps, body, counts (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary color, timestamps, body, counts (default the muted-foreground token). |
 
 ## Events
 
@@ -113,7 +113,7 @@ Either an item action button was pressed (params carry { id, title, category, ac
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

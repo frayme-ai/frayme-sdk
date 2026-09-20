@@ -40,7 +40,7 @@ Hierarchical breadcrumb path trail. items go root → current; the last item is 
 | `size` | `"sm" \| "md" \| "lg"` | Font size of the trail (default md). Use sm for a dense sub-header. |
 | `maxItems` | `number` | Collapse a long trail: when the number of items exceeds this cap (minimum 3), keep the first item, replace the middle with a single non-clickable "…" entry, and keep the trailing items so the current page always shows (shadcn BreadcrumbEllipsis convention). Omit (default) or a value ≥ the item count to show every item. A plain count, not a dimension. |
 | `accent` | `string` | Color of the current/last item (and link hover). Names a specific brand color; default is the foreground token. |
-| `mutedColor` | `string` | Secondary/muted text colour — the non-current trail items, link rest state, and the separator glyphs (at 70% strength; default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the non-current trail items, link rest state, and the separator glyphs (at 70% strength; default the muted-foreground token). |
 | `font` | `"sans" \| "serif" \| "mono" \| "rounded" \| "display"` | Typeface for the whole breadcrumb trail; cascades to descendants via font inheritance (sans · serif · mono · rounded · display). Omit to inherit the theme font. |
 | `weight` | `"light" \| "normal" \| "medium" \| "semibold" \| "bold"` | Font weight of the crumb labels (light · normal · medium · semibold · bold; default normal, with the current page medium). |
 | `tracking` | `"tighter" \| "tight" \| "normal" \| "wide" \| "wider"` | Letter-spacing of the crumb labels (tighter · tight · normal · wide · wider; default normal). |
