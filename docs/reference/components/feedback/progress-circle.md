@@ -37,5 +37,5 @@ A circular/radial progress ring with the percentage in the center. Use for a sin
 | `color` | `string` | Exact fill colour of the progress arc (the filled portion of the ring); wins over the `tone` token. Set to a brand colour when the semantic tones do not fit. |
 | `trackColor` | `string` | Exact color of the unfilled track ring behind the arc (default a muted token). |
 | `valueColor` | `string` | Exact colour of the centre percentage value text (default the foreground token). The shared value-text channel across Gauge/RadialBar/ProgressCircle. |
-| `mutedColor` | `string` | Secondary/muted text colour — the small caption under the center percentage (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the small caption under the center percentage (default the muted-foreground token). |
 | `ariaLabel` | `string` | Override the screen-reader label for the ring (default the computed "&lt;pct>% &lt;label>" summary). |

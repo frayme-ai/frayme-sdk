@@ -6,7 +6,7 @@ The ten failures integrators actually hit, each with its cause and fix.
 
 **Symptom:** `AUTHENTICATION_REQUIRED` even though the key is in the dashboard.
 
-Almost always the header, not the key. Check in order: the header is exactly `Authorization: Bearer fr_…` (the `Bearer ` prefix is required); the env var doesn't carry a trailing newline or quote from your secrets manager; you're not sending a truncated key (they're shown once at mint, so re-mint if unsure); the key wasn't revoked or expired. Confirm with the smallest possible call:
+Almost always the header, not the key. Check in order: the header is exactly `Authorization: Bearer fr_live_…` (the `Bearer ` prefix is required); the env var doesn't carry a trailing newline or quote from your secrets manager; you're not sending a truncated key (they're shown once at mint, so re-mint if unsure); the key wasn't revoked or expired. Confirm with the smallest possible call:
 
 ```bash
 curl -i https://api.frayme.ai/v1/me -H "Authorization: Bearer $FRAYME_API_KEY"

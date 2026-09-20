@@ -8,7 +8,7 @@
 | [DropdownMenu](dropdown-menu.md) | Dropdown menu with trigger button and selectable items. Use { $bindState } on value for selected item binding. |
 | [Menubar](menubar.md) | An application-style horizontal menu bar (File / Edit / View). Each top-level label opens a dropdown of items  |
 | [Navbar](navbar.md) | Horizontal top navigation bar. Renders a &lt;nav> with an optional left brand label (with an optional leading  |
-| [NavigationMenu](navigation-menu.md) | A two-level navigation menu with flyout submenus. Each top-level item is a link, or — when it has `children` — |
+| [NavigationMenu](navigation-menu.md) | A two-level navigation menu with flyout submenus. Each top-level item is a link, or, when it has `children`, |
 | [Pagination](pagination.md) | Page navigation. Use { $bindState } on page for current page number. `siblingCount` sets how many numbers flan |
 | [SidebarItem](sidebar-item.md) | A single Sidebar entry. Renders a safe anchor when `href` is set, otherwise a button (bind on.commit). `active |
 | [Sidebar](sidebar.md) | Vertical app navigation rail. Renders an &lt;aside> with an optional title header and SidebarItem children. `c |

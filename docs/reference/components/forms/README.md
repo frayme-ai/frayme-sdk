@@ -8,10 +8,10 @@
 | [Checkbox](checkbox.md) | Single checkbox bound to a boolean `checked`. Use for an independent on/off choice (agree to terms, opt-in) or |
 | [ColorPicker](color-picker.md) | Swatch-grid color picker with an optional hex field and a live preview chip. Two-way bound on `value`; per-swa |
 | [Combobox](combobox.md) | Single-select typeahead / autocomplete. The input holds the query; a filtered menu lists matching options (cas |
-| [DatePicker](date-picker.md) | Single-date picker: a bordered field (formatted value or placeholder + a leading calendar icon) above an inlin |
-| [DateRangePicker](date-range-picker.md) | Date-range picker: a field showing "start – end" above one inline month grid where days between the endpoints  |
+| [DatePicker](date-picker.md) | Single-date picker: a bordered field button (formatted value or placeholder + a leading calendar icon) that op |
+| [DateRangePicker](date-range-picker.md) | Date-range picker: a field button showing "start, end" that opens a month grid on demand, where days between  |
 | [FieldError](field-error.md) | Inline validation error. Renders a small danger-toned line with a leading alert-circle icon and role="alert".  |
-| [FileUpload](file-upload.md) | Click-to-upload zone: a dashed zone wrapping a native file picker (drag-drop is NOT handled — dropping a file  |
+| [FileUpload](file-upload.md) | Click-to-upload zone: a dashed zone wrapping a native file picker (drag-drop is NOT handled, dropping a file  |
 | [FormField](form-field.md) | Field group: a label + the wrapped control (children) + a help/error line. Use to give any bare control a cons |
 | [Form](form.md) | Form wrapper that lays out fields + a submit button. Bind on.commit for the handler; the renderer prevents the |
 | [Input](input.md) | Text input field, with optional inline prefix/suffix strings and a leading `icon` rendered inside the bordered |

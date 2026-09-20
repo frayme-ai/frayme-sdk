@@ -23,7 +23,7 @@ The request body is `snake_case` and **strict**: any unknown field is rejected w
 | `action_policy` | enum | no | `open` (default): model-authored actions beyond your contract stay live · `declared_only`: the server strips every non-builtin action you didn't declare. |
 | `prior_spec` | object | no | ≤ 48,000 chars serialized. Your current spec; the server returns a minimal patch (edit mode). Validated before use. |
 | `action_context` | object | no | ≤ 16,000 chars serialized. What the user just did. See [action_context fields](#action_context-fields). Pair with `mode: "continue_journey"`. |
-| `custom_components` | array | no | ≤ 20 BYOC manifests (your plan's limit may be lower). Compiled manifests share a 12,000-char per-request budget. |
+| `custom_components` | array | no | ≤ 20 BYOC manifests per request, on every plan. Compiled manifests share a 12,000-char per-request budget. |
 | `max_operations` | integer | no | 1-200. Caps the number of streamed operations. |
 | `context` | object | no | `theme` (≤ 40 chars): **the** theme dial, `"light"` or `"dark"`; `framework_hint` (≤ 60 chars): a layout hint such as `"dashboard"`. |
 | `metadata` | object | no | ≤ 24,000 chars serialized. Free-form; recorded with the generation for your own correlation. Not shown to the model. |
@@ -101,8 +101,8 @@ With `stream: true` (the default) the response is `text/event-stream`. Every fra
 | --- | --- | --- | --- |
 | 1 | `compose.started` | `generation_id`, `model` | Composition began. |
 | 2 | `op` × N | `op`, `path`, `value?`, `from?` | One json-render operation. **Provisional**: safe to render live, but not final. |
-| 2b | `compose.restarted` × 0-2 | `generation_id`, `model` (next attempt), `reason.code` | The previous attempt failed validation and is being retried on a stronger model. **Discard all rendered state**: subsequent `op` frames build a fresh spec. |
-| 3 | `compose.completed` | `generation_id`, `model`, `operation_count`, `usage`, `validated: true`, `interactions`, `components_used`, `replayed?` | The **only** finalizer. The spec passed validation; this is the billing moment. |
+| 2b | `compose.restarted` × 0-1 | `generation_id`, `model` (next attempt), `reason.code` | The previous attempt failed validation and is being retried on a stronger model (at most one restart per request today; treat every one the same way). **Discard all rendered state**: subsequent `op` frames build a fresh spec. |
+| 3 | `compose.completed` | `generation_id`, `model`, `operation_count`, `usage`, `validated: true`, `interactions`, `components_used`, `replayed?` | The **only** finalizer. The spec passed validation (the same `validateSpec` the `@frayme/runtime` renderer applies, so what ships is what renders); this is the billing moment. |
 | - | `error` | `error.code`, `error.message` | In-band terminal failure. Never billed. Codes match the [error taxonomy](errors.md). |
 
 A `: ping` comment is sent every 15 seconds to keep proxies from idling the connection.
@@ -126,7 +126,7 @@ With `stream: false`, one envelope after composition finishes:
     "interactions": [
       { "element": "submitBtn", "event": "commit", "action": "approveRefund", "kind": "agent", "params": null }
     ],
-    "components_used": ["Button", "Card", "TextField"]
+    "components_used": ["Button", "Card", "Input"]
   }
 }
 ```

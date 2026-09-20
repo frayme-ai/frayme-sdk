@@ -76,7 +76,7 @@ A bounded, editable data grid: header-labelled columns and rows where you edit o
 | `rows` | `((string \| number \| boolean \| null)[] \| Record&lt;string, string \| number \| boolean \| null>)[]` | Row data: an array of cell arrays (aligned to columns) OR objects keyed by column.key. Omit for a demo. Capped at 200 rows. |
 | `value` | `((string \| number \| boolean \| null)[])[]` | Bindable live cell matrix (array of cell-arrays, aligned to columns). Bind this to spec.state so an external Button can read the currently edited grid; it is mirrored on every committed cell edit and Save. Omit unless you need the external-read path. |
 | `editable` | `boolean` | Allow cell editing (default true). Set false for a read-only grid (clicking a cell still emits select). |
-| `lockedRows` | `number[]` | 0-based indices of rows the end user cannot edit (every cell read-only) while the rest of the grid stays editable — template/formula/total rows in a budget or timesheet ("the totals row is calculated; leave it"). Columns have their own per-column `readonly`. UI-level enforcement only — the host still validates. |
+| `lockedRows` | `number[]` | 0-based indices of rows the end user cannot edit (every cell read-only) while the rest of the grid stays editable, template/formula/total rows in a budget or timesheet ("the totals row is calculated; leave it"). Columns have their own per-column `readonly`. UI-level enforcement only, the host still validates. |
 | `showRowHeaders` | `boolean` | Show a leading row-header column labelling each row (default `false`); turn on for named rows or when `rowLabels` is supplied. |
 | `rowLabels` | `string[]` | Text for the row-header column, one per row (default the row number `1..n`); requires `showRowHeaders` to be visible. |
 | `zebra` | `boolean` | Tint alternate rows with a subtle stripe for readability (default true). |
@@ -109,7 +109,7 @@ Save was pressed OR a row was added. On save: { reason: "save", rowCount, change
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

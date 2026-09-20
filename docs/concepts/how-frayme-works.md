@@ -46,7 +46,7 @@ import '@frayme/runtime/styles.css';
 
 That is the whole integration surface: one API call in, one renderer out, one action callback back.
 
-If your agent runs on the [Vercel AI SDK](../frameworks/ai-sdk.md), `fraymeTools()` from `@frayme/api/ai-sdk` packages the compose and action calls as ready-made agent tools.
+If your agent runs on the [Vercel AI SDK](../frameworks/ai-sdk.md), `fraymeTools({ client, messages })` from `@frayme/api/ai-sdk` packages the compose and action calls as the ready-made `frayme_compose` and `frayme_action` tools, and adds `lookup_intent` and `query_source` when you pass `intents` or `sources`.
 
 ## Where Frayme sits
 

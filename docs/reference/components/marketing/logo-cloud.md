@@ -38,4 +38,4 @@ A row/grid of partner or customer logos with an optional muted heading. `graysca
 | `grayscale` | `boolean` | Render logos muted/desaturated until hover (the classic logo-wall treatment, default true). |
 | `size` | `"sm" \| "md" \| "lg"` | Logo height enum: sm (1.5rem) · md (2rem, default) · lg (3rem). Width stays auto for aspect; overridden by the exact `height` value channel when set. |
 | `height` | `string \| number` | Exact logo height (e.g. "40px" / "2.5rem"; width stays auto for aspect). Overrides the `size` enum, which is the default. |
-| `mutedColor` | `string` | Secondary/muted text colour — the heading above the logos and the alt-text fallback of a failed/absent logo (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the heading above the logos and the alt-text fallback of a failed/absent logo (default the muted-foreground token). |

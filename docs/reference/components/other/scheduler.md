@@ -1,6 +1,6 @@
 # Scheduler
 
-A professional day/week scheduler: a vertical hour axis with one column per day or resource, events as duration-sized blocks that split into side-by-side lanes when they overlap, and a live current-time line. It holds the full event set in state — click an empty slot to create (with an inline editor), click an event to view / edit / delete it in a popover, drag to reschedule, and drag its bottom edge to resize. Every change renders instantly AND emits a fully-populated intent (commit / change / move / dismiss / select) for the host to persist. Times are "HH:MM" or minutes-from-midnight, validated and positioned proportionally. Bind `value` with `{ $bindState }` so the agent (or a sibling control) can read the live event set (mirrored on every create/edit/move/delete) from spec.state. PERMISSION FIDELITY: when the request scopes what the end user may change, mirror it exactly — `locked` per event or `lockExisting` for add-only grids; these are UX-level locks, the host still validates every intent.
+A professional day/week scheduler: a vertical hour axis with one column per day or resource, events as duration-sized blocks that split into side-by-side lanes when they overlap, and a live current-time line. It holds the full event set in state, click an empty slot to create (with an inline editor), click an event to view / edit / delete it in a popover, drag to reschedule, and drag its bottom edge to resize. Every change renders instantly AND emits a fully-populated intent (commit / change / move / dismiss / select) for the host to persist. Times are "HH:MM" or minutes-from-midnight, validated and positioned proportionally. Bind `value` with `{ $bindState }` so the agent (or a sibling control) can read the live event set (mirrored on every create/edit/move/delete) from spec.state. PERMISSION FIDELITY: when the request scopes what the end user may change, mirror it exactly, `locked` per event or `lockExisting` for add-only grids; these are UX-level locks, the host still validates every intent.
 
 ## Example
 
@@ -86,7 +86,7 @@ A professional day/week scheduler: a vertical hour axis with one column per day 
 | Prop | Type | Description |
 | --- | --- | --- |
 | `columns` | `({ label: string })[]` | The day/resource columns, left to right; each is { label }. Defaults to a single "Today" column. |
-| `events` | `({ id: string, title: string, start: string \| number, end: string \| number, column: number, subtitle: string, description: string, color: string, locked: boolean })[]` | The events to place; each is { id?, title, start, end, column?, subtitle?, description?, color?, locked? }. Events with unparseable times are skipped. The component holds these in state and mutates them as the user schedules — except `locked` events, which stay exactly as supplied. |
+| `events` | `({ id: string, title: string, start: string \| number, end: string \| number, column: number, subtitle: string, description: string, color: string, locked: boolean })[]` | The events to place; each is { id?, title, start, end, column?, subtitle?, description?, color?, locked? }. Events with unparseable times are skipped. The component holds these in state and mutates them as the user schedules, except `locked` events, which stay exactly as supplied. |
 | `value` | `({ id: string, title: string, start: string \| number, end: string \| number, column: number, subtitle: string, description: string, color: string })[]` | Bindable ($bindState) mirror of the LIVE schedule: the component writes the full resolved event set here on every create/edit/move/delete, so an external Button can read the current schedule from spec.state without replaying the event stream. Seed it or leave it for the component to populate. |
 | `startHour` | `number` | First hour shown at the top of the time axis, 0..23 (default 8); lower it for early-morning schedules so events are not clipped off the grid. |
 | `endHour` | `number` | Last hour shown on the axis, 1..24 (default 18); coerced above startHour. |
@@ -94,7 +94,7 @@ A professional day/week scheduler: a vertical hour axis with one column per day 
 | `hour12` | `boolean` | Show 12-hour clock labels ("9:00 AM") vs 24-hour ("09:00") on the axis + popover (default true = 12-hour). |
 | `nowLine` | `boolean` | Show a live "current time" line across the grid (client-only; default true). Hidden when the current time is outside the window. |
 | `editable` | `boolean` | Allow scheduling (default true): click an empty slot to CREATE (opens an inline editor), click an event to VIEW/EDIT/DELETE it in a popover, drag to RESCHEDULE, drag the bottom edge to RESIZE. Set false for a read-only grid (clicking an event still opens a read-only popover and emits `select`). |
-| `lockExisting` | `boolean` | The ADD-ONLY permission shape: lock every event supplied via props (as if each carried locked:true) while empty-slot creation stays live — the end user can schedule NEW entries but cannot move, edit, or delete the existing ones. Use when the request grants create-but-not-modify rights ("crew can book new slots; confirmed appointments are read-only"). UI-level enforcement only — the host still validates every intent. |
+| `lockExisting` | `boolean` | The ADD-ONLY permission shape: lock every event supplied via props (as if each carried locked:true) while empty-slot creation stays live, the end user can schedule NEW entries but cannot move, edit, or delete the existing ones. Use when the request grants create-but-not-modify rights ("crew can book new slots; confirmed appointments are read-only"). UI-level enforcement only, the host still validates every intent. |
 | `snapMinutes` | `number` | Snap increment in minutes for create/drag (default 15; e.g. 30 for half-hour slots). 0 disables snapping. |
 | `defaultDuration` | `number` | Length in minutes of an event created by clicking an empty slot (default 60). |
 | `newEventTitle` | `string` | Title given to a click-created event before it is edited (default "New event"). Escaped text. |
@@ -121,13 +121,13 @@ An event was opened (clicked without dragging); params carry the full event { id
 
 ### commit
 
-Either an empty slot was clicked to CREATE an event (params carry the full new event, same shape as `select`; the host adds it and recomposes) OR the opt-in "Save schedule" footer button was pressed (params carry { events, count } — the full resolved event set as a single whole-schedule snapshot).
+Either an empty slot was clicked to CREATE an event (params carry the full new event, same shape as `select`; the host adds it and recomposes) OR the opt-in "Save schedule" footer button was pressed (params carry { events, count }, the full resolved event set as a single whole-schedule snapshot).
 
 | Key | Type | Description |
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |
@@ -152,7 +152,7 @@ An event was dragged to RESCHEDULE or resized; params carry the full updated eve
 | `toColumn` | `string` | Optional. Target column key (kanban). |
 | `fromIndex` | `number` | Optional. Source position (kanban/reorder). |
 | `toIndex` | `number` | Optional. Target position (kanban/reorder). |
-| `splitPercent` | `number` | Optional. Final divider position (SplitPane, 0–100, on pointer-up). |
+| `splitPercent` | `number` | Optional. Final divider position (SplitPane, 0-100, on pointer-up). |
 | `width` | `number` | Optional. Final width in px (Resizable, on pointer-up). |
 | `height` | `number` | Optional. Final height in px (Resizable, on pointer-up). |
 | `axis` | `'x' \| 'y' \| 'both'` | Optional. Which axis the resize changed (Resizable). |

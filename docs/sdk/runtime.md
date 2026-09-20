@@ -6,7 +6,7 @@ Renders Frayme specs as live, interactive React UI: one renderer component, a st
 npm i @frayme/runtime
 ```
 
-ESM, MIT, Node ≥ 20.19, React ≥ 19. Version 0.5.0. The `ai` / `@ai-sdk/react` peers are optional, needed only for the `/ai-sdk` entrypoint.
+ESM, MIT, Node ≥ 20.19, React ≥ 19. Version 0.6.0. The `ai` / `@ai-sdk/react` peers are optional, needed only for the `/ai-sdk` entrypoint.
 
 ## Entrypoints
 
@@ -285,13 +285,13 @@ The handle (`onAction`'s second argument):
 | `status` | `'idle' \| 'streaming' \| 'restarting' \| 'complete' \| 'error'`. It reads `streaming` from the moment the props change. |
 | `generationId` | The generation `spec` belongs to. |
 | `edit(prompt, extra?)` | Change the last complete screen in place (`mode: 'edit'`). With no complete screen, sends a fresh create instead. |
-| `continue(event, prompt?, extra?)` | Compose the next step after a press (`mode: 'continue_journey'`, the press as `action_context`), cut to the API's size limits. |
+| `continue(event, prompt?, extra?)` | Compose the next step after a press: a plain create whose prompt names the control that was pressed, with the pressed action's params as `data` over the props' own. The pressed screen is not sent, and neither is the event's `state`. Without `prompt` (or `extra.prompt`), it writes one naming the control. |
 | `retry()` | Send the last request again, unchanged. Does nothing unless `status` is `'error'`. |
 | `abort()` | Stop the compose in flight. |
 
-`edit` and `continue` resend the props' `data`, `actions`, `signals` and `context`, and `extra` overrides any of them. Only a complete screen is ever sent as `prior_spec`.
+`edit` and `continue` resend the props' `data`, `actions`, `signals` and `context`, and `extra` overrides any of them. Only a complete screen is ever sent as `prior_spec`, and only by `edit`.
 
-`continue` fits the request to the API's [size limits](api.md#request-size-limits) with `fitContinuation` from `@frayme/api`. A press over 16,000 characters loses its `state`, then its `params`, but keeps the action name and ids. A screen over 48,000 characters is left out, so the next screen is built from the press alone. A table's row action can carry every row, so this matters most there. `edit` doesn't fit anything: a screen too large to edit gets the API's error notice. A failed compose shows an error notice above the last good screen, with a "Try again" button when retrying could help. That's a dropped connection, a timeout, a rate limit or a server error, but not a bad request or an exhausted quota.
+`continue` derives only what you did not give it: pass a `prompt` and yours is used, and name `data` in `extra` and the derived values are left out entirely. The control's own `label` and `description` are stripped from the derived `data`, because a `data` key the composer does not use is drawn on the screen as a stray detail. Since 0.6.0 nothing is cut to fit on a continue: the request carries no `prior_spec` and no `action_context`. `edit` sends the screen as it is: a screen too large to edit gets the API's error notice. A failed compose shows an error notice above the last good screen, with a "Try again" button when retrying could help. That's a dropped connection, a timeout, a rate limit or a server error, but not a bad request or an exhausted quota.
 
 `useFraymeScreen(options)` is the same logic as a hook. It returns the handle plus `restartKey`, `screenKey` (use it as the renderer's React `key`), `model` and `error`, and you render the spec yourself. If no client is available, both throw during render. See [Chatless screens](../guides/chatless-screens.md).
 
@@ -345,7 +345,7 @@ Ship `@frayme/runtime/styles.css` for the defaults, then override tokens per ins
 }
 ```
 
-`ThemeTokens` keys: `primary`, `primaryForeground`, `background`, `foreground`, `card`, `cardForeground`, `border`, `muted`, `mutedForeground`, `danger`, `dangerForeground`, `success`, `successForeground`, `warning`, `warningForeground`, `info`, `infoForeground`, `accent`, `radius`, `fontFamily`. `accent` (`--frayme-accent`) colors every interactive state at once: a switch that is on, a selected row or option, a checked box, the focus ring. If you leave it unset, the neutral default stays.
+`ThemeTokens` keys: `primary`, `primaryForeground`, `background`, `foreground`, `card`, `cardForeground`, `border`, `muted`, `mutedForeground`, `danger`, `dangerForeground`, `success`, `successForeground`, `warning`, `warningForeground`, `info`, `infoForeground`, `accent`, `accentForeground`, `radius`, `fontFamily`. `accent` (`--frayme-accent`) colors every interactive state at once: a switch that is on, a selected row or option, a checked box, the focus ring. If you leave it unset, the neutral default stays. `accentForeground` (`--frayme-accent-fg`) is the ink on an accent fill; leave it out and it is picked by contrast, as `primaryForeground` is. Since 0.6.0 a passed `primary` also fills every main action, and `onFillInk(fill)` from the root is the contrast picker behind both inks.
 
 The theme types:
 

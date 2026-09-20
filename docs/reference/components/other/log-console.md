@@ -1,6 +1,6 @@
 # LogConsole
 
-A virtualized log console: thousands of lines with fixed-row virtualization, per-line severity color from a closed level enum, ANSI stripped to plain text, a level+search toolbar, wrap toggle, copy, and sticky auto-scroll (follow) with a "jump to latest" pill. Fed by a static snapshot the host recomposes (no socket). Escaped text; SSR-safe (renders top-anchored, jumps to the tail on mount). Bind `levels`, `query`, `follow`, `wrap`, `selectedIndex` with `{ $bindState }` so the agent (or a sibling control) can read the live view state from spec.state — `levels` holds the enabled severity filter, `query` the active search text, `follow` whether auto-scroll is on, `wrap` whether long lines wrap, `selectedIndex` the selected line index.
+A virtualized log console: thousands of lines with fixed-row virtualization, per-line severity color from a closed level enum, ANSI stripped to plain text, a level+search toolbar, wrap toggle, copy, and sticky auto-scroll (follow) with a "jump to latest" pill. Fed by a static snapshot the host recomposes (no socket). Escaped text; SSR-safe (renders top-anchored, jumps to the tail on mount). Bind `levels`, `query`, `follow`, `wrap`, `selectedIndex` with `{ $bindState }` so the agent (or a sibling control) can read the live view state from spec.state, `levels` holds the enabled severity filter, `query` the active search text, `follow` whether auto-scroll is on, `wrap` whether long lines wrap, `selectedIndex` the selected line index.
 
 ## Example
 
@@ -67,7 +67,7 @@ A virtualized log console: thousands of lines with fixed-row virtualization, per
 | `wrap` | `boolean` | Wrap long lines instead of horizontal scroll (default false); the current wrap toggle mirrors back into (bindable) state so an external Button can read whether long-line wrapping is on. |
 | `selectedIndex` | `number` | Zero-based index of the currently-selected log line; a line click writes the index here (mirrored into bindable state) so an external Button can read which line is selected. null = nothing selected. |
 | `showSearch` | `boolean` | Show the search box for filtering log lines (default true). |
-| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit — no per-keystroke stream. |
+| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit, no per-keystroke stream. |
 | `maxHeight` | `string \| number` | Max console height before the body scrolls (default 24rem). |
 | `rowHeight` | `number` | Fixed row height in px for virtualization (default 20, clamped 16..40). |
 | `accent` | `string` | Accent color of the active toolbar controls + jump pill (default the primary token). |
@@ -77,7 +77,7 @@ A virtualized log console: thousands of lines with fixed-row virtualization, per
 
 ### search
 
-The search query changed; params carry { query }. Only fires when emitOnChange !== false — otherwise the query lives in (bindable) state and is read on demand (e.g. via the copy `commit` or an external Button).
+The search query changed; params carry { query }. Only fires when emitOnChange !== false, otherwise the query lives in (bindable) state and is read on demand (e.g. via the copy `commit` or an external Button).
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -113,7 +113,7 @@ The copy affordance was used; params carry { control:"copy", count, text (the jo
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

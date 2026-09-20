@@ -38,13 +38,13 @@ Compact −/+ quantity stepper with an editable numeric readout, clamped to [min
 | `weight` | `"light" \| "normal" \| "medium" \| "semibold" \| "bold"` | Font weight of the field label (default medium); set to dial the emphasis up or down. |
 | `tracking` | `"tighter" \| "tight" \| "normal" \| "wide" \| "wider"` | Letter-spacing of the field label (default normal); reach for `wide`/`wider` on an uppercase caption. |
 | `disabled` | `boolean` | Grey out the whole control (60% opacity, not-allowed cursor) and block the readout and both −/+ buttons (default false). |
-| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit — no per-keystroke stream. |
+| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit, no per-keystroke stream. |
 
 ## Events
 
 ### change
 
-A step button was clicked or the readout was typed into (clamped to [min,max]); params carry { value }. Only fires when `emitOnChange` !== false — otherwise the value lives in bindable state for an external Button to read.
+A step button was clicked or the readout was typed into (clamped to [min,max]); params carry { value }. Only fires when `emitOnChange` !== false, otherwise the value lives in bindable state for an external Button to read.
 
 | Key | Type | Description |
 | --- | --- | --- |

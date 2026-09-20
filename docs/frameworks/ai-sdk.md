@@ -55,7 +55,7 @@ export async function POST(req: Request) {
 
 See [`@frayme/api/ai-sdk`](../sdk/api-ai-sdk.md) for the full reference.
 
-- **Without `messages`,** the tools still compose, but nothing can be read from the chat. `frayme_compose` offers no `edit_of` and refuses `mode: 'edit'`, and every screen is built fresh. `frayme_action` forwards the call as the model wrote it (only cut to the API's size ceilings), so the model must copy the whole event, params and state included.
+- **Without `messages`,** the tools still compose, but nothing can be read from the chat. `frayme_compose` offers no `edit_of` and refuses `mode: 'edit'`, and every screen is built fresh. `frayme_action` takes the call as the model wrote it, so the model must copy the whole event; only the `prompt`, `data`, `actions` and `signals` it adds reach the composer.
 - **Custom components** are never offered to the model: `fraymeTools` leaves `custom_components` out of the `frayme_compose` schema. If your screens need them, wire your own tool from `@frayme/api/tools` (`createComposeTool`, or the definitions in [Lower level](#lower-level)) and add the manifests in your own code.
 
 ## Client: the chat page
@@ -116,10 +116,10 @@ Pass the whole message, as the snippet does: `fraymePart` reads its other parts 
 1. The user presses a control on a screen: a Button, a Form submit, a DataTable row action (see [Which controls reach your agent](../guides/state-and-actions.md#which-controls-reach-your-agent)). If the screen is final and `interactive`, `FraymeResult` calls `onPress` with the full `DynamicActionEvent`.
 2. `pressMessage(e)` builds the user's next message: text for the model, and the whole event under `metadata.frayme`. `sendMessage` posts it with the rest of the history.
 3. The model reads the text. Its last line is `frayme_action` followed by a short JSON object: the action name, the verb, the element id, the label and the generation id. The model calls `frayme_action` with that object, and adds `prompt`, `data`, `actions` and `signals` for the next screen.
-4. `fraymeTools({ messages })` checks the call against the press on the last user message and restores the params and state from its metadata. The page's copy of the event wins over the model's. When the pressed screen finished in this chat, the tool also attaches it as `prior_spec`, then sends a `continue_journey` compose.
+4. `fraymeTools({ messages })` checks the call against the press on the last user message: the page's copy of the event wins over the model's. It then composes the next screen fresh, as a plain create built from the model's `prompt`, `data`, `actions` and `signals`. The pressed screen is not attached, and the event's params and state are not sent: a value the user typed appears on the next screen only if the model named it in `data`, and the press itself is described in `prompt`.
 5. The next screen streams back as `frayme_action` outputs, and `fraymePart` draws the press itself as a card above it.
 
-The metadata never reaches the model: `convertToModelMessages` sends only the text. The params and state still arrive intact, because step 4 reads them from the metadata.
+The metadata never reaches the model: `convertToModelMessages` sends only the text. The tool reads the params and state from the metadata to check the call, and the model reads them as the text of the press message.
 
 The press is read leniently, the same way the page draws its card. Only the action name must be valid, a string of 1 to 60 characters. Any other field that does not fit is dropped rather than rejected:
 
@@ -127,12 +127,7 @@ The press is read leniently, the same way the page draws its card. Only the acti
 - an `element_id` or `generation_id` over 120 characters;
 - `params` or `state` that is not an object.
 
-A press can also be far larger than the screen it came from: a table's row action carries every row. A request over the API's size ceilings would fail before any model call, the same way every time, so `frayme_action` cuts it to fit instead:
-
-- If the press is over 16,000 characters of JSON, its `state` is left out first, then its `params`. The action name and the ids always stay.
-- A pressed screen over 48,000 characters is left out, and the next screen is built from the press alone.
-
-The call's outputs then carry `trimmed` (what was left out), and the model reads the same list with a plain-language `trimmed_note`, so it knows what the next screen was built without.
+A press can be far larger than the screen it came from (a table's row action carries every row), which is one reason nothing of the event is sent: the request `frayme_action` makes is the same size whatever the user did on the screen, and it is never cut to fit.
 
 A press is answered once. If the turn carries on in a new request (after a tool approval, or a tool the client ran) and the reply so far already holds a Frayme result that is not an error, the press counts as answered.
 
@@ -195,7 +190,7 @@ A screen can also be too large to send (over 48,000 characters of JSON). An edit
 If the API rejects the earlier screen, the two modes differ:
 
 - **An edit fails** with the API's error. It never quietly becomes a new screen, so the model cannot report a change that did not happen.
-- **A `continue_journey` goes on without the earlier screen,** once. This includes a press, whose pressed screen is sent the same way. The new screen's outputs carry `prior_spec_dropped: true`, and the model reads `prior_screen_dropped: true` with a note that the screen was built from the prompt alone.
+- **A `continue_journey` goes on without the earlier screen,** once. The new screen's outputs carry `prior_spec_dropped: true`, and the model reads `prior_screen_dropped: true` with a note that the screen was built from the prompt alone. A press is not affected: `frayme_action` attaches no screen.
 
 See [Edits and journeys](../guides/edits-and-journeys.md) for what an edit preserves.
 
@@ -278,7 +273,7 @@ import {
   tool,
   type UIMessage,
 } from 'ai';
-import Frayme, { fitContinuation, type ComposeRequest } from '@frayme/api';
+import Frayme, { type ComposeRequest } from '@frayme/api';
 import { actionToolDefinition, composeToolDefinition } from '@frayme/api/tools';
 import { composeStreamToDataParts } from '@frayme/runtime';
 
@@ -313,13 +308,12 @@ export async function POST(req: Request) {
           frayme_action: tool({
             description: actionToolDefinition.description,
             inputSchema: actionToolDefinition.inputSchema,
-            // `label` and `description` are for your thread card; the wire does not take them.
-            execute: ({ prompt, data, actions, signals, label, description, ...press }) =>
+            // A press composes a fresh screen: the event is read, but only the next
+            // screen's inputs are sent. The prompt names the press; `data` carries the
+            // values the next screen must show.
+            execute: ({ prompt, data, actions, signals, action }) =>
               streamScreen({
-                prompt: prompt ?? `The user pressed "${press.action}". Continue the journey.`,
-                mode: 'continue_journey',
-                // A big press (a table's rows) is cut to the API's size ceiling: state first, then params.
-                action_context: fitContinuation({ action_context: press }).action_context,
+                prompt: prompt ?? `The user pressed the "${action}" control. Show the next step.`,
                 data,
                 actions,
                 signals,

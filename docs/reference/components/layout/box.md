@@ -1,6 +1,6 @@
 # Box
 
-Primitive styled container for padding/border/background/shadow when Card is too much. Children stack VERTICALLY with a small built-in gap (never run together); for a horizontal row or a custom gap put a Stack inside the Box. Reach for it to visually group a few related elements — a callout strip, a framed hint, a soft-tinted summary — without the header chrome a Card implies.
+Primitive styled container for padding/border/background/shadow when Card is too much. Children stack VERTICALLY with a small built-in gap (never run together); for a horizontal row or a custom gap put a Stack inside the Box. Reach for it to visually group a few related elements, a callout strip, a framed hint, a soft-tinted summary, without the header chrome a Card implies.
 
 Accepts child elements via `children` (the `default` slot).
 
@@ -36,7 +36,7 @@ Accepts child elements via `children` (the `default` slot).
 | `shadow` | `"none" \| "sm" \| "md" \| "lg" \| "xl"` | Drop-shadow depth (default none). Use to lift the box off the page as a floating surface. |
 | `align` | `"start" \| "center" \| "end"` | Text alignment of the box content (default start). `center` for a centered callout/empty-state. |
 | `bg` | `string` | Background fill color. Names a specific surface color when no theme token fits; omit for transparent. |
-| `color` | `string` | On-surface text colour for everything inside the box — cascades to all child text (default the foreground token). Pair with `bg` so a dark fill keeps readable content. |
+| `color` | `string` | On-surface text colour for everything inside the box, cascades to all child text (default the foreground token). Pair with `bg` so a dark fill keeps readable content. |
 | `borderColor` | `string` | Border color (implies/with `bordered`). Use to tint the outline, e.g. a soft brand edge. |
 | `width` | `string \| number` | Explicit box width (e.g. "480px" or "100%"). Omit to fill/shrink to content. |
 | `minHeight` | `string \| number` | Minimum height (e.g. "60vh" for a full-bleed hero box, or "12rem"). Omit for intrinsic height. |

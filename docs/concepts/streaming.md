@@ -7,7 +7,7 @@
 Every streaming compose follows one shape:
 
 ```
-compose.started → op ×N → [compose.restarted → op ×N] ×0-2 → compose.completed
+compose.started → op ×N → [compose.restarted → op ×N] ×0-1 → compose.completed
                                                             | error
 ```
 
@@ -22,7 +22,7 @@ compose.started → op ×N → [compose.restarted → op ×N] ×0-2 → compose.
 Two rules fall out of this:
 
 1. **Ops are provisional until `compose.completed`.** Render them live for perceived speed, but treat the spec as unconfirmed: never persist or act on it before the completion event.
-2. **`compose.restarted` means discard.** Clear all rendered state and start accumulating again from empty (or from `prior_spec` in edit mode). Up to 2 restarts can occur per request.
+2. **`compose.restarted` means discard.** Clear all rendered state and start accumulating again from empty (or from `prior_spec` in edit mode). At most one restart occurs per request today; treat every one the same way.
 
 ## On the wire
 
@@ -103,7 +103,8 @@ for await (const event of frayme.compose.stream({ prompt })) {
 import { FraymeRenderer, useFraymeCompose } from '@frayme/runtime/react';
 
 function Composer() {
-  const { compose, spec, status, restartKey } = useFraymeCompose();
+  // Pass a Frayme client here, or set `client` on a <FraymeProvider> above.
+  const { compose, spec, status, restartKey } = useFraymeCompose(client);
 
   return (
     <>

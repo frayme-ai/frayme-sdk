@@ -40,11 +40,11 @@ A long list rendered with hand-rolled virtualization (only the visible rows are 
 | `itemHeight` | `number` | Fixed row height in pixels (default 44). Windowing needs a fixed height; if omitted every row renders. A plain px count, not a CSS dimension. |
 | `maxHeight` | `string \| number` | Height of the scroll viewport (e.g. "20rem"; default 20rem). The list scrolls inside it. Drives `--fr-vlist-h`. |
 | `overscan` | `number` | Extra rows rendered above/below the visible window for smooth scrolling (default 4). A plain count. |
-| `selectable` | `boolean` | Make rows clickable — clicking sets the selected value and emits `select` (default false). |
-| `value` | `string` | The currently selected row value (the clicked row's `value`, falling back to its label). Mirrored back here into spec.state so it works with {$bindState} — bind it and an external control (e.g. a Submit Button) can read the current selection. |
-| `mutedColor` | `string` | Secondary/muted text colour — each row description, the trailing meta text, the row leading icon, and the empty-state label (default the muted-foreground token). |
+| `selectable` | `boolean` | Make rows clickable, clicking sets the selected value and emits `select` (default false). |
+| `value` | `string` | The currently selected row value (the clicked row's `value`, falling back to its label). Mirrored back here into spec.state so it works with {$bindState}, bind it and an external control (e.g. a Submit Button) can read the current selection. |
+| `mutedColor` | `string` | Secondary/muted text colour, each row description, the trailing meta text, the row leading icon, and the empty-state label (default the muted-foreground token). |
 | `bg` | `string` | Background fill of the list viewport (default the card token). Names a specific brand color. |
-| `color` | `string` | Primary text colour — each row label (default the foreground token). |
+| `color` | `string` | Primary text colour, each row label (default the foreground token). |
 | `borderColor` | `string` | Border colour of the list viewport AND the dividers between rows, so both travel together (default the border token). |
 | `radiusValue` | `string \| number` | Exact corner rounding of the list viewport (e.g. "12px"; default the Frayme radius token). |
 
@@ -52,7 +52,7 @@ A long list rendered with hand-rolled virtualization (only the visible rows are 
 
 ### select
 
-A row was clicked while `selectable` is on (also sets the selection locally); params carry {value, label} — the row `value`, falling back to its label.
+A row was clicked while `selectable` is on (also sets the selection locally); params carry {value, label}, the row `value`, falling back to its label.
 
 | Key | Type | Description |
 | --- | --- | --- |

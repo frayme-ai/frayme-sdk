@@ -1,6 +1,6 @@
 # CopyButton
 
-One-click copy-to-clipboard button that flips to a transient "Copied!" state with a check icon. Self-contained — no host wiring needed. Reach for it beside a command, code snippet, URL or API key to give the user a frictionless copy; the label reverts to `label` after ~1.5s and it emits no events, so it never round-trips to the agent.
+One-click copy-to-clipboard button that flips to a transient "Copied!" state with a check icon. Self-contained, no host wiring needed. Reach for it beside a command, code snippet, URL or API key to give the user a frictionless copy; the label reverts to `label` after ~1.5s and it emits no events, so it never round-trips to the agent.
 
 ## Example
 

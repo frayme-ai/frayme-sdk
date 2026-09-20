@@ -21,7 +21,7 @@ curl https://api.frayme.ai/v1/me \
       "monthlyGenerations": 50000,
       "rateLimitPerMin": …,
       "generationsRemaining": 41258,
-      "inlineComponentsLimit": 5
+      "inlineComponentsLimit": 20
     }
   }
 }
@@ -40,7 +40,7 @@ curl https://api.frayme.ai/v1/me \
 | `plan.monthlyGenerations` | number | Generations included per month on your plan. |
 | `plan.rateLimitPerMin` | number | Your per-key burst limit, in requests per minute. This field is the source of truth for the number. It is set by your plan and not published elsewhere. See [rate limits](rate-limits.md). |
 | `plan.generationsRemaining` | number | Generations left in the current cycle. **Poll this** to alert before you hit the cap. |
-| `plan.inlineComponentsLimit` | number | Max inline `custom_components` per compose request on your plan (0 = BYOC not included). |
+| `plan.inlineComponentsLimit` | number | Max inline `custom_components` per compose request. 20 on every plan: a wire limit, not a plan gate. |
 
 ### With the SDK
 
@@ -74,7 +74,7 @@ curl https://api.frayme.ai/v1/health
   "data": {
     "status": "ok",
     "service": "frayme-inference-api",
-    "catalog_version": "frayme-0.18.0"
+    "catalog_version": "frayme-0.19.0"
   }
 }
 ```

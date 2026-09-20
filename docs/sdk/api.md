@@ -6,7 +6,7 @@ The official TypeScript client for the Frayme API: streaming and non-streaming c
 npm i @frayme/api
 ```
 
-ESM, MIT, Node ≥ 20.19. Version 0.5.0. Runs in Node, edge runtimes, and (in keyless proxy mode) the browser. Peers: `zod` and `@json-render/core`. `ai` is also a peer, but it's optional: only `@frayme/api/ai-sdk` needs it.
+ESM, MIT, Node ≥ 20.19. Version 0.6.0. Runs in Node, edge runtimes, and (in keyless proxy mode) the browser. Peers: `zod` and `@json-render/core`. `ai` is also a peer, but it's optional: only `@frayme/api/ai-sdk` needs it.
 
 ## Entry points
 
@@ -212,19 +212,15 @@ export function continueFrom(context: ComposeActionContext, screen: Spec) {
 
 `jsonSize(value)` returns the serialized length the limits count, or `Infinity` for a value that can't be serialized. `data` has no fitting helper: facts can't be cut without changing the screen, so keep `data` under its limit yourself.
 
-These parts of the SDK fit a request for you:
-
-- `createActionTool` fits `action_context` before it sends, without reporting the cut.
-- `frayme_action` from `fraymeTools` fits the press and the pressed screen, and reports the cut in `trimmed` on its outputs.
-- `frayme_compose` refuses an `edit_of` edit of a screen over the limit with `SCREEN_TOO_LARGE`, and leaves the screen out of a `continue_journey`.
-- `FraymeScreen.continue` in `@frayme/runtime` fits both fields.
+Since 0.6.0 the SDK's own press helpers send neither `action_context` nor `prior_spec`: `createActionTool`, `frayme_action` from `fraymeTools` and `FraymeScreen.continue` in `@frayme/runtime` compose the next screen as a fresh create (see [The round trip](#the-round-trip)), so they have nothing to fit. `fitContinuation` is for a request you build yourself. One part of the SDK still cuts to fit: `frayme_compose` refuses an `edit_of` edit of a screen over the limit with `SCREEN_TOO_LARGE`, and leaves the screen out of a `continue_journey`, reporting the cut in `trimmed` on its outputs.
 
 ## me() and health()
 
 ```ts
 const me = await frayme.me();
 // { workspace: { id, name, slug },
-//   plan: { tierKey, monthlyGenerations, rateLimitPerMin, generationsRemaining } }
+//   plan: { tierKey, monthlyGenerations, rateLimitPerMin, generationsRemaining,
+//           inlineComponentsLimit } }
 //   ← camelCase, unlike compose
 
 const health = await frayme.health(); // no auth: { status: 'ok', service, catalog_version }
@@ -350,17 +346,17 @@ const result = await frayme.compose.create({
 
 ### The round trip
 
-Only a press round-trips: a Button, a Confirmation verdict, a Form submit, a DataTable, or a row/bulk action on a table or board. Every other gesture stays local under `state._ui.<elementId>.<verb>` (latest per verb, never cleared by a press) and rides in the next press's `state`; `live: true` on the declared action is the opt-out, and Frayme injects a carrier button (labelled from `role`, else "Done") when an action is wired only to a non-press component. The event your host receives (`{ action, event, params, state, element_id, label, description, generation_id }`) goes to `frayme_action` verbatim; the bound tool omits `label` and `description` from the request because the wire's `action_context` does not carry them yet.
+Only a press round-trips: a Button, a Confirmation verdict, a Form submit, a DataTable, or a row/bulk action on a table or board. Every other gesture stays local under `state._ui.<elementId>.<verb>` (latest per verb, never cleared by a press) and rides in the next press's `state`; `live: true` on the declared action is the opt-out, and Frayme injects a carrier button (labelled from `role`, else "Done") when an action is wired only to a non-press component. The event your host receives (`{ action, event, params, state, element_id, label, description, generation_id }`) goes to `frayme_action` verbatim. Since 0.6.0 a press composes a fresh screen: the bound tool reads the event but sends none of it, so the request it makes is a plain create built from `prompt`, `data`, `actions` and `signals` (no `mode`, `action_context` or `prior_spec`). The `prompt` is the only place the press is described to the composer; without one the tool sends `The user pressed the "<action>" control. Show the next step.`
 
 ### The next screen's inputs
 
-A `continue_journey` compose builds a whole new screen, so `actionInputSchema` also takes the three fields `frayme_compose` uses to build one:
+The next screen is composed fresh, so `actionInputSchema` also takes the three fields `frayme_compose` uses to build one:
 
-- `data`: the facts the next screen shows, such as the saved record, the new total or the confirmation number.
-- `actions`: the controls the next screen needs. Re-declare every action it needs, including ones the previous screen already declared. An action you leave out comes back unwired.
+- `data`: the facts the next screen shows, such as the values the user just entered, the saved record, the new total or the confirmation number. A value the user typed that is not named here does not appear on the next screen. What was pressed belongs in `prompt`, never here: a `data` key the composer does not use is drawn on the screen as a stray detail.
+- `actions`: the controls that lead forward from here. An action you leave out comes back unwired. Do not re-declare the control just pressed with required params: a declared action that nothing binds makes the server add a button plus a blank input per param, putting back the form the next screen was meant to replace.
 - `signals`: steering for the next screen.
 
-They use the same schemas and limits as on `frayme_compose`. `createActionTool` sends them as top-level request fields next to `action_context`, never inside it. It also fits `action_context` to its [size limit](#request-size-limits) before sending:
+They use the same schemas and limits as on `frayme_compose`. `createActionTool` sends them as top-level request fields, and nothing else:
 
 ```ts
 import Frayme from '@frayme/api';

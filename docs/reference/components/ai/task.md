@@ -27,4 +27,4 @@ A single status row in an agent task list / plan: a state icon (circle/spinner/c
 | `detail` | `string` | Secondary muted line under the title (e.g. progress note or sub-step). |
 | `state` | `"pending" \| "active" \| "done" \| "error"` | Step status, shown as the leading icon + color: pending (empty circle, muted) · active (spinner, accent) · done (check, success) · error (x, danger). Default pending. |
 | `accent` | `string` | Override color for the status icon + title. A supplied accent replaces the state tone in EVERY state (including done-green and error-red), not just active; when unset, the active state uses the primary token. |
-| `mutedColor` | `string` | Secondary/muted text colour — the detail line under the title (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the detail line under the title (default the muted-foreground token). |

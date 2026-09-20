@@ -17,5 +17,5 @@
 | [LogoCloud](logo-cloud.md) | A row/grid of partner or customer logos with an optional muted heading. `grayscale` mutes them until hover; `c |
 | [PlanCard](plan-card.md) | A single plan/price card: name, price + period, a feature list with check marks, an optional ribbon badge, and |
 | [PricingTable](pricing-table.md) | A DISPLAY-ONLY plan-comparison grid: several plan columns with price, features, and an optional CTA. Each plan |
-| [SocialBar](social-bar.md) | A row of icon-only social/contact links — Twitter/X, Facebook, Instagram, LinkedIn, YouTube, GitHub (via `netw |
-| [Testimonial](testimonial.md) | A customer quote card: an optional star rating, the quote body (plain text — no markdown/HTML), and the author |
+| [SocialBar](social-bar.md) | A row of icon-only social/contact links, Twitter/X, Facebook, Instagram, LinkedIn, YouTube, GitHub (via `netw |
+| [Testimonial](testimonial.md) | A customer quote card: an optional star rating, the quote body (plain text, no markdown/HTML), and the author |

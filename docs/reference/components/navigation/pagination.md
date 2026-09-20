@@ -45,9 +45,9 @@ Page navigation. Use { $bindState } on page for current page number. `siblingCou
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `totalPages` | `number` | Total number of pages (1-based). Bounds the rendered page-number window and clamps navigation — `page` can never exceed it. |
+| `totalPages` | `number` | Total number of pages (1-based). Bounds the rendered page-number window and clamps navigation, `page` can never exceed it. |
 | `page` | `number` | Current page number (1-based). Use `{ $bindState }` for two-way binding so other elements can read and drive it; otherwise sets the initial page (default 1). |
-| `shape` | `"square" \| "rounded" \| "circle"` | Silhouette of each page button — square (sharp corners) · rounded (default) · circle (fully round pills). |
+| `shape` | `"square" \| "rounded" \| "circle"` | Silhouette of each page button, square (sharp corners) · rounded (default) · circle (fully round pills). |
 | `variant` | `"solid" \| "outline" \| "ghost"` | Resting look of the unselected page buttons: solid (filled) · outline (bordered, default) · ghost (transparent until hover). The active page always fills with `accent` regardless; use `ghost` for a lighter, borderless pager. |
 | `showEdges` | `boolean` | Show the « » first/last jump buttons flanking the pager (default true). Turn them off for a compact pager, or when `totalPages` is small enough that prev/next already reach every page. |
 | `showPrevNext` | `boolean` | Show the ‹ › previous/next arrow buttons flanking the page numbers (default true = shown). |
@@ -64,7 +64,7 @@ Page navigation. Use { $bindState } on page for current page number. `siblingCou
 | `firstIcon` | `string` | Glyph NAME for the first-page button (default the « char). Unknown/absent keeps «. Never raw SVG. |
 | `lastIcon` | `string` | Glyph NAME for the last-page button (default the » char). Unknown/absent keeps ». Never raw SVG. |
 | `accent` | `string` | Background fill and border of the current/active page button, plus a faint 10% tint of the same colour as the hover background on the resting ones (default the foreground token). Pairs with `accentText` for the numeral on that fill. |
-| `accentText` | `string` | Text colour of the label printed on the `accent` fill — the on-fill ink (default the primary-foreground token). |
+| `accentText` | `string` | Text colour of the label printed on the `accent` fill, the on-fill ink. Defaults to the card token, the inverse of the fill in both light and dark. |
 | `radius` | `"none" \| "sm" \| "md" \| "lg" \| "full"` | Corner-radius token for the control (default `md`); drop to `sm`/`none` on dense toolbars, `lg` or `full` for a pill-shaped button. |
 | `size` | `"sm" \| "md" \| "lg"` | Control height + padding + font-size together (default md). |
 | `fullWidth` | `boolean` | Stretch the control to fill its container width (default false); set true for stacked mobile CTAs or a button that spans a form row. |

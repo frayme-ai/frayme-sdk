@@ -47,7 +47,7 @@ Conversion funnel: stacked trapezoid stages narrowing as values drop. Each stage
 | `size` | `"sm" \| "md" \| "lg"` | Overall scale of dots, labels, and strokes (default md). |
 | `showValues` | `boolean` | Print each stage’s value in the stage list below the funnel (default true). |
 | `showPercent` | `boolean` | Print each stage’s percent of the FIRST stage (conversion rate; default false). |
-| `mutedColor` | `string` | Secondary/muted text colour — the conversion-rate percent beside each stage and the empty-state caption (default the muted-foreground token). |
-| `fillOpacity` | `"solid" \| "soft"` | Band fill weight: solid (the stage ramp at full strength, default) · soft (translucent bands — for a funnel used as a backdrop behind other content). soft shallows the stage ramp so the late stages stay visible, so keep solid when the colour step down the stages is doing the work. |
+| `mutedColor` | `string` | Secondary/muted text colour, the conversion-rate percent beside each stage and the empty-state caption (default the muted-foreground token). |
+| `fillOpacity` | `"solid" \| "soft"` | Band fill weight: solid (the stage ramp at full strength, default) · soft (translucent bands, for a funnel used as a backdrop behind other content). soft shallows the stage ramp so the late stages stay visible, so keep solid when the colour step down the stages is doing the work. |
 | `emptyText` | `string` | Override the empty-state message shown when there is no renderable data (default "No data"). |
 | `ariaLabel` | `string` | Override the chart’s accessible summary (the role="img" aria-label). Default is an auto-computed description of the data. |

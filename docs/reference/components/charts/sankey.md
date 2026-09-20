@@ -60,6 +60,6 @@ Sankey flow diagram: bands flow left→right between nodes laid out in columns. 
 | `fillOpacity` | `"solid" \| "soft"` | Flow-band fill weight: solid (heavier, more opaque bands) · soft (lighter, more translucent). Default keeps the current band opacity. |
 | `showValues` | `boolean` | Print each node’s total throughput in the legend below the chart (default false). |
 | `showLegend` | `boolean` | Show the legend mapping colour→node label below the diagram (default true). Hide it when the node labels alone carry the story. |
-| `mutedColor` | `string` | Secondary/muted text colour — the legend node names and the empty-state caption (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the legend node names and the empty-state caption (default the muted-foreground token). |
 | `emptyText` | `string` | Override the empty-state message shown when there is no renderable data (default "No data"). |
 | `ariaLabel` | `string` | Override the chart’s accessible summary (the role="img" aria-label). Default is an auto-computed description of the data. |

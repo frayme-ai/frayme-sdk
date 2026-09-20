@@ -28,7 +28,7 @@ Accepts child elements via `children` (the `default` slot).
 | `layout` | `"vertical" \| "horizontal" \| "inline"` | Field arrangement: vertical (stacked, default) · horizontal (label beside control rows) · inline (one compact row, e.g. an email + button signup). |
 | `gap` | `"none" \| "sm" \| "md" \| "lg" \| "xl"` | Spacing between fields. Reach for `sm` on a dense settings form, `lg` on a roomy onboarding step. |
 | `width` | `string \| number` | Explicit form width (e.g. "28rem" for a centered auth card, "100%" to fill). Omit for natural width. |
-| `disabled` | `boolean` | Disable EVERY field in the form at once via a native &lt;fieldset disabled> (default false). Use to lock the whole form while a submit is in flight — pairs with the `commit` event for the pending state; no per-field wiring needed. |
+| `disabled` | `boolean` | Disable EVERY field in the form at once via a native &lt;fieldset disabled> (default false). Use to lock the whole form while a submit is in flight, pairs with the `commit` event for the pending state; no per-field wiring needed. |
 
 ## Events
 
@@ -40,7 +40,7 @@ The form was submitted (native submit intercepted, no page reload); params carry
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

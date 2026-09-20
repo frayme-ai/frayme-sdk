@@ -1,33 +1,33 @@
 # Events
 
-Every interactive Frayme component emits one or more of eight canonical event verbs — a closed vocabulary, so handlers written once work across the whole catalog.
+Every interactive Frayme component emits one or more of eight canonical event verbs, a closed vocabulary, so handlers written once work across the whole catalog.
 
 ```ts
 import { CANONICAL_EVENTS, EVENT_CONTRACT, componentEvents } from '@frayme/catalog';
 
 CANONICAL_EVENTS; // ["commit","select","change","dismiss","search","sort","page","move"]
 componentEvents('Button'); // ['commit']
-componentEvents('Card');   // [] — display-only, no events
+componentEvents('Card');   // [], display-only, no events
 ```
 
 Most interactions (typing, toggling tabs, local filters) resolve inside the renderer without a round-trip; only spec-declared actions reach your host. When an event fires, its payload carries the intrinsic keys below.
 
 ## commit
 
-The user activated the primary affordance — a button/CTA press, Enter in an input, a form submit, a palette/menu action. The terminal "do it" signal of a surface.
+The user activated the primary affordance, a button/CTA press, Enter in an input, a form submit, a palette/menu action. The terminal "do it" signal of a surface.
 
 | Key | Type | Description |
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |
 
 ## select
 
-The user picked an item from a set — a table row, a calendar day, an option, a tree node, a list item. Identifies WHICH item in the params, not in the verb.
+The user picked an item from a set, a table row, a calendar day, an option, a tree node, a list item. Identifies WHICH item in the params, not in the verb.
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -40,7 +40,7 @@ The user picked an item from a set — a table row, a calendar day, an option, a
 
 ## change
 
-A value or disclosure state changed — typing, toggling, sliding, picking a date, expanding a section. The continuous "state moved" signal (commit is the terminal one).
+A value or disclosure state changed, typing, toggling, sliding, picking a date, expanding a section. The continuous "state moved" signal (commit is the terminal one).
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -49,7 +49,7 @@ A value or disclosure state changed — typing, toggling, sliding, picking a dat
 
 ## dismiss
 
-The user closed, discarded, removed or cleared something — a toast/banner close, a chip remove, a clear-all, a deny.
+The user closed, discarded, removed or cleared something, a toast/banner close, a chip remove, a clear-all, a deny.
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -69,7 +69,7 @@ The user entered query text to filter or search a surface.
 
 ## sort
 
-The user requested a sort — clicking a sortable column header cycles direction.
+The user requested a sort, clicking a sortable column header cycles direction.
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -78,7 +78,7 @@ The user requested a sort — clicking a sortable column header cycles direction
 
 ## page
 
-The user navigated pagination — a next/prev arrow, a numbered page button, or a table footer pager.
+The user navigated pagination, a next/prev arrow, a numbered page button, or a table footer pager.
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -86,7 +86,7 @@ The user navigated pagination — a next/prev arrow, a numbered page button, or 
 
 ## move
 
-The user repositioned something — dragging a kanban card, reordering, or resizing a divider. Pointer-driven resizes emit ONCE on release with the final geometry.
+The user repositioned something, dragging a kanban card, reordering, or resizing a divider. Pointer-driven resizes emit ONCE on release with the final geometry.
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -95,9 +95,17 @@ The user repositioned something — dragging a kanban card, reordering, or resiz
 | `toColumn` | `string` | Optional. Target column key (kanban). |
 | `fromIndex` | `number` | Optional. Source position (kanban/reorder). |
 | `toIndex` | `number` | Optional. Target position (kanban/reorder). |
-| `splitPercent` | `number` | Optional. Final divider position (SplitPane, 0–100, on pointer-up). |
+| `splitPercent` | `number` | Optional. Final divider position (SplitPane, 0-100, on pointer-up). |
 | `width` | `number` | Optional. Final width in px (Resizable, on pointer-up). |
 | `height` | `number` | Optional. Final height in px (Resizable, on pointer-up). |
 | `axis` | `'x' \| 'y' \| 'both'` | Optional. Which axis the resize changed (Resizable). |
+
+## Component-specific spellings
+
+A few components accept extra event keys on top of the canonical eight. They are exported as `COMPONENT_EXTRA_EVENTS` (distinct verbs the renderer fires when bound) and `COMPONENT_EVENT_ALIASES` (alternative spellings of a verb the component already emits); `acceptedEventKeys(type, declared)` lists every key a type accepts.
+
+- `DataTable`: `add`, `update` (component-specific verbs)
+- `DatePicker`: `commit` → `select` (aliases)
+- `DateRangePicker`: `commit` → `select` (aliases)
 
 Each component page lists which verbs that component emits, with component-specific notes.

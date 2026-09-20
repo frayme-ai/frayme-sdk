@@ -72,7 +72,7 @@ The body must be a JSON object sent as `application/json` (parameters such as `c
 
 Any other field answers 400 with `Unknown field "<name>".`, and so do `action_policy` and `metadata`, which are the server's business. The body is capped at `maxBodyBytes` (default 128 KiB), checked against `Content-Length` and again while reading, and a larger body answers 413.
 
-The handler cuts nothing to fit. It forwards the allowed fields as sent, and the API answers 400 when one is over its ceiling: `data` or `prior_spec` over 48,000 characters of JSON, or `action_context` over 16,000. `FraymeScreen`'s `continue` already cuts the press and the screen to fit before they reach the handler; `data` is yours to keep under its ceiling.
+The handler cuts nothing to fit. It forwards the allowed fields as sent, and the API answers 400 when one is over its ceiling: `data` or `prior_spec` over 48,000 characters of JSON, or `action_context` over 16,000. `FraymeScreen`'s `continue` sends neither a `prior_spec` nor an `action_context` (a press composes a fresh screen, with the pressed action's params in `data`), so on that path only `data` is yours to keep under its ceiling.
 
 ## The action policy is the server's
 

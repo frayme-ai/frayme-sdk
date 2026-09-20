@@ -34,7 +34,7 @@ Accepts child elements via `children` (the `default` slot).
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `title` | `string` | Trigger text — the always-visible section heading the user clicks to expand/collapse. Keep to 2-6 words ("Advanced options"). |
+| `title` | `string` | Trigger text, the always-visible section heading the user clicks to expand/collapse. Keep to 2-6 words ("Advanced options"). |
 | `defaultOpen` | `boolean` | Start expanded on first render (uncontrolled; default false = collapsed). Ignored once a bound `open` resolves. |
 | `open` | `boolean` | Controlled open state. Use { $bindState } to drive it from state; omit for uncontrolled (use defaultOpen instead). |
 | `variant` | `"bordered" \| "ghost"` | With (bordered, default) or without (ghost) a surrounding border box. |
@@ -42,15 +42,15 @@ Accepts child elements via `children` (the `default` slot).
 | `radius` | `"none" \| "sm" \| "md" \| "lg" \| "full"` | Corner radius of the box: none · sm · md (default, the theme radius) · lg · full. Visible with variant:bordered; use `radiusValue` for an exact value. |
 | `radiusValue` | `string \| number` | Exact corner radius of the box (e.g. "12px" / "1rem"). Overrides the `radius` enum, which is the default. |
 | `iconPosition` | `"start" \| "end"` | Caret position relative to the title: start (left) or end (right, default). |
-| `borderColor` | `string` | Border color of the surrounding box (default the border token); only visible with variant:bordered. Set it to tint the outline — e.g. a soft brand edge on a highlighted panel. |
+| `borderColor` | `string` | Border color of the surrounding box (default the border token); only visible with variant:bordered. Set it to tint the outline, e.g. a soft brand edge on a highlighted panel. |
 | `accent` | `string` | Text colour of the trigger title and its caret glyph, in every open/closed state (default: inherits the surrounding ink). The body content keeps its own colours. |
-| `chevronIcon` | `string` | Expand/collapse caret glyph — an icon NAME from the closed registry (e.g. "chevron-down", "plus"). Unknown/omitted → the default ▾ caret. Never raw SVG. |
+| `chevronIcon` | `string` | Expand/collapse caret glyph, an icon NAME from the closed registry (e.g. "chevron-down", "plus"). Unknown/omitted → the default ▾ caret. Never raw SVG. |
 
 ## Events
 
 ### change
 
-The section was expanded or collapsed via its trigger; params carry {open} — the resolved boolean open state after the toggle.
+The section was expanded or collapsed via its trigger; params carry {open}, the resolved boolean open state after the toggle.
 
 | Key | Type | Description |
 | --- | --- | --- |

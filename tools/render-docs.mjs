@@ -684,7 +684,7 @@ const FAILURE_CATEGORY_NOTES = {
   compiler_error: 'The stream compiler threw while replaying the operations.',
   empty_spec: 'Compilation produced no spec (or a spec with no root/elements).',
   catalog_validation_failed: 'A component type, prop shape, or spec structure check failed.',
-  invalid_prop_value: 'A literal prop value is not one of the options its schema allows (for example an out-of-enum `direction`).',
+  invalid_prop_value: 'A literal prop value fails its schema (an out-of-enum `direction`, a string where a number is due, a prop the component does not declare, a required prop missing), or the spec has a leaf with children, an undrawable chart, or a `$state` read that nothing seeds or writes.',
   unknown_element_key: 'An element carries a field the renderer does not recognise.',
   invalid_binding: 'A state binding or template expression is malformed.',
   invalid_directive: 'A `visible`/`watch`/conditional directive has the wrong shape.',
@@ -742,7 +742,7 @@ function validationPage(categories) {
     '- **`resolution`** — run the render-resolution gate (binding syntax, directive shapes, action kinds, value safety) after the catalog and referential checks. Off by default; recommended for authoring and CI pipelines.',
   );
   lines.push(
-    '- **`props`** — check every literal prop value against its schema options (`invalid_prop_value`). On by default: an out-of-enum value renders silently as the bare base style, so it is treated as a failure rather than a nuance.',
+    '- **`props`**: check every literal prop against its schema (enum, type, unknown and missing props) plus the structural rules (a leaf with children, an undrawable chart, a `$state` or `$bindState` read that is neither seeded in `/state` nor written by a control or an action), all reported as `invalid_prop_value`. On by default: an out-of-enum value renders silently as the bare base style, so it is treated as a failure rather than a nuance.',
   );
   lines.push(
     '- **`computed`** — check every `$computed` expression (registered function name, argument shape). On by default; skipped when `resolution: true` already ran the full gate.',
@@ -810,8 +810,24 @@ async function readIfExists(path) {
   }
 }
 
+/**
+ * The published docs carry no em or en dash (house rule for everything a
+ * customer reads). The catalog's own descriptions do, and they must stay as
+ * they are: the model is trained on them byte for byte. So the dash goes at
+ * render time: an em dash with spaces around it becomes a comma, an en dash
+ * between two characters (a range, "0-100", "Jul-Sep") becomes a hyphen, and
+ * any other dash becomes a comma.
+ */
+function plainDashes(text) {
+  return text
+    .replace(/\s*\u2014\s*/g, ', ')
+    .replace(/(?<=\S)\u2013(?=\S)/g, '-')
+    .replace(/\s*\u2013\s*/g, ', ');
+}
+
 /** Write `content` to `path` unless it already holds exactly that content. */
-async function emit(path, content, tally, dryRun) {
+async function emit(path, rawContent, tally, dryRun) {
+  const content = plainDashes(rawContent);
   const existing = await readIfExists(path);
   if (existing === content) {
     tally.unchanged++;

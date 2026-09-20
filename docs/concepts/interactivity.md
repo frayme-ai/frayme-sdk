@@ -14,7 +14,7 @@ user interaction
       └─ bound to a DECLARED action ─────────→ DynamicActionEvent → your agent
 ```
 
-Three built-in actions (`setState`, `pushState`, `removeState`) power the local layer; they mutate client state and never leave the browser. Everything else that fires must name an action, and a spec can only wire actions to things you enabled, so a rendered UI can never call out to anything you didn't declare.
+Three built-in actions (`setState`, `pushState`, `removeState`) power the local layer; they mutate client state and never leave the browser. Everything else that fires must name an action, and an action can only reach your own code: the `onDynamicAction` callback, the next compose as `action_context`, or a host transport you wire. By default (`action_policy: 'open'`) an action the model adds beyond your contract is forwarded to you the same way; send `action_policy: 'declared_only'` and the server strips every action you did not declare, along with any button left with nothing to do.
 
 ## The 8 canonical event verbs
 
@@ -63,7 +63,7 @@ const stream = frayme.compose.stream({
 });
 ```
 
-The action contract is enforced at [validation](validation.md) time: a `required` action that is not wired to a control fails the spec, so "the model forgot the button" is not a failure mode you handle.
+The action contract is enforced server-side before the spec ships: Frayme binds each declared action to a control, injects a button for a `required` action the model left out, and the contract gate in [validation](validation.md) then confirms every required action is wired, so "the model forgot the button" is not a failure mode you handle.
 
 ## Receiving actions
 
@@ -114,6 +114,7 @@ Each declared action can specify how the server closes the loop when it fires, v
 | --- | --- |
 | `agent` (default) | The event routes back to your code: `onDynamicAction` on the client, or `action_context` on the next compose. You decide what happens. |
 | `recompose` | Frayme regenerates the UI itself using a fixed `prompt` you supply on the action. The result is a self-contained "next screen" with no agent round-trip. |
+| `host` | The event goes to the host bridge you inject into the renderer (`hostTransport`, for an MCP host or an iframe parent) on the postMessage `channel` you name on the action. Without a host transport it falls back to `agent`. |
 | `false` | The action is denied: the control renders but is inert. Useful for previews and read-only surfaces. |
 
 ```ts

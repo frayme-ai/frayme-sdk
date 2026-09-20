@@ -24,7 +24,7 @@ Circular user avatar: renders the image at `src`, falling back to initials deriv
 | Prop | Type | Description |
 | --- | --- | --- |
 | `src` | `string` | Image URL for the avatar photo (javascript:/file: schemes rejected). When omitted or the load fails, initials derived from `name` render instead. |
-| `name` | `string` | The person’s display name — REQUIRED. Drives the fallback initials (first letters of the first two words: "Jane Doe" → "JD"), the img alt text, and the hover tooltip. |
+| `name` | `string` | The person’s display name, REQUIRED. Drives the fallback initials (first letters of the first two words: "Jane Doe" → "JD"), the img alt text, and the hover tooltip. |
 | `size` | `"xs" \| "sm" \| "md" \| "lg" \| "xl"` | Box diameter and initials font size together: xs · sm · md (default) · lg · xl. Drop to `xs`/`sm` for inline/list rows, `lg`/`xl` for a profile header; use `sizeValue` for an exact diameter. |
 | `sizeValue` | `string \| number` | Exact box diameter (width + height, e.g. "80px" / "5rem"). Overrides the `size` enum, which is the default (initials font size still follows the enum). |
 | `shape` | `"circle" \| "rounded" \| "square"` | Corner shape: circle (default) · rounded · square. |

@@ -1,6 +1,6 @@
 # Kbd
 
-Renders one or more keyboard keys as styled `<kbd>` chips joined by "+" (e.g. "Cmd + K") — for documenting shortcuts inline in text or a command palette. Pass `keys` as a single string or an ordered array; renders escaped text only, never markup. `font`/`bg`/`color`/`borderColor` style the region and chips.
+Renders one or more keyboard keys as styled `<kbd>` chips joined by "+" (e.g. "Cmd + K"), for documenting shortcuts inline in text or a command palette. Pass `keys` as a single string or an ordered array; renders escaped text only, never markup. `font`/`bg`/`color`/`borderColor` style the region and chips.
 
 ## Example
 

@@ -8,19 +8,20 @@ Frayme runs its own model, purpose-built for composing interfaces. Model output 
 
 - **Component types**: every `elements.*.type` must be one of the 189 catalog components. There is no escape hatch into arbitrary HTML, React, or script.
 - **Spec structure**: `state`, `root`, `elements` must form a well-formed json-render document.
-- **Referential integrity**: `root` and every id in every `children` array must resolve to a real element; no cycles, no dangling references.
+- **Referential integrity**: `root` and every id in every `children` array must resolve to a real element; no dangling references. A `children` cycle is cut by the server's mechanical repair pass before the gate, and again by the renderer.
+- **State paths that resolve**: every `$state` / `$bindState` read must be seeded in `/state` or written by a control or an action (`setState` and friends), so nothing renders empty against an undefined path. The renderer runs the same rule before its final commit.
 - **Event vocabulary**: `on` wiring must use the 8 canonical event verbs (see [Interactivity](interactivity.md)).
 - **The action contract**: every action you declared with `required: true` must be wired to a control; declared actions must be bound legally.
-- **Value safety**: colors, dimensions, and coordinates are checked as values, not just types, so a generated prop cannot smuggle in something a renderer would choke on.
-- **Resource caps**: element counts, children per element, nesting depth, and string sizes are bounded, so an over-generation can never become a render bomb.
+- **Value safety**: colors and dimensions are checked as values, not just types. The `resolution` gate in `@frayme/catalog/validate` rejects an unsafe value outright, and the renderer passes every such prop through the same `safeColor` / `safeDimension` checks before it reaches CSS, so a generated prop cannot smuggle in something a renderer would choke on.
+- **Resource caps**: the stream is bounded (`max_operations`, a per-line size cap, and an abort on runaway repetition), and the `resolution` gate additionally bounds element count, children per element, nesting depth and string sizes, so an over-generation can never become a render bomb.
 
 ## What happens on failure
 
 Validation failures are handled server-side, invisibly to your integration:
 
 1. The failing attempt is discarded. If you were streaming, you receive `compose.restarted` and should discard rendered state (the SDK does this for you; see [Streaming](streaming.md)).
-2. The request is automatically retried on a stronger model, up to 2 times.
-3. If no attempt validates, the request fails with `502 COMPOSITION_FAILED` (or an in-band `error` event on a stream).
+2. The request is automatically retried once, on a stronger model; the `compose.restarted` event names it.
+3. If no attempt validates, the request fails with `502 COMPOSITION_FAILED`, or `503 MODEL_UNAVAILABLE` when no model produced any output at all (an in-band `error` event on a stream).
 
 Failed requests are not billed. Billing happens only on validated success: `compose.completed` is simultaneously the validation receipt and the billing event.
 

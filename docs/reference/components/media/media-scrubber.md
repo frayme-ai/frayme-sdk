@@ -1,6 +1,6 @@
 # MediaScrubber
 
-A visual media scrubber: a waveform / bar / line track with a draggable playhead, played + buffered fills, chapter markers, an optional play/pause button and a time readout. It does not drive a media element — it emits seek (`change`) and play/pause (`commit`) intents for the host. Owns the playhead position locally (seeded from currentTime); SSR-safe; one stable track carries the drag so no pointer-capture bugs. Bind `value` with `{ $bindState }` so the agent (or a sibling control) can read the live seek position (playhead in seconds) from spec.state.
+A visual media scrubber: a waveform / bar / line track with a draggable playhead, played + buffered fills, chapter markers, an optional play/pause button and a time readout. It does not drive a media element, it emits seek (`change`) and play/pause (`commit`) intents for the host. Owns the playhead position locally (seeded from currentTime); SSR-safe; one stable track carries the drag so no pointer-capture bugs. Bind `value` with `{ $bindState }` so the agent (or a sibling control) can read the live seek position (playhead in seconds) from spec.state.
 
 ## Example
 
@@ -68,19 +68,19 @@ A visual media scrubber: a waveform / bar / line track with a draggable playhead
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `duration` | `number` | Total media length in SECONDS — the full span of the track (default `100`); set to the real clip length so seek fractions map correctly. |
+| `duration` | `number` | Total media length in SECONDS, the full span of the track (default `100`); set to the real clip length so seek fractions map correctly. |
 | `currentTime` | `number` | Current playhead position in seconds (default 0). The host updates this during playback; the scrubber follows. |
 | `value` | `number` | The live seek position in seconds, held in (bindable) state so an external Button can read where the playhead is. Seeds from currentTime when unbound; bind it to expose the scrub position. |
-| `buffered` | `number` | Buffered-up-to position in seconds (default none) — renders a secondary fill. |
+| `buffered` | `number` | Buffered-up-to position in seconds (default none), renders a secondary fill. |
 | `waveform` | `number[]` | Pre-computed waveform amplitudes 0..1 (or any positive scale, normalized). Omit for a flat track. Capped at 2000 samples. |
 | `chapters` | `({ id: string, time: number, label: string })[]` | Chapter markers { id?, time (seconds), label? } placed along the axis. Capped at 200. |
-| `playing` | `boolean` | Whether media is currently playing (default false) — sets the play/pause button state. |
+| `playing` | `boolean` | Whether media is currently playing (default false), sets the play/pause button state. |
 | `showPlayButton` | `boolean` | Show the play/pause button that emits a play/pause `commit` intent (default `true`); hide it for a seek-only scrubber. |
 | `showTime` | `boolean` | Show the "current / duration" time readout (default true). |
 | `showThumbnails` | `boolean` | Reserve a taller track for a thumbnail strip look (default false). |
 | `showSubmit` | `boolean` | Show an internal Submit button that emits `commit` with the current playhead position on demand (default false). Use it when no external Button reads the bound seek value. |
 | `submitLabel` | `string` | Label for the internal Submit button when showSubmit is on (default "Seek"). Ignored unless showSubmit is true. |
-| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit — no per-keystroke stream. |
+| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit, no per-keystroke stream. |
 | `variant` | `"waveform" \| "bar" \| "line"` | Track style: waveform (default; needs waveform data, falls back to bar) · bar (a solid fill track) · line. |
 | `height` | `string \| number` | Height of the scrubber track / waveform area (default 3rem). |
 | `accent` | `string` | Played fill + playhead color (default the primary token). |
@@ -91,7 +91,7 @@ A visual media scrubber: a waveform / bar / line track with a draggable playhead
 
 ### change
 
-The playhead was moved (drag-end or arrow key); params carry { time (seconds), fraction (0..1), timeLabel }. Only fires when emitOnChange !== false — otherwise the position lives in (bindable) state and is delivered on commit/submit.
+The playhead was moved (drag-end or arrow key); params carry { time (seconds), fraction (0..1), timeLabel }. Only fires when emitOnChange !== false, otherwise the position lives in (bindable) state and is delivered on commit/submit.
 
 | Key | Type | Description |
 | --- | --- | --- |
@@ -100,13 +100,13 @@ The playhead was moved (drag-end or arrow key); params carry { time (seconds), f
 
 ### commit
 
-Either the play/pause button was pressed — params carry { action: "play"|"pause", playing (requested next state) } — OR the internal Submit button (showSubmit) settled the playhead — params carry { time (seconds), fraction (0..1), timeLabel }.
+Either the play/pause button was pressed, params carry { action: "play"|"pause", playing (requested next state) }, OR the internal Submit button (showSubmit) settled the playhead, params carry { time (seconds), fraction (0..1), timeLabel }.
 
 | Key | Type | Description |
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

@@ -41,9 +41,9 @@ Concentric proportional rings (one per datum). Each ring’s arc = value÷max of
 | `trackColor` | `string` | Exact color of each ring’s empty track (default the muted token). |
 | `scaleColor` | `string` | When set, tint every ring as a single-hue scale from this colour (outer ring solid → inner rings lighter), overriding `palette`. Use for one-metric radial scales; leave unset for distinct per-ring colours. |
 | `valueColor` | `string` | Exact colour of the legend value text shown by `showValues` (default the foreground token). The shared value-text channel across Gauge/RadialBar/ProgressCircle. |
-| `height` | `string \| number` | Plot height (e.g. "240px" or "16rem"; default ~200px). Bounded 80–800. |
+| `height` | `string \| number` | Plot height (e.g. "240px" or "16rem"; default ~200px). Bounded 80-800. |
 | `showLegend` | `boolean` | Show a legend of ring labels beside the chart (default true). |
 | `showValues` | `boolean` | Print each ring’s value in the legend (default false). |
-| `mutedColor` | `string` | Secondary/muted text colour — the legend ring labels and the empty-state caption (default the muted-foreground token). |
+| `mutedColor` | `string` | Secondary/muted text colour, the legend ring labels and the empty-state caption (default the muted-foreground token). |
 | `emptyText` | `string` | Override the empty-state message shown when there is no valid data (default "No data"). |
 | `ariaLabel` | `string` | Override the screen-reader summary of the chart (default an auto per-ring summary). |

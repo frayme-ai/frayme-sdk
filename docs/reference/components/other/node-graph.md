@@ -1,6 +1,6 @@
 # NodeGraph
 
-A directed graph / flowchart / live pipeline: author nodes + edges (structure only) and the engine computes a deterministic layered layout with routed connectors and arrowheads. Each node can carry a status (idle/running/done/error/blocked) with a progress bar, an icon, a sublabel and a meta badge — turning it into a live agent-execution view. Node hit-targets are focusable HTML buttons; single-select by default, or set multiSelect to pick a bindable set of nodes. Stateless-seeded, SSR-safe; click a node to emit `select`.
+A directed graph / flowchart / live pipeline: author nodes + edges (structure only) and the engine computes a deterministic layered layout with routed connectors and arrowheads. Each node can carry a status (idle/running/done/error/blocked) with a progress bar, an icon, a sublabel and a meta badge, turning it into a live agent-execution view. Node hit-targets are focusable HTML buttons; single-select by default, or set multiSelect to pick a bindable set of nodes. Stateless-seeded, SSR-safe; click a node to emit `select`.
 
 ## Example
 
@@ -77,13 +77,13 @@ A directed graph / flowchart / live pipeline: author nodes + edges (structure on
 | `edges` | `({ from: string, to: string, label: string })[]` | Directed edges { from, to, label? } referencing node ids. Self-edges + unknown ids are dropped; cycles are broken for layout. Capped at 240. |
 | `direction` | `"TB" \| "LR"` | Layout flow direction: TB (top→bottom, the default) or LR (left→right). |
 | `nodeShape` | `"rounded" \| "pill" \| "rect"` | Shape of each node box: rounded, pill, or rect (default rounded). |
-| `multiSelect` | `boolean` | Allow selecting a SET of nodes (default false — single-select). When true, clicking toggles a node in the selection and `select` carries the full set. |
+| `multiSelect` | `boolean` | Allow selecting a SET of nodes (default false, single-select). When true, clicking toggles a node in the selection and `select` carries the full set. |
 | `selectedIds` | `string[]` | Node ids selected initially (multi-select). Bind with { $bindState } so an external Button can read the current node selection from spec.state. |
 | `showStatus` | `boolean` | Show the per-node status indicator + progress bar when a node has a status/progress (default true). |
 | `showArrows` | `boolean` | Draw directional arrowheads at the target end of each edge (default `true`); set `false` for an undirected/plain-connector look. |
 | `showEdgeLabels` | `boolean` | Render the label text on edges that have one (default true). |
 | `nodeWidth` | `number` | Width of every node box in px (default `168`, clamped `64..300`); widen for longer labels or narrow for a compact graph. |
-| `nodeHeight` | `number` | Node height in px (default auto — taller for status/sublabel nodes, clamped 32..140). |
+| `nodeHeight` | `number` | Node height in px (default auto, taller for status/sublabel nodes, clamped 32..140). |
 | `accent` | `string` | Default node border + selection-ring + progress-bar color (default the primary token). |
 | `lineColor` | `string` | Edge line + arrowhead color (default the border token). |
 | `mutedColor` | `string` | Edge labels, sublabels + secondary text (default the muted-foreground token). |

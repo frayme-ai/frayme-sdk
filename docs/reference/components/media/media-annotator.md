@@ -1,6 +1,6 @@
 # MediaAnnotator
 
-Annotate an image with pins, boxes, text notes, and freehand ink. Author an image + optional pre-placed marks; the user adds/labels/deletes annotations from a toolbar. One shared capture surface; coords are normalized to the object-contain image content box so marks stay aligned at any size. Stateless-seeded (owns the set), SSR-safe. Emits `commit` (create, with geometry), `change` (label/text edit), `select` (open), `dismiss` (delete/clear). v1: no drag-reposition. Bind `annotations` with `{ $bindState }` so the agent (or a sibling control) can read the live annotation set — each mark with its resolved geometry (pin/text {x,y}, box {x,y,w,h}, freehand {points}, normalized 0..1) — from spec.state.
+Annotate an image with pins, boxes, text notes, and freehand ink. Author an image + optional pre-placed marks; the user adds/labels/deletes annotations from a toolbar. One shared capture surface; coords are normalized to the object-contain image content box so marks stay aligned at any size. Stateless-seeded (owns the set), SSR-safe. Emits `commit` (create, with geometry), `change` (label/text edit), `select` (open), `dismiss` (delete/clear). v1: no drag-reposition. Bind `annotations` with `{ $bindState }` so the agent (or a sibling control) can read the live annotation set, each mark with its resolved geometry (pin/text {x,y}, box {x,y,w,h}, freehand {points}, normalized 0..1), from spec.state.
 
 ## Example
 
@@ -75,8 +75,8 @@ Annotate an image with pins, boxes, text notes, and freehand ink. Author an imag
 | Prop | Type | Description |
 | --- | --- | --- |
 | `src` | `string` | Image URL or raster data: URI (http/https + raster data only; svg/blob rejected). Omit → a placeholder canvas. |
-| `alt` | `string` | What the image SHOWS, for anyone who cannot see it. This image is the subject of the screen — the thing being annotated — so leaving it undescribed hands a screen-reader user a set of pins floating over nothing. Describe the scene, not the task: "Bathroom tiling with four snags marked", never "Annotated image". Omit only when the image is genuinely decorative, which for this component it never is. |
-| `annotations` | `({ id: string, kind: "pin" \| "box" \| "freehand" \| "text", label: string, color: string, x: number, y: number, w: number, h: number, points: object[] })[]` | Pre-placed annotations, each a pin { kind:"pin", x, y }, box { kind:"box", x, y, w, h }, freehand { kind:"freehand", points:[{x,y}] }, or text { kind:"text", x, y, label } (the label is the shown text) in normalized 0..1 image-content-box coords, with { id?, label?, color? }. Invalid marks are skipped. Capped at 200. Bindable: the current annotation set (each mark with its resolved geometry — pin/text {x,y}, box {x,y,w,h}, freehand {points}, normalized 0..1) is mirrored back here into spec.state on every create/edit/delete/clear, so an external Button bound with { $bindState } can read all annotations. |
+| `alt` | `string` | What the image SHOWS, for anyone who cannot see it. This image is the subject of the screen, the thing being annotated, so leaving it undescribed hands a screen-reader user a set of pins floating over nothing. Describe the scene, not the task: "Bathroom tiling with four snags marked", never "Annotated image". Omit only when the image is genuinely decorative, which for this component it never is. |
+| `annotations` | `({ id: string, kind: "pin" \| "box" \| "freehand" \| "text", label: string, color: string, x: number, y: number, w: number, h: number, points: object[] })[]` | Pre-placed annotations, each a pin { kind:"pin", x, y }, box { kind:"box", x, y, w, h }, freehand { kind:"freehand", points:[{x,y}] }, or text { kind:"text", x, y, label } (the label is the shown text) in normalized 0..1 image-content-box coords, with { id?, label?, color? }. Invalid marks are skipped. Capped at 200. Bindable: the current annotation set (each mark with its resolved geometry, pin/text {x,y}, box {x,y,w,h}, freehand {points}, normalized 0..1) is mirrored back here into spec.state on every create/edit/delete/clear, so an external Button bound with { $bindState } can read all annotations. |
 | `mode` | `"select" \| "pin" \| "box" \| "freehand" \| "text"` | Initial tool (default select). The toolbar switches tools (pin/box/text/draw); select lets you open/edit/delete a mark. |
 | `editable` | `boolean` | Allow creating/editing/deleting annotations (default true). When false, a read-only viewer. |
 | `showToolbar` | `boolean` | Show the toolbar of drawing tools (pin/box/text/draw) plus the clear action (default true); set false to hide it for a read-only or externally-controlled viewer. |
@@ -90,13 +90,13 @@ Annotate an image with pins, boxes, text notes, and freehand ink. Author an imag
 
 ### commit
 
-A new annotation was created; params carry { id, kind, count } plus its drawn geometry — pin/text add { x, y }, box adds { x, y, w, h }, freehand adds { points:[{x,y}] } (normalized 0..1 image-content-box coords). A text mark is created empty; its content arrives via `change`.
+A new annotation was created; params carry { id, kind, count } plus its drawn geometry, pin/text add { x, y }, box adds { x, y, w, h }, freehand adds { points:[{x,y}] } (normalized 0..1 image-content-box coords). A text mark is created empty; its content arrives via `change`.
 
 | Key | Type | Description |
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |
@@ -112,7 +112,7 @@ An annotation's label/text was edited; params carry { id, kind, label } (for a t
 
 ### select
 
-An annotation was opened; params carry { id, kind, label } plus its geometry — pin/text add { x, y } (text adds its { text }), box adds { x, y, w, h }, freehand adds { points:[{x,y}] } (normalized 0..1 coords).
+An annotation was opened; params carry { id, kind, label } plus its geometry, pin/text add { x, y } (text adds its { text }), box adds { x, y, w, h }, freehand adds { points:[{x,y}] } (normalized 0..1 coords).
 
 | Key | Type | Description |
 | --- | --- | --- |

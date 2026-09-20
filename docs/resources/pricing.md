@@ -14,6 +14,8 @@ Flat monthly plans with hard generation caps. No credits, no metering maze, no o
 
 Prices in USD. Every plan gets **every feature**: streaming, the full catalog, edit mode, journeys, custom components, the SDK, idempotent retries. The only lever between tiers is volume.
 
+Need more than Scale? Enterprise plans come with unlimited generations, a dedicated team and an SLA: email [sales@frayme.ai](mailto:sales@frayme.ai).
+
 {% hint style="info" %}
 Sign up and manage your plan from your Frayme dashboard at [frayme.ai](https://frayme.ai).
 {% endhint %}

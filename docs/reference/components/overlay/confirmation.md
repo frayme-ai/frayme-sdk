@@ -27,10 +27,10 @@ An inline human-in-the-loop gate: a message + an Approve button (emits `commit`)
 | `message` | `string` | The question / action to approve, shown above the two buttons (e.g. "Send this email to 12 recipients?"). |
 | `confirmLabel` | `string` | Label for the primary approve button (default "Approve"). |
 | `denyLabel` | `string` | Label for the secondary deny button (default "Deny"). |
-| `cancelLabel` | `string` | Accepted alias of `denyLabel` for the secondary deny button — the shared `confirm:{…}` block and DataTable's row editor both spell this button `cancelLabel`, so it is honoured here too. `denyLabel` is the canonical name and wins when both are set. |
+| `cancelLabel` | `string` | Accepted alias of `denyLabel` for the secondary deny button, the shared `confirm:{…}` block and DataTable's row editor both spell this button `cancelLabel`, so it is honoured here too. `denyLabel` is the canonical name and wins when both are set. |
 | `tone` | `"neutral" \| "success" \| "warning" \| "critical" \| "info"` | Semantic color of the confirm button (default neutral → primary). Use `critical` for destructive actions, `success` for safe ones. |
 | `bg` | `string` | Background fill of the confirmation card surface (default card token). |
-| `color` | `string` | On-surface text colour — the confirmation `message` AND the Deny button label — pair it with a custom `bg` so the gate stays legible over a saturated fill (defaults: the foreground token for the message, muted-foreground for Deny). |
+| `color` | `string` | On-surface text colour, the confirmation `message` AND the Deny button label, pair it with a custom `bg` so the gate stays legible over a saturated fill (defaults: the foreground token for the message, muted-foreground for Deny). |
 | `borderColor` | `string` | Border colour of the confirmation card (default the border token). |
 | `borderStyle` | `"solid" \| "dashed" \| "dotted"` | Card border line style: solid (default) · dashed · dotted. |
 | `borderWidthValue` | `string \| number` | Exact card border thickness (e.g. "2px"; default 1px). |
@@ -40,7 +40,7 @@ An inline human-in-the-loop gate: a message + an Approve button (emits `commit`)
 | `tracking` | `"tighter" \| "tight" \| "normal" \| "wide" \| "wider"` | Letter-spacing of the confirmation `message` (tighter · tight · normal · wide · wider; default normal). |
 | `leading` | `"tight" \| "snug" \| "normal" \| "relaxed" \| "loose"` | Line-height of the confirmation `message` (tight · snug · normal · relaxed · loose; default normal). |
 | `fontSize` | `string \| number` | Exact font size of the confirmation `message` (e.g. "20px" / "1.25rem"). Default 0.875rem. |
-| `decision` | `"approved" \| "denied"` | The user's verdict once the gate is answered — "approved" after the confirm button, "denied" after the deny button; null until answered. Bind with { $bindState } so an external element (e.g. a sibling Button) can read whether Approve or Deny was pressed; the renderer writes it into spec.state before emitting commit/dismiss. |
+| `decision` | `"approved" \| "denied"` | The user's verdict once the gate is answered, "approved" after the confirm button, "denied" after the deny button; null until answered. Bind with { $bindState } so an external element (e.g. a sibling Button) can read whether Approve or Deny was pressed; the renderer writes it into spec.state before emitting commit/dismiss. |
 
 ## Events
 
@@ -52,7 +52,7 @@ The approve button (`confirmLabel`, default "Approve") was clicked; params carry
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

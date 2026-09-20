@@ -85,9 +85,9 @@ A role × capability permission grid: each cell is a tri-state toggle (allow / d
 | `saveLabel` | `string` | Text shown on the Save button when showSave is on (default "Save permissions"). |
 | `showRoleDescriptions` | `boolean` | Show each role's description under its label (default false). |
 | `stickyHeader` | `boolean` | Keep the capability header row visible while scrolling (default true). |
-| `allowColor` | `string` | The "allow" state colour, used on both sides at once: it is the TEXT COLOUR of the ✓ glyph in each allowed cell and in the legend, and at 10% strength it is also that cell's background wash — so the tick reads against a tint of itself over the card surface. Default the success token. |
-| `denyColor` | `string` | The "deny" state colour, used on both sides at once: it is the TEXT COLOUR of the ✕ glyph in each denied cell and in the legend, and at 10% strength it is also that cell's background wash — so the cross reads against a tint of itself over the card surface. Default the danger token. |
-| `accent` | `string` | Interaction colour. As a BACKGROUND it fills the "Save permissions" button, whose label is always the card token — so it has to stay dark enough to carry that label (it falls back to the foreground token there, not the primary one). As a TEXT COLOUR it paints a role row-header on hover. It also draws the selected-cell ring and every focus ring, which are lines. |
+| `allowColor` | `string` | The "allow" state colour, used on both sides at once: it is the TEXT COLOUR of the ✓ glyph in each allowed cell and in the legend, and at 10% strength it is also that cell's background wash, so the tick reads against a tint of itself over the card surface. Default the success token. |
+| `denyColor` | `string` | The "deny" state colour, used on both sides at once: it is the TEXT COLOUR of the ✕ glyph in each denied cell and in the legend, and at 10% strength it is also that cell's background wash, so the cross reads against a tint of itself over the card surface. Default the danger token. |
+| `accent` | `string` | Interaction colour. As a BACKGROUND it fills the "Save permissions" button, whose label is always the card token, so it has to stay dark enough to carry that label (it falls back to the foreground token there, not the primary one). As a TEXT COLOUR it paints a role row-header on hover. It also draws the selected-cell ring and every focus ring, which are lines. |
 | `headerTextColor` | `string` | Header text color (default the muted-foreground token). |
 
 ## Events
@@ -109,7 +109,7 @@ A bulk apply OR a Save-permissions press. On bulk: { reason: "bulk-column"|"bulk
 | --- | --- | --- |
 | `value` | `string` | Optional. The committed text/value when the affordance carries one (e.g. the typed prompt on Enter). |
 | `fields` | `Record&lt;string, unknown>` | Optional. All named field values collected at submit (Form only, via FormData). |
-| `label` | `string` | Optional. The visible label of the activated control — item identity for mapped buttons/actions. |
+| `label` | `string` | Optional. The visible label of the activated control, item identity for mapped buttons/actions. |
 | `name` | `string` | Optional. The control’s machine name when it has one. |
 | `index` | `number` | Optional. Position of the activated item when it came from a list (Fab actions, pricing plans). |
 | `control` | `string` | Optional. Names a secondary affordance inside a composite control that fired the primary verb (e.g. PromptInput’s attach button → control:"attach"). |

@@ -46,24 +46,24 @@ Collapsible sections. Items as [{title, content}]. Type 'single' (default) or 'm
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `items` | `({ title: string, content: string })[]` | The sections as [{title, content}] — both plain strings (content is NOT a child slot), e.g. [{"title":"Shipping","content":"Ships in 2-3 business days."}]. For rich child components use Collapsible instead. |
+| `items` | `({ title: string, content: string })[]` | The sections as [{title, content}], both plain strings (content is NOT a child slot), e.g. [{"title":"Shipping","content":"Ships in 2-3 business days."}]. For rich child components use Collapsible instead. |
 | `type` | `"single" \| "multiple"` | Expansion mode: single (opening one section closes the others, default) · multiple (sections open and close independently). |
 | `defaultOpenIndex` | `number \| number[]` | Item index (or indices, with type:multiple) expanded by default. Omit to start fully collapsed. |
 | `variant` | `"bordered" \| "separated" \| "ghost"` | Container chrome: bordered (boxed, default) · separated (gapped cards) · ghost (borderless). |
-| `size` | `"sm" \| "md" \| "lg"` | Section density — padding + font size of each trigger (the panel body padding follows), and the caret glyph size (14/16/18): sm · md (default) · lg. |
+| `size` | `"sm" \| "md" \| "lg"` | Section density, padding + font size of each trigger (the panel body padding follows), and the caret glyph size (14/16/18): sm · md (default) · lg. |
 | `radius` | `"none" \| "sm" \| "md" \| "lg" \| "full"` | Corner radius of the boxed container (variant:bordered) AND of each item card (variant:separated); default md. |
 | `radiusValue` | `string \| number` | Exact corner radius of the container and of each separated item card (e.g. "12px" / "1rem"). Overrides the `radius` enum, which is the default. |
 | `borderColor` | `string` | Border color of the outer box AND the dividers between sections (each card edge on variant:separated); default the border token. |
 | `accent` | `string` | Text colour of the OPEN section's header title and its caret glyph (default: inherits the surrounding ink). Names a specific colour for the active section. |
-| `mutedColor` | `string` | Secondary/muted text colour — the expanded panel body copy (default the muted-foreground token). |
-| `chevronIcon` | `string` | Expand/collapse caret glyph — an icon NAME from the closed registry (e.g. "chevron-down", "plus"). Unknown/omitted → the default ▾ caret. Never raw SVG. |
+| `mutedColor` | `string` | Secondary/muted text colour, the expanded panel body copy (default the muted-foreground token). |
+| `chevronIcon` | `string` | Expand/collapse caret glyph, an icon NAME from the closed registry (e.g. "chevron-down", "plus"). Unknown/omitted → the default ▾ caret. Never raw SVG. |
 | `openIndexes` | `number[]` | Indexes of the currently-expanded sections, mirrored back here into (bindable) spec.state on every toggle. Bind with { $bindState } so a Button/agent can read which sections are open; with type:single it holds at most one index. Seeds from `defaultOpenIndex` when omitted. |
 
 ## Events
 
 ### change
 
-A section was expanded or collapsed; params carry {openIndexes} — the full resolved array of currently-expanded item indexes (with type:single it holds at most one).
+A section was expanded or collapsed; params carry {openIndexes}, the full resolved array of currently-expanded item indexes (with type:single it holds at most one).
 
 | Key | Type | Description |
 | --- | --- | --- |

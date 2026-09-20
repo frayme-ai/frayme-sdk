@@ -30,14 +30,14 @@ Single-date picker: a bordered field button (formatted value or placeholder + a 
 | `size` | `"sm" \| "md" \| "lg"` | Field/grid height/font-size/padding token (default `md`); use `sm` in dense forms, `lg` for touch or roomy layouts. |
 | `disabled` | `boolean` | Grey out the field (60% opacity, not-allowed cursor) and hide the inline calendar panel entirely (default false). |
 | `format` | `"iso" \| "long" \| "short"` | How the chosen date renders in the field: iso (2026-06-25) · long (June 25, 2026, default) · short (Jun 25). |
-| `mode` | `"popover" \| "inline"` | Whether the month grid opens on demand from the field (default `popover` — the field is a real button; opens on click/Enter/Space/ArrowDown, closes on pick/Escape/outside-click) or is permanently visible below the field (`inline`). Reach for `inline` only when the month itself is the point of the screen (a booking calendar, an availability view) — otherwise the grid eats vertical space for a field the user may not touch. |
-| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit — no per-keystroke stream. |
-| `accent` | `string` | Selected-day fill, focus rings (day cells + month chevrons), and the day-cell/chevron hover wash when set (default primary token). Does NOT tint the field calendar icon — that follows `mutedColor`. |
+| `mode` | `"popover" \| "inline"` | Whether the month grid opens on demand from the field (default `popover`, the field is a real button; opens on click/Enter/Space/ArrowDown, closes on pick/Escape/outside-click) or is permanently visible below the field (`inline`). Reach for `inline` only when the month itself is the point of the screen (a booking calendar, an availability view), otherwise the grid eats vertical space for a field the user may not touch. |
+| `emitOnChange` | `boolean` | Emit `change` on every keystroke/drag (default true). Set false to hold the value in (bindable) state and deliver it only on commit/submit, no per-keystroke stream. |
+| `accent` | `string` | Selected-day fill, focus rings (day cells + month chevrons), and the day-cell/chevron hover wash when set (default primary token). Does NOT tint the field calendar icon, that follows `mutedColor`. |
 | `accentText` | `string` | Text color of the selected day, paired with `accent` (default the primary-foreground token). Set when a light/custom accent needs dark text. |
 | `borderColor` | `string` | Resting border colour of the field box AND the inline calendar panel (default the border token). |
 | `bg` | `string` | Field + calendar background color (default card token). |
-| `mutedColor` | `string` | Secondary/muted text colour — the field calendar icon, the weekday header labels, the empty-state placeholder text, the resting prev/next month chevrons, AND the resting out-of-range/disabled day numbers (default the muted-foreground token). |
-| `color` | `string` | Base text colour — the regular day numbers, the month title, the chevron hover colour, AND the chosen value shown in the field (default the foreground token). Muted/disabled days keep `mutedColor`; the selected day keeps `accentText`. |
+| `mutedColor` | `string` | Secondary/muted text colour, the field calendar icon, the weekday header labels, the empty-state placeholder text, the resting prev/next month chevrons, AND the resting out-of-range/disabled day numbers (default the muted-foreground token). |
+| `color` | `string` | Base text colour, the regular day numbers, the month title, the chevron hover colour, AND the chosen value shown in the field (default the foreground token). Muted/disabled days keep `mutedColor`; the selected day keeps `accentText`. |
 | `radiusValue` | `string \| number` | Exact corner rounding of the field, the calendar panel, AND the day cells (e.g. "0.5rem", "12px"; default the frayme radius token). |
 | `monthNames` | `string[]` | i18n: the 12 full month names in calendar order (Jan→Dec), used in the header title + the formatted field value. Escaped text; ignored unless exactly 12 entries (default English). |
 | `weekdayLabels` | `string[]` | i18n: the 7 weekday header labels starting Monday (the grid week-start), e.g. ["Lun","Mar","Mer",…]. Escaped text; ignored unless exactly 7 entries (default English). |
@@ -46,7 +46,7 @@ Single-date picker: a bordered field button (formatted value or placeholder + a 
 
 ### select
 
-A day cell inside min/max was clicked — a deliberate date selection; params carry { value } (the picked date, ISO YYYY-MM-DD). Fires on EVERY pick (a discrete choice — never gated by emitOnChange). `commit` is accepted as an alias and binds to this same event.
+A day cell inside min/max was clicked, a deliberate date selection; params carry { value } (the picked date, ISO YYYY-MM-DD). Fires on EVERY pick (a discrete choice, never gated by emitOnChange). `commit` is accepted as an alias and binds to this same event.
 
 | Key | Type | Description |
 | --- | --- | --- |

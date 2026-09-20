@@ -1,6 +1,6 @@
 # NavigationMenu
 
-A two-level navigation menu with flyout submenus. Each top-level item is a link, or — when it has `children` — a button (aria-haspopup/aria-expanded) that toggles a one-level flyout of sub-links (internal state, live without a binding; Escape or an outside click dismisses it). Leaf links are scheme-guarded &lt;a>s; `select` is emitted on navigation. Use as the primary site/app nav.
+A two-level navigation menu with flyout submenus. Each top-level item is a link, or, when it has `children`, a button (aria-haspopup/aria-expanded) that toggles a one-level flyout of sub-links (internal state, live without a binding; Escape or an outside click dismisses it). Leaf links are scheme-guarded &lt;a>s; `select` is emitted on navigation. Use as the primary site/app nav.
 
 ## Example
 
@@ -49,8 +49,8 @@ A two-level navigation menu with flyout submenus. Each top-level item is a link,
 | --- | --- | --- |
 | `items` | `({ label: string, href: string, icon: string, active: boolean, children: object[] })[]` | Top-level nav entries. A plain entry is a link ({label, href, icon, active}); an entry WITH `children` becomes a toggle that opens a flyout of sub-items ({label, href, description, icon}). Set `active:true` on the current-page entry. |
 | `orientation` | `"horizontal" \| "vertical"` | Bar direction: horizontal (top nav, default) · vertical (a sidebar-style menu). |
-| `accent` | `string` | Accent TEXT COLOUR for the nav links — the link/trigger hover, the open flyout trigger incl. its chevron, AND the current-page (`active`) entry (default the foreground token). Names a specific brand color. |
-| `mutedColor` | `string` | Secondary/muted text colour — the sub-item description lines inside the flyout + the trigger chevron at rest (default the muted-foreground token). |
+| `accent` | `string` | Accent TEXT COLOUR for the nav links, the link/trigger hover, the open flyout trigger incl. its chevron, AND the current-page (`active`) entry (default the foreground token). Names a specific brand color. |
+| `mutedColor` | `string` | Secondary/muted text colour, the sub-item description lines inside the flyout + the trigger chevron at rest (default the muted-foreground token). |
 | `bg` | `string` | Background fill of the flyout submenu panel (default the card token). Pair with `borderColor` so a branded nav does not pop a default-white menu. |
 | `borderColor` | `string` | Border colour of the flyout submenu panel (default the border token). Pair with `bg` for a branded flyout surface. |
 
@@ -58,7 +58,7 @@ A two-level navigation menu with flyout submenus. Each top-level item is a link,
 
 ### select
 
-A nav link was clicked — a top-level leaf or a flyout sub-link; params carry {label, href, index}, plus {parent} (the top-level label) for sub-links.
+A nav link was clicked, a top-level leaf or a flyout sub-link; params carry {label, href, index}, plus {parent} (the top-level label) for sub-links.
 
 | Key | Type | Description |
 | --- | --- | --- |
