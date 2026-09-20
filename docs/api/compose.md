@@ -87,7 +87,7 @@ Light or dark is not a signal. `context.theme` is **the** theme dial (`"light"` 
     "plans": [
       { "name": "Starter", "price": "$29/mo" },
       { "name": "Pro", "price": "$99/mo", "recommended": true },
-      { "name": "Scale", "price": "$299/mo" }
+      { "name": "Scale", "price": "$499/mo" }
     ]
   }
 }

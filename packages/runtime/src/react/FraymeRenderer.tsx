@@ -380,7 +380,19 @@ function normalizeSpecProps(spec: Spec | FraymeSpec | null, carrierTypes: readon
                decided — exactly as an authored one wins everywhere else here. */
             if (!bindingDispatches(el, verb, bb, carrierTypes)) return b;
             touched = true;
-            const label = (next.props as { label?: unknown } | undefined)?.label;
+            const pressed = next.props as { label?: unknown; variant?: unknown; tone?: unknown } | undefined;
+            const label = pressed?.label;
+            /* A DESTRUCTIVE CONTROL GETS A DESTRUCTIVE GUARD. The guard's affirmative
+               button wears the host's brand fill (confirm-modal.tsx), so a generic
+               guard on a Delete button would ask "Delete account?" over a
+               brand-coloured Confirm. The pressed control's own danger intent
+               (variant:"danger" or tone:"critical", the spellings Button, IconButton
+               and Confirmation render red) carries into the guard, the same way
+               deriveConfirm() carries a row action's `danger` variant for DataTable.
+               COMMIT ONLY. A critical Confirmation also fires `dismiss` from its Deny
+               button, and declining the destructive act is the safe choice, so that
+               guard stays non-danger. */
+            const dangerPress = verb === 'commit' && (pressed?.variant === 'danger' || pressed?.tone === 'critical');
             /* `message` MUST be present, even empty. json-render's resolveAction runs
                interpolateString over confirm.message unconditionally, so a config
                without it throws `Cannot read properties of undefined (reading
@@ -402,7 +414,7 @@ function normalizeSpecProps(spec: Spec | FraymeSpec | null, carrierTypes: readon
                the empty-string floor stays for every action without one. */
             const decl = (specActions as Record<string, { description?: unknown } | undefined>)[bb.action];
             const d = typeof decl?.description === 'string' ? decl.description.trim() : '';
-            return { ...bb, confirm: { title: t, message: d } };
+            return { ...bb, confirm: dangerPress ? { title: t, message: d, variant: 'danger' } : { title: t, message: d } };
           });
           if (touched) (guarded ??= { ...on2 })[verb] = Array.isArray(binding) ? out : out[0];
         }
@@ -750,12 +762,17 @@ export function FraymeRenderer({
         '--fr-confirm-border': surfaceField(bg),
         '--fr-confirm-cancel-border': surfaceField(bg),
         '--fr-confirm-cancel-hover': surfaceSunken(bg),
-        '--fr-confirm-accent-fg': bg,
+        // A PASSED BRAND OUTRANKS THE SPEC'S PAGE COLOURS for the confirm's main
+        // button, as it already does for the Button that opened it (that Button
+        // reads --fr-btn-fill and nothing else). Written as a var() chain, not a
+        // JS branch, so a brand that arrives from an ancestor or a preset is
+        // honoured too. With no brand both resolve to the spec colour, as before.
+        '--fr-confirm-accent-fg': `var(--fr-btn-ink,${bg})`,
       } : {}),
       ...(ink ? {
         '--fr-confirm-title': ink,
         '--fr-confirm-cancel-fg': ink,
-        '--fr-confirm-accent': ink,
+        '--fr-confirm-accent': `var(--fr-btn-fill,${ink})`,
       } : {}),
       ...(muted ? { '--fr-confirm-message': muted } : {}),
     } as typeof baseStyle;

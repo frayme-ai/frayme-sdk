@@ -7,7 +7,7 @@ import { useIntrinsicEmit, useCommitLatch } from '../intrinsic.js';
 import { useLocalOrBound as useBoundProp } from './_state.js';
 import { cn } from '../cn.js';
 import { FormValidationProvider } from '../field-validation.js';
-import { FieldRequiredContext } from './forms.js';
+import { FieldDescriptionContext, FieldLabelContext, FieldRequiredContext, type FieldDescription } from './forms.js';
 import { styleVars, fontClass, weightClass, trackingClass, leadingClass } from './_style.js';
 import { Icon } from './icons.js';
 
@@ -282,6 +282,18 @@ export function FormField({ element, children }: ComponentRenderProps): ReactNod
   const labelId = `fr-ff-${slug}-label`;
   const descId = `fr-ff-${slug}-desc`;
   const hasDesc = p.errorText != null || p.helpText != null;
+  // The one line printed below (error wins, exactly as HelpLine decides it),
+  // handed to the control(s) inside so a control repeating it word for word does
+  // not print it again. Memoised so a re-render does not re-render every consumer.
+  const fieldLine = useMemo<FieldDescription>(
+    () =>
+      p.errorText != null
+        ? { kind: 'error', text: p.errorText }
+        : p.helpText != null
+          ? { kind: 'help', text: p.helpText }
+          : null,
+    [p.errorText, p.helpText],
+  );
   return (
     <div
       className={cn(fieldGroup({ placement }))}
@@ -317,7 +329,11 @@ export function FormField({ element, children }: ComponentRenderProps): ReactNod
           control genuinely required (native validation) via the cascade —
           the asterisk is never just decoration. */}
       <div className="flex w-full flex-col gap-1.5">
-        <FieldRequiredContext.Provider value={p.required === true}>{children}</FieldRequiredContext.Provider>
+        <FieldRequiredContext.Provider value={p.required === true}>
+          <FieldDescriptionContext.Provider value={fieldLine}>
+            <FieldLabelContext.Provider value={typeof p.label === 'string' ? p.label : null}>{children}</FieldLabelContext.Provider>
+          </FieldDescriptionContext.Provider>
+        </FieldRequiredContext.Provider>
         {hasDesc && (
           <div id={descId}>
             <HelpLine helpText={p.helpText} errorText={p.errorText} size={size} />

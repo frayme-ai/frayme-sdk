@@ -100,9 +100,9 @@
                     },
                     "plan": {
                       "tierKey": "free",
-                      "monthlyGenerations": 500,
+                      "monthlyGenerations": 100,
                       "rateLimitPerMin": 30,
-                      "generationsRemaining": 496,
+                      "generationsRemaining": 96,
                       "inlineComponentsLimit": 0
                     }
                   }
@@ -168,7 +168,7 @@
                         },
                         {
                           "name": "Scale",
-                          "price": "$299/mo"
+                          "price": "$499/mo"
                         }
                       ]
                     },
