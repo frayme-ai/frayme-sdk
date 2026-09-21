@@ -1,5 +1,11 @@
 # @frayme/runtime
 
+## 0.6.1
+
+### The `"use client"` directive stays out of the type files
+
+The client entrypoints (`/react`, `/ai-sdk`, `/ag-ui`) are stamped with `"use client"` so a React Server Components bundler treats every chunk as client code. The stamp was also landing on the generated `.d.ts` files, where a statement is not allowed: any consumer type-checking with `skipLibCheck: false` got TS1036 from `@frayme/runtime/react`. The banner now applies to JavaScript chunks only. Nothing else changes; the default `skipLibCheck: true` never saw the problem, which is why 0.5.0 and 0.6.0 shipped with it.
+
 ## 0.6.0
 
 ### A passed `primary` colors every main action

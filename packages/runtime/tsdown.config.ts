@@ -42,6 +42,14 @@ export default defineConfig([
       'ag-ui/index': 'src/ag-ui/index.tsx',
     },
     clean: false,
-    outputOptions: { banner: '"use client";' },
+    // The directive belongs to the JavaScript only. As a plain string the
+    // banner was stamped on the .d.ts chunks too, and a statement in an
+    // ambient file is TS1036 for any consumer with skipLibCheck off (found
+    // 21 Sep 2026 by type-checking the docs' snippets under strict settings;
+    // shipped that way in 0.5.0 and 0.6.0, harmless under the default
+    // skipLibCheck: true).
+    outputOptions: {
+      banner: (chunk) => (chunk.fileName.endsWith('.ts') ? '' : '"use client";'),
+    },
   },
 ]);

@@ -86,7 +86,7 @@ All MIT-licensed, ESM, Node ≥ 20.19.
 | Package | Version | What it does |
 | --- | --- | --- |
 | [`@frayme/api`](https://www.npmjs.com/package/@frayme/api) | 0.6.0 | Zero-dependency API client: streaming, typed errors, retries that can't double-bill, agent tools for every major framework (`fraymeTools()` for the Vercel AI SDK), and a ready-made server proxy (`createFraymeHandler()`) |
-| [`@frayme/runtime`](https://www.npmjs.com/package/@frayme/runtime) | 0.6.0 | Renders specs as live React 19: full 189-component registry, `--frayme-*` CSS theming, AI SDK and AG-UI adapters |
+| [`@frayme/runtime`](https://www.npmjs.com/package/@frayme/runtime) | 0.6.1 | Renders specs as live React 19: full 189-component registry, `--frayme-*` CSS theming, AI SDK and AG-UI adapters |
 | [`@frayme/catalog`](https://www.npmjs.com/package/@frayme/catalog) | 0.4.1 | The component vocabulary: schemas, `fraymeCatalog.validate()`, and bring-your-own-component manifests |
 
 ## Built on open standards

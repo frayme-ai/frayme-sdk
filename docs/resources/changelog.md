@@ -7,8 +7,12 @@ Release notes for the Frayme SDK packages, each versioned independently, followi
 | Package | Version |
 | --- | --- |
 | `@frayme/api` | 0.6.0 |
-| `@frayme/runtime` | 0.6.0 |
+| `@frayme/runtime` | 0.6.1 |
 | `@frayme/catalog` | 0.4.1 |
+
+## 0.6.1 (`@frayme/runtime`)
+
+The `"use client"` directive no longer lands in the generated type files. A consumer with `skipLibCheck: false` used to get TS1036 from `@frayme/runtime/react`, `/ai-sdk` and `/ag-ui`; the directive now goes on the JavaScript chunks only. No API change.
 
 ## 0.6.0 (`@frayme/api`, `@frayme/runtime`) and 0.4.1 (`@frayme/catalog`)
 

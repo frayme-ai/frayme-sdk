@@ -6,7 +6,7 @@ Renders Frayme specs as live, interactive React UI: one renderer component, a st
 npm i @frayme/runtime
 ```
 
-ESM, MIT, Node ≥ 20.19, React ≥ 19. Version 0.6.0. The `ai` / `@ai-sdk/react` peers are optional, needed only for the `/ai-sdk` entrypoint.
+ESM, MIT, Node ≥ 20.19, React ≥ 19. Version 0.6.1. The `ai` / `@ai-sdk/react` peers are optional, needed only for the `/ai-sdk` entrypoint.
 
 ## Entrypoints
 
