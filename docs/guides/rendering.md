@@ -19,10 +19,10 @@ import '@frayme/runtime/styles.css';
 
 ```tsx
 // Settled specs (the default): validate, then render
-<FraymeRenderer spec={finalSpec} mode="strict" />
+<FraymeRenderer spec={finalSpec} mode="strict" />;
 
 // Streaming snapshots: render each partial spec as it arrives
-<FraymeRenderer spec={snapshot} mode="progressive" loading={status === 'streaming'} />
+<FraymeRenderer spec={snapshot} mode="progressive" loading={status === 'streaming'} />;
 ```
 
 - **`strict`** (default): the spec is re-validated against the component catalog before anything renders. A failing spec renders a `role="alert"` panel listing the first five issues instead of the UI. Use this for anything you loaded from storage or received from code you don't control.
