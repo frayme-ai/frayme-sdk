@@ -6,9 +6,20 @@ Release notes for the Frayme SDK packages, each versioned independently, followi
 
 | Package | Version |
 | --- | --- |
-| `@frayme/api` | 0.6.0 |
+| `@frayme/api` | 0.7.0 |
 | `@frayme/runtime` | 0.6.1 |
 | `@frayme/catalog` | 0.4.1 |
+
+## 0.7.0 (`@frayme/api`)
+
+`frayme_compose` takes references to what the host already holds, so the agent stops retyping it.
+
+- **`use_intent`** names one of your intents and brings its layout, signals and actions into the call.
+- **`data_from`** runs `query_source`-shaped queries and puts the rows straight into `data`, under `as` or the source name.
+- Anything the agent passes itself is kept; a reference only fills a gap. An unknown name is refused with the known ones and never reaches the API.
+- Each field is offered only when you passed intents or sources, and `prompt` becomes optional only when an intent can supply it.
+
+Additive: a call written the old way sends exactly the same request. `lookup_intent` and `query_source` are unchanged, for when the agent needs to read before it decides. See [Intents and sources](../guides/intents-and-sources.md).
 
 ## 0.6.1 (`@frayme/runtime`)
 

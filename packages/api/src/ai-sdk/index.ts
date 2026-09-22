@@ -57,12 +57,14 @@ import {
 } from '../agent/compose-outputs.js';
 import {
   fraymeIntentSchema,
+  intentExample,
   lookupIntentTool,
   type FraymeIntent,
   type FraymeIntentExample,
 } from '../agent/intents.js';
 import { type FraymePress } from '../agent/press.js';
 import {
+  querySource,
   querySourceTool,
   type FraymeSources,
   type QuerySourceInput,
@@ -94,6 +96,70 @@ export const PRESS_INVALID = 'PRESS_INVALID';
 export const UNKNOWN_SCREEN = 'UNKNOWN_SCREEN';
 export const SCREEN_TOO_LARGE = 'SCREEN_TOO_LARGE';
 export const CLIENT_ERROR = 'CLIENT_ERROR';
+export const UNKNOWN_INTENT = 'UNKNOWN_INTENT';
+export const UNKNOWN_SOURCE = 'UNKNOWN_SOURCE';
+export const NOTHING_TO_COMPOSE = 'NOTHING_TO_COMPOSE';
+
+/**
+ * BY REFERENCE (0.7.0). The model used to write a compose call by COPYING: the
+ * intent's whole layout out of `lookup_intent`, then every row out of
+ * `query_source`. Measured on the Sandbox 20 Sep, that is 7.7 to 11.6 seconds
+ * of a 25 to 55 second turn, at ~330 characters a second, and 76% of what it
+ * types is a verbatim copy of text it was just handed. It is also the only
+ * stretch of a turn with nothing on screen: the screen itself streams in.
+ *
+ * `use_intent` and `data_from` name what the host already holds. The host is
+ * this process — `fraymeTools` is given `intents` and `sources` — so the tool
+ * fills the fields in before the request leaves, and the model writes a line
+ * instead of three thousand characters. Anything the model DOES pass wins:
+ * a reference is a default, never an override.
+ *
+ * Offered only when there is something to reference, the same rule
+ * `lookup_intent` and `query_source` follow: a field naming an empty set only
+ * costs the model a decision.
+ */
+const DATA_FROM_MAX_QUERIES = 5;
+const DATA_KEY_MAX_CHARS = 40;
+
+function useIntentField(names: readonly string[]) {
+  return z
+    .enum(names as [string, ...string[]])
+    .optional()
+    .describe(
+      `Build this call from one of this app's own intents: ${names.join(', ')}. Its layout becomes the prompt, and its signals and actions come with it, so you do not write them out. Pass it INSTEAD of calling lookup_intent and copying the example, and add only what the intent cannot know: the data (see data_from), and anything the user asked for that the layout does not cover, in prompt. A prompt, signals or actions you pass yourself is kept and the intent's is not used for that field.`,
+    );
+}
+
+/** `names` narrows `source` to what this app has; null leaves it open, for the
+ *  exported type, which has to describe every app at once. */
+function dataFromField(names: readonly string[] | null) {
+  return z
+    .array(
+      z.object({
+        source: (names ? z.enum(names as [string, ...string[]]) : z.string()).describe('The source to read.'),
+        as: z
+          .string()
+          .min(1)
+          .max(DATA_KEY_MAX_CHARS)
+          .optional()
+          .describe(
+            'The key these rows take in `data`. Default: the source name. Name it whatever the layout refers to, e.g. "events" for a layout bound to /events.',
+          ),
+        search: z.string().optional().describe('Case-insensitive text to find anywhere in a row.'),
+        where: z
+          .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.null()]))
+          .optional()
+          .describe('Exact values for top-level fields, e.g. {"status":"open"}. Every pair must match.'),
+        fields: z.array(z.string()).optional().describe('Return only these fields of each row.'),
+        limit: z.number().optional().describe('Most rows to return, 1 to 50. Default 20.'),
+      }),
+    )
+    .max(DATA_FROM_MAX_QUERIES)
+    .optional()
+    .describe(
+      `Put rows from this app's sources straight into \`data\`, without reading them back through query_source and typing them out: ${(names ?? []).join(', ')}. Each entry is the same query query_source takes, and its rows land at \`as\` (default: the source name). Use query_source when you need to READ values to decide something; use this when the rows are simply what the screen shows. A \`data\` key you pass yourself is kept and the rows do not overwrite it.`,
+    );
+}
 
 const editOfField = z
   .string()
@@ -111,20 +177,128 @@ const editOfField = z
  * component manifests are left out too: they are the host's code, never the
  * model's to write.
  */
-export const fraymeComposeInputSchema = composeInputSchema
-  .omit({ prior_spec: true, custom_components: true })
-  .extend({ edit_of: editOfField });
+const composeBase = composeInputSchema.omit({ prior_spec: true, custom_components: true });
+
+/**
+ * The widest shape the tool accepts, and so the input type. The schema a given
+ * app actually offers is narrower: `composeSchemaFor` drops `edit_of` without
+ * history, drops each reference field when there is nothing to reference, and
+ * narrows the names to what exists. `prompt` is optional here because
+ * `use_intent` can supply it; a call with neither is refused, by name, in
+ * `expandReferences`.
+ */
+export const fraymeComposeInputSchema = composeBase.extend({
+  prompt: composeBase.shape.prompt.optional(),
+  edit_of: editOfField,
+  use_intent: z.string().optional(),
+  data_from: dataFromField(null),
+});
 
 export type FraymeComposeToolInput = z.infer<typeof fraymeComposeInputSchema>;
+type DataFromQuery = NonNullable<FraymeComposeToolInput['data_from']>[number];
 
-/** Without the chat history no earlier screen can be found, so `edit_of` is not offered. */
-const composeWithoutHistorySchema = composeInputSchema.omit({ prior_spec: true, custom_components: true });
+/** The schema one app offers: only the fields it can honour, named to what it has. */
+function composeSchemaFor(
+  withHistory: boolean,
+  intentNames: readonly string[],
+  sourceNames: readonly string[],
+): typeof fraymeComposeInputSchema {
+  let schema = composeBase as unknown as typeof fraymeComposeInputSchema;
+  const extra: Record<string, z.ZodTypeAny> = {};
+  if (withHistory) extra.edit_of = editOfField;
+  if (intentNames.length > 0) {
+    extra.use_intent = useIntentField(intentNames);
+    // Only now may the prompt be left out: an intent is the one thing that
+    // can supply it. Without intents it stays required, as the API has it.
+    extra.prompt = composeBase.shape.prompt.optional();
+  }
+  if (sourceNames.length > 0) extra.data_from = dataFromField(sourceNames);
+  if (Object.keys(extra).length > 0) {
+    schema = (schema as unknown as typeof composeBase).extend(extra) as unknown as typeof fraymeComposeInputSchema;
+  }
+  return schema;
+}
+
+/**
+ * Fill in what was named rather than written. Returns the request fields, or a
+ * refusal the model can correct (an unknown name, or a call with no prompt at
+ * all). Everything the model passed is kept: a reference only fills a gap.
+ */
+function expandReferences(
+  fields: Record<string, unknown>,
+  useIntent: string | undefined,
+  dataFrom: readonly DataFromQuery[] | undefined,
+  examples: ReadonlyMap<string, FraymeIntentExample>,
+  sources: FraymeSources | undefined,
+): Record<string, unknown> | FraymeComposeOutput {
+  const out = { ...fields };
+
+  if (useIntent !== undefined) {
+    const example = examples.get(useIntent);
+    if (!example) {
+      const known = [...examples.keys()].join(', ');
+      return refusal(
+        UNKNOWN_INTENT,
+        `No intent named "${useIntent.slice(0, 80)}". This app's intents: ${known || 'none'}. Use one of those, or leave use_intent out and describe the screen in prompt.`,
+      );
+    }
+    const call = example.example_call;
+    if (out.prompt === undefined) out.prompt = call.prompt;
+    // Cloned on the way in: the example is built once and shared by every call.
+    if (out.signals === undefined && call.signals) out.signals = structuredClone(call.signals);
+    if (out.actions === undefined && call.actions) out.actions = structuredClone(call.actions);
+  }
+
+  if (dataFrom && dataFrom.length > 0) {
+    if (!sources) {
+      return refusal(UNKNOWN_SOURCE, 'This app has no data sources, so data_from cannot be used. Pass the values in data.');
+    }
+    const fetched: Record<string, unknown> = {};
+    for (const query of dataFrom) {
+      const result = querySource(sources, query);
+      if ('error' in result) return refusal(UNKNOWN_SOURCE, result.error);
+      fetched[query.as ?? query.source] = result.rows;
+    }
+    // A key the model wrote itself wins: it saw something the query did not.
+    out.data = { ...fetched, ...(isRecord(out.data) ? out.data : {}) };
+  }
+
+  if (typeof out.prompt !== 'string' || out.prompt.length === 0) {
+    return refusal(
+      NOTHING_TO_COMPOSE,
+      examples.size > 0
+        ? 'A compose needs either prompt, describing the screen, or use_intent naming one of this app\'s intents.'
+        : 'A compose needs prompt, describing the screen.',
+    );
+  }
+  return out;
+}
 
 const COMPOSE_HOST_NOTE =
   '\n\nIN THIS APP: specs never reach you, so never pass `prior_spec`. To edit or continue a screen, pass `edit_of` with its generation_id and the tool attaches that screen. Where an example above shows "prior_spec", send "edit_of" instead.';
 
 const COMPOSE_NO_HISTORY_NOTE =
   '\n\nIN THIS APP: earlier screens are not available to this tool, so never pass `prior_spec`. Describe each screen in full.';
+
+/** What the model is told about the two shortcuts, named to this app's own intents and sources. */
+function referenceNote(intentNames: readonly string[], sourceNames: readonly string[]): string {
+  if (intentNames.length === 0 && sourceNames.length === 0) return '';
+  const lines = [
+    '\n\nNAME THINGS INSTEAD OF COPYING THEM. This app holds its own intents and data, and this tool can read them for you. Copying them out costs the user seconds of waiting on a blank screen, so reach for these first:',
+  ];
+  if (intentNames.length > 0) {
+    lines.push(
+      `· \`use_intent\` takes an intent name (${intentNames.join(', ')}) and brings its layout, signals and actions with it. Prefer it to calling lookup_intent and retyping the example. Add only what the intent cannot know.`,
+    );
+  }
+  if (sourceNames.length > 0) {
+    lines.push(
+      `· \`data_from\` takes queries against this app's sources (${sourceNames.join(', ')}) and puts the rows straight into \`data\`. Prefer it to reading rows back through query_source and retyping them. query_source is for when you need to READ a value to decide something.`,
+    );
+  }
+  lines.push('Whatever you write yourself is kept: these only fill in what you leave out.');
+  return lines.join('\n');
+}
 
 const ACTION_HOST_NOTE =
   '\n\nIN THIS APP: a press reaches you as the user\'s message, ending in a line that starts with "frayme_action" followed by the event JSON. Call frayme_action with that JSON as it is, plus `prompt`, `data`, `actions` and `signals` for the next screen. The tool reads the press from that message and sends none of it onward: the next screen is composed fresh, so name in `data` every value the user entered that it must show, and describe the press in `prompt`. Call frayme_action only for such a press; for anything else, call frayme_compose.';
@@ -406,6 +580,19 @@ export function fraymeTools(options: FraymeToolsOptions = {}): FraymeTools {
   if (turnComposed(messages)) guard.claim();
   let client = options.client;
 
+  // Parsed up front, because frayme_compose references them too: `use_intent`
+  // and `data_from` are filled in from the same intents and sources that back
+  // lookup_intent and query_source.
+  const parsedIntents =
+    options.intents && options.intents.length > 0 ? parseIntents(options.intents) : [];
+  const examples = new Map<string, FraymeIntentExample>(
+    parsedIntents.map((intent) => [intent.name, intentExample(intent)]),
+  );
+  const sourceRows = options.sources;
+  const sourceNames = isRecord(sourceRows)
+    ? Object.keys(sourceRows).filter((name) => Array.isArray(sourceRows[name]))
+    : [];
+
   /** The host's context wins over the model's: the host knows the surface it draws on. */
   const withContext = (context: ComposeRequest['context']): ComposeRequest['context'] => {
     const merged = { ...context };
@@ -467,13 +654,18 @@ export function fraymeTools(options: FraymeToolsOptions = {}): FraymeTools {
   }
 
   const frayme_compose: Tool<FraymeComposeToolInput, FraymeComposeOutput> = {
-    description: composeToolDefinition.description + (withHistory ? COMPOSE_HOST_NOTE : COMPOSE_NO_HISTORY_NOTE),
-    inputSchema: (withHistory ? fraymeComposeInputSchema : composeWithoutHistorySchema) as typeof fraymeComposeInputSchema,
+    description:
+      composeToolDefinition.description +
+      (withHistory ? COMPOSE_HOST_NOTE : COMPOSE_NO_HISTORY_NOTE) +
+      referenceNote([...examples.keys()], sourceNames),
+    inputSchema: composeSchemaFor(withHistory, [...examples.keys()], sourceNames),
     inputExamples: composeExamples(withHistory),
     execute: (input, { abortSignal }) =>
       run(() => {
-        const { edit_of: editOf, context, ...rest } = input;
-        const request: Omit<ComposeRequest, 'stream'> = { ...rest, action_policy: actionPolicy };
+        const { edit_of: editOf, context, use_intent: useIntent, data_from: dataFrom, ...rest } = input;
+        const filled = expandReferences(rest, useIntent, dataFrom, examples, sourceRows);
+        if ('status' in filled) return filled as FraymeComposeOutput;
+        const request = { ...filled, action_policy: actionPolicy } as Omit<ComposeRequest, 'stream'>;
         const merged = withContext(context);
         if (merged) request.context = merged;
         const trimmed: FraymeTrimmed[] = [];
@@ -583,10 +775,12 @@ export function fraymeTools(options: FraymeToolsOptions = {}): FraymeTools {
   };
 
   const tools: FraymeTools = { frayme_compose, frayme_action };
-  const intents =
-    options.intents && options.intents.length > 0 ? lookupIntentTool(parseIntents(options.intents)) : undefined;
+  // Both tools stay: `use_intent` and `data_from` are the fast path, these are
+  // for READING — deciding which intent fits, or looking a value up before
+  // writing the prompt around it.
+  const intents = parsedIntents.length > 0 ? lookupIntentTool(parsedIntents) : undefined;
   if (intents) tools.lookup_intent = asAiTool(intents);
-  const sources = options.sources ? querySourceTool(options.sources) : undefined;
+  const sources = sourceRows ? querySourceTool(sourceRows) : undefined;
   if (sources) tools.query_source = asAiTool(sources);
   return tools;
 }

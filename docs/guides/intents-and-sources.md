@@ -95,6 +95,34 @@ export async function POST(req: Request) {
 - **Build the tools per request.** They read that request's `messages`, and the sources you pass are that user's.
 - **Row types:** TypeScript rejects rows typed with an `interface`, because an interface has no index signature. Use a `type` alias, or copy the rows (`rows.map((row) => ({ ...row }))`).
 
+## Naming them instead of copying them
+
+`lookup_intent` and `query_source` hand the agent text it then has to **retype** into its `frayme_compose` call. That typing is the slowest part of a turn and the only part with nothing on screen, because the screen itself streams in as it is composed. Measured on a real agent in September 2026: 7.7 to 11.6 seconds of a 25 to 55 second turn, three quarters of it a verbatim copy.
+
+So `frayme_compose` takes references to what you already passed to `fraymeTools`:
+
+```jsonc
+// What the agent writes
+{
+  "use_intent": "order_tracking",
+  "data_from": [{ "source": "orders", "as": "rows", "where": { "id": "A-1084" } }]
+}
+```
+
+The tool fills the rest in before the request leaves your process:
+
+- **`use_intent`** takes an intent name. Its layout becomes `prompt`, and its `signals` and `actions` come with it.
+- **`data_from`** takes the same queries `query_source` takes. Each one's rows land in `data` under `as`, or under the source name.
+
+Two rules make this safe to reach for:
+
+- **What the agent writes itself wins.** A reference only fills a field that was left out, so an agent that needs a different layout passes `prompt` and keeps the intent's actions.
+- **An unknown name is refused, not guessed.** The refusal names what does exist and the agent can correct it in the same turn; nothing reaches the API.
+
+Each field appears only when you passed something it could name, and `prompt` stays required until there are intents to supply it.
+
+Both tools below stay, because naming is not always enough: use them when the agent has to **read** something to decide, and the references when the intent or the rows are simply what the screen shows.
+
 ## `lookup_intent`
 
 The agent passes one of your intent names, `{ "name": "order_tracking" }`, and gets the intent back as an example call. The shape is `FraymeIntentExample` from `@frayme/api/agent`:

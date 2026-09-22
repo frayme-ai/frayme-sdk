@@ -22,12 +22,15 @@ import {
   fraymeComposeInputSchema,
   fraymeTools,
   CLIENT_ERROR,
+  NOTHING_TO_COMPOSE,
   NO_PRESS,
   pendingPress,
   PRESS_INVALID,
   PRESS_MISMATCH,
   SCREEN_TOO_LARGE,
+  UNKNOWN_INTENT,
   UNKNOWN_SCREEN,
+  UNKNOWN_SOURCE,
   type FraymeComposeOutput,
   type FraymeToolsOptions,
 } from '../src/ai-sdk/index.js';
@@ -743,6 +746,171 @@ describe('fraymeTools: intents and sources', () => {
     expect(intent).toMatchObject({ intent: 'order_tracking', example_call: { prompt: 'A timeline and an address card.' } });
     const rows = await tools.query_source?.execute?.({ source: 'orders', search: 'delayed' }, callOptions());
     expect(rows).toMatchObject({ source: 'orders', matched: 1, rows: [{ id: 'A-1', status: 'Delayed' }] });
+  });
+});
+
+/*
+ * BY REFERENCE. The point of `use_intent` and `data_from` is that the model
+ * stops retyping what the host already holds, so every test here asserts the
+ * REQUEST that left — what the model wrote is only the input.
+ */
+describe('fraymeTools: use_intent and data_from', () => {
+  const intents: FraymeIntent[] = [
+    {
+      name: 'order_tracking',
+      description: 'Where is my order.',
+      layout: 'A timeline and an address card.',
+      signals: { density: 'compact' },
+      actions: [{ name: 'refund', description: 'Refund the order.' }],
+    },
+  ];
+  const sources = {
+    orders: [
+      { id: 'A-1', status: 'Delayed' },
+      { id: 'A-2', status: 'Shipped' },
+    ],
+  };
+
+  it('an intent name becomes the prompt, the signals and the actions', async () => {
+    const { tools, calls } = setup([ok()], { intents });
+    await outputs(tools.frayme_compose.execute, { use_intent: 'order_tracking' });
+    const body = bodyOf(calls[0]);
+
+    expect(body.prompt).toBe('A timeline and an address card.');
+    expect(body.signals).toEqual({ density: 'compact' });
+    expect(body.actions).toEqual([{ name: 'refund', description: 'Refund the order.' }]);
+    // The reference itself is the tool's business, never the API's.
+    expect(body.use_intent).toBeUndefined();
+    expect(body.data_from).toBeUndefined();
+  });
+
+  it('what the model writes itself WINS over the intent', async () => {
+    const { tools, calls } = setup([ok()], { intents });
+    await outputs(tools.frayme_compose.execute, {
+      use_intent: 'order_tracking',
+      prompt: 'A map, not a timeline.',
+      signals: { density: 'rich' },
+    });
+    const body = bodyOf(calls[0]);
+
+    expect(body.prompt).toBe('A map, not a timeline.');
+    expect(body.signals).toEqual({ density: 'rich' });
+    // Untouched fields still come from the intent.
+    expect(body.actions).toEqual([{ name: 'refund', description: 'Refund the order.' }]);
+  });
+
+  it('data_from puts the queried rows in data, under `as` when given', async () => {
+    const { tools, calls } = setup([ok()], { intents, sources });
+    await outputs(tools.frayme_compose.execute, {
+      prompt: 'Every order.',
+      data_from: [{ source: 'orders', as: 'rows' }],
+    });
+    expect(bodyOf(calls[0]).data).toEqual({ rows: [{ id: 'A-1', status: 'Delayed' }, { id: 'A-2', status: 'Shipped' }] });
+
+    const second = setup([ok()], { intents, sources });
+    await outputs(second.tools.frayme_compose.execute, {
+      prompt: 'Every order.',
+      data_from: [{ source: 'orders' }],
+    });
+    expect(Object.keys(bodyOf(second.calls[0]).data as object)).toEqual(['orders']);
+  });
+
+  it('the query narrows the rows, exactly as query_source would', async () => {
+    const { tools, calls } = setup([ok()], { sources });
+    await outputs(tools.frayme_compose.execute, {
+      prompt: 'Delayed orders.',
+      data_from: [{ source: 'orders', where: { status: 'Delayed' }, fields: ['id'] }],
+    });
+    expect(bodyOf(calls[0]).data).toEqual({ orders: [{ id: 'A-1' }] });
+  });
+
+  it('a data key the model wrote is kept, and the rows join it', async () => {
+    const { tools, calls } = setup([ok()], { sources });
+    await outputs(tools.frayme_compose.execute, {
+      prompt: 'Orders, with a heading.',
+      data: { heading: 'Your orders' },
+      data_from: [{ source: 'orders', as: 'rows' }],
+    });
+    const data = bodyOf(calls[0]).data as Record<string, unknown>;
+    expect(data.heading).toBe('Your orders');
+    expect(data.rows).toHaveLength(2);
+  });
+
+  it('several sources land side by side', async () => {
+    const { tools, calls } = setup([ok()], {
+      sources: { ...sources, notes: [{ text: 'Left with a neighbour.' }] },
+    });
+    await outputs(tools.frayme_compose.execute, {
+      prompt: 'Orders and notes.',
+      data_from: [{ source: 'orders', as: 'rows' }, { source: 'notes' }],
+    });
+    expect(Object.keys(bodyOf(calls[0]).data as object).sort()).toEqual(['notes', 'rows']);
+  });
+
+  it('an unknown name is REFUSED with the known ones, and nothing is sent', async () => {
+    const { tools, calls } = setup([], { intents, sources });
+
+    const badIntent = await outputs(tools.frayme_compose.execute, { use_intent: 'returns' });
+    expect(badIntent[0]?.error?.code).toBe(UNKNOWN_INTENT);
+    expect(badIntent[0]?.error?.message).toContain('order_tracking');
+    expect(badIntent[0]?.error?.retryable).toBe(true);
+    expect(badIntent[0]?.refused).toBe(true);
+
+    const second = setup([], { intents, sources });
+    const badSource = await outputs(second.tools.frayme_compose.execute, {
+      prompt: 'Something.',
+      data_from: [{ source: 'invoices' }],
+    });
+    expect(badSource[0]?.error?.code).toBe(UNKNOWN_SOURCE);
+    expect(badSource[0]?.error?.message).toContain('orders');
+
+    expect(calls).toHaveLength(0);
+    expect(second.calls).toHaveLength(0);
+  });
+
+  it('neither a prompt nor an intent is refused by name, not sent as an empty compose', async () => {
+    const { tools, calls } = setup([], { intents });
+    const out = await outputs(tools.frayme_compose.execute, { data: {} });
+    expect(out[0]?.error?.code).toBe(NOTHING_TO_COMPOSE);
+    expect(out[0]?.error?.message).toContain('use_intent');
+    expect(calls).toHaveLength(0);
+  });
+
+  it('a refused reference RELEASES the turn\'s compose, so the model can correct it', async () => {
+    const { tools, calls } = setup([ok()], { intents });
+    const refused = await outputs(tools.frayme_compose.execute, { use_intent: 'returns' });
+    expect(refused[0]?.refused).toBe(true);
+    // The same turn's second call is the correction, and it must reach the API.
+    await outputs(tools.frayme_compose.execute, { use_intent: 'order_tracking' });
+    expect(bodyOf(calls[0]).prompt).toBe('A timeline and an address card.');
+  });
+
+  it('the fields are offered only when the app has something to reference', () => {
+    const bare = setup([]).tools.frayme_compose;
+    const bareKeys = Object.keys((bare.inputSchema as unknown as { shape: object }).shape);
+    expect(bareKeys).not.toContain('use_intent');
+    expect(bareKeys).not.toContain('data_from');
+    // No intent can supply it, so the prompt stays required.
+    expect((bare.inputSchema as unknown as { safeParse: (v: unknown) => { success: boolean } }).safeParse({}).success).toBe(false);
+
+    const full = setup([], { intents, sources }).tools.frayme_compose;
+    const fullKeys = Object.keys((full.inputSchema as unknown as { shape: object }).shape);
+    expect(fullKeys).toContain('use_intent');
+    expect(fullKeys).toContain('data_from');
+    expect(full.description).toContain('use_intent');
+    expect(full.description).toContain('order_tracking');
+    expect(full.description).toContain('data_from');
+  });
+
+  it('the intent example is CLONED, so one call cannot mutate the next', async () => {
+    const { tools, calls } = setup([ok(), ok()], { intents });
+    await outputs(tools.frayme_compose.execute, { use_intent: 'order_tracking' });
+    const first = bodyOf(calls[0]).actions as Record<string, unknown>[];
+    first[0]!.name = 'mutated';
+
+    const second = setup([ok()], { intents });
+    await outputs(second.tools.frayme_compose.execute, { use_intent: 'order_tracking' });
+    expect((bodyOf(second.calls[0]).actions as Record<string, unknown>[])[0]!.name).toBe('refund');
   });
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "@frayme/api",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Frayme API client — zero-dependency, fetch-based, streaming generative-UI compose for Node, edge, Bun, Deno, and Workers.",
   "homepage": "https://frayme.ai",
   "keywords": [
