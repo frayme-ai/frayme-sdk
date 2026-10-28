@@ -69,11 +69,11 @@
     "@frayme/api": "^0.6.0 || ^0.7.0"
   },
   "peerDependencies": {
-    "@ai-sdk/react": "^3.0.0",
+    "@ai-sdk/react": "^4.0.0",
     "@frayme/catalog": ">=0.4.0 <0.5.0",
     "@json-render/core": "^0.19.0",
     "@json-render/react": "^0.19.0",
-    "ai": "^6.0.0",
+    "ai": "^7.0.0",
     "react": "^19.0.0",
     "zod": "^4.0.0"
   },
@@ -86,14 +86,14 @@
     }
   },
   "devDependencies": {
-    "@ai-sdk/react": "^3.0.0",
+    "@ai-sdk/react": "^4.0.0",
     "@frayme/catalog": ">=0.4.0 <0.5.0",
     "@json-render/core": "^0.19.0",
     "@json-render/react": "^0.19.0",
     "@tailwindcss/cli": "^4.3.1",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.0.0",
-    "ai": "^6.0.0",
+    "ai": "^7.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jsdom": "^25.0.0",

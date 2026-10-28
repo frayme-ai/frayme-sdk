@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   convertToModelMessages,
   readUIMessageStream,
-  stepCountIs,
+  isStepCount,
   streamText,
   type ToolExecutionOptions,
   type UIMessage,
@@ -54,15 +54,16 @@ function setup(script: ScriptedResponse[], options: Omit<FraymeToolsOptions, 'cl
   return { tools: fraymeTools({ client, ...options }), calls: mock.calls };
 }
 
-const callOptions = (over: Partial<ToolExecutionOptions> = {}): ToolExecutionOptions => ({
+const callOptions = (over: Partial<ToolExecutionOptions<unknown>> = {}): ToolExecutionOptions<unknown> => ({
   toolCallId: 'call_1',
   messages: [],
+  context: undefined,
   ...over,
 });
 
 /** Run a tool the way the AI SDK does and keep every output. */
 async function outputs(
-  execute: ((input: never, options: ToolExecutionOptions) => unknown) | undefined,
+  execute: ((input: never, options: ToolExecutionOptions<unknown>) => unknown) | undefined,
   input: unknown,
 ): Promise<FraymeComposeOutput[]> {
   const result = execute?.(input as never, callOptions());
@@ -979,7 +980,7 @@ describe('fraymeTools in a streamText turn', () => {
       model,
       tools,
       messages: [{ role: 'user', content: 'show me a card' }],
-      stopWhen: stepCountIs(4),
+      stopWhen: isStepCount(4),
     });
 
     const chunks: Array<Record<string, unknown>> = [];
@@ -1002,7 +1003,7 @@ describe('fraymeTools in a streamText turn', () => {
   it('a saved chat converts back to model messages without the spec', async () => {
     const { tools } = setup([ok()], { snapshotEveryMs: 0 });
     const { model } = scriptedModel([toolCallStep('frayme_compose', { prompt: 'A card' }), textStep('Here it is.')]);
-    const result = streamText({ model, tools, messages: [{ role: 'user', content: 'card' }], stopWhen: stepCountIs(4) });
+    const result = streamText({ model, tools, messages: [{ role: 'user', content: 'card' }], stopWhen: isStepCount(4) });
     const assistant = await lastMessage(result.toUIMessageStream() as never);
     const part = assistant.parts.find((p) => p.type === 'tool-frayme_compose') as Record<string, unknown> | undefined;
     expect(part?.state).toBe('output-available');
@@ -1035,7 +1036,8 @@ describe('fraymeTools in a streamText turn', () => {
       model,
       tools,
       messages: await convertToModelMessages(messages as UIMessage[], { tools }),
-      stopWhen: stepCountIs(4),
+      stopWhen: isStepCount(4),
+      allowSystemInMessages: true,
     });
     await result.consumeStream();
     await result.response;
@@ -1063,7 +1065,7 @@ describe('fraymeTools in a streamText turn', () => {
       ],
       textStep('ok'),
     ]);
-    const result = streamText({ model, tools, messages: [{ role: 'user', content: 'card' }], stopWhen: stepCountIs(4) });
+    const result = streamText({ model, tools, messages: [{ role: 'user', content: 'card' }], stopWhen: isStepCount(4) });
     const chunks: Array<Record<string, unknown>> = [];
     for await (const chunk of result.toUIMessageStream()) chunks.push(chunk as Record<string, unknown>);
     expect(calls).toHaveLength(1);
@@ -1080,7 +1082,7 @@ describe('fraymeTools in a streamText turn', () => {
       toolCallStep('frayme_compose', { prompt: 'Another card' }, 'call_2'),
       textStep('ok'),
     ]);
-    const result = streamText({ model, tools, messages: [{ role: 'user', content: 'card' }], stopWhen: stepCountIs(5) });
+    const result = streamText({ model, tools, messages: [{ role: 'user', content: 'card' }], stopWhen: isStepCount(5) });
     await result.consumeStream();
     await result.response;
     expect(calls).toHaveLength(1);

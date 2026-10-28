@@ -531,7 +531,7 @@ function asAiTool<I, O>(spec: FraymeToolSpec<I, O>): Tool<I, O> {
   return {
     description: spec.description,
     inputSchema: spec.inputSchema,
-    execute: (input: I, options: ToolExecutionOptions) => spec.execute(input, { signal: options.abortSignal }),
+    execute: (input: I, options: ToolExecutionOptions<unknown>) => spec.execute(input, { signal: options.abortSignal }),
   } as unknown as Tool<I, O>;
 }
 
